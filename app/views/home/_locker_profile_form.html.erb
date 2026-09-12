@@ -1,0 +1,29 @@
+<%# 002 FR-005/FR-006: the floor and the locker number are always offered as two
+    separate fields. The caller decides how this is surfaced — openly for someone
+    who has nothing saved, behind the edit control for someone who has. %>
+<%= render "devise/shared/error_messages", resource: current_user %>
+
+<%# novalidate: the server decides what is valid, so every failure is reported
+    the same way rather than some by the browser and some by the app. %>
+<%= form_with model: current_user, url: locker_profile_path, method: :patch,
+              html: { class: "space-y-5", novalidate: true } do |f| %>
+  <div>
+    <%= f.label :floor, class: "block text-sm font-medium text-slate-700" %>
+    <%= f.text_field :floor, autocomplete: "off",
+          class: "mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400" %>
+  </div>
+
+  <div>
+    <%= f.label :locker_number, class: "block text-sm font-medium text-slate-700" %>
+    <%= f.text_field :locker_number, autocomplete: "off",
+          aria: { describedby: "locker_number_hint" },
+          class: "mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400" %>
+    <%# FR-002/FR-008: say up front that this one is optional. %>
+    <p id="locker_number_hint" class="mt-1 text-sm text-slate-500">
+      Leave empty if you have no locker assigned.
+    </p>
+  </div>
+
+  <%= f.submit "Save locker details",
+        class: "w-full cursor-pointer rounded-md bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2" %>
+<% end %>

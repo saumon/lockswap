@@ -4,3 +4,18 @@ alice:
   email: alice@example.com
   encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
   failed_attempts: 0
+
+# Locker-profile fixtures (002): bob has both values, carol has a floor but no
+# locker assigned. alice deliberately has neither — she is the "not yet asked" case.
+bob:
+  email: bob@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  failed_attempts: 0
+  floor: "3"
+  locker_number: "B12"
+
+carol:
+  email: carol@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  failed_attempts: 0
+  floor: "2"

@@ -60,7 +60,8 @@ The project starts with the foundations: without user accounts, no locker swap i
 | Feature | Status |
 | --- | --- |
 | **001 — Signup and login** | ✅ Shipped |
-| Lockers and current assignment | ⏳ To be specified |
+| **002 — Floor and locker details** | ✅ Shipped |
+| Locker directory and availability | ⏳ To be specified |
 | Offering and accepting a swap | ⏳ To be specified |
 | History of changes | ⏳ To be specified |
 
@@ -72,6 +73,18 @@ What feature 001 covers today — see
 * a session that persists for 30 days, browser restarts included, until the user logs out;
 * a generic failure message, identical whether the email is unknown or the password is wrong;
 * the account is locked for 15 minutes after 5 consecutive failures.
+
+What feature 002 adds — see
+[`specs/002-locker-floor-profile/spec.md`](specs/002-locker-floor-profile/spec.md):
+
+* the floor and the locker number are shown on the homepage as soon as they are on file;
+* a user who has filled in nothing yet is asked for them right there, as **two separate fields**;
+* the floor is required; the locker number is not, because having no locker assigned is an ordinary
+  state and is displayed as such, never as an error;
+* a locker number belongs to one account at a time — a clash is refused without ever revealing who
+  holds it, and the database enforces that even when two people submit at the same moment;
+* the details can be changed later, behind an **Edit locker details** control so the homepage reports
+  a settled state instead of standing permanently open for editing.
 
 ## 🧭 Method: Spec-Driven Development
 
@@ -135,8 +148,8 @@ start at `/users/sign_up`.
 ## ✅ Tests and quality
 
 ```sh
-bin/rails test         # models
-bin/rails test:system  # end-to-end signup, login, lockout, and redirect flows
+bin/rails test         # models and controllers
+bin/rails test:system  # end-to-end signup, login, lockout, redirect, and locker-details flows
 bin/rubocop            # lint (zero warnings tolerated)
 bin/brakeman           # static security analysis
 ```
@@ -146,9 +159,13 @@ a failure blocks the merge.
 
 ## 🔍 Validate a feature by hand
 
-[`specs/001-user-authentication/quickstart.md`](specs/001-user-authentication/quickstart.md) walks
-through every acceptance scenario: signup, login, the 30-day session, logout, the generic failure
-message, and the 15-minute lockout.
+Each feature ships a quickstart that walks through its acceptance scenarios by hand:
+
+* [`specs/001-user-authentication/quickstart.md`](specs/001-user-authentication/quickstart.md) —
+  signup, login, the 30-day session, logout, the generic failure message, and the 15-minute lockout;
+* [`specs/002-locker-floor-profile/quickstart.md`](specs/002-locker-floor-profile/quickstart.md) —
+  filling in a floor with and without a locker number, the rejected blank floor, a locker number
+  already taken by someone else, and editing either value afterwards.
 
 ## 🚢 Deploy
 
