@@ -1,0 +1,6 @@
+# Shared account used across the signup, login, and lockout tests.
+# The plaintext password is "password123" (see ActiveSupport::TestCase::VALID_PASSWORD).
+alice:
+  email: alice@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  failed_attempts: 0

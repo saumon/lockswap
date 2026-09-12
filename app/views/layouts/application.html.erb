@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= content_for(:title) || "LockSwap" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="LockSwap">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <%# Includes all stylesheet files in app/assets/stylesheets %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+    <header class="border-b border-slate-200 bg-white">
+      <nav class="mx-auto flex max-w-3xl items-center justify-between px-5 py-4" aria-label="Main">
+        <span class="text-lg font-semibold tracking-tight">LockSwap</span>
+
+        <%# FR-009: the sign-out control is only meaningful for a signed-in visitor. %>
+        <% if user_signed_in? %>
+          <div class="flex items-center gap-4">
+            <span class="hidden text-sm text-slate-600 sm:inline"><%= current_user.email %></span>
+            <%= button_to "Log out", destroy_user_session_path, method: :delete,
+                  class: "rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
+          </div>
+        <% end %>
+      </nav>
+    </header>
+
+    <main class="mx-auto w-full max-w-3xl px-5 py-10">
+      <%= render "layouts/flash" %>
+      <%= yield %>
+    </main>
+  </body>
+</html>
