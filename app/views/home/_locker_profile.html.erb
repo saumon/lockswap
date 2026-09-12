@@ -1,0 +1,22 @@
+<%# 002 FR-003/FR-004: the saved floor and locker number, shown once a floor exists.
+    Reads the saved values rather than the attributes, so a rejected edit shows
+    the error next to what is still on file instead of next to itself. %>
+<div id="locker-profile" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+  <h2 class="text-lg font-semibold tracking-tight">Your locker</h2>
+
+  <dl class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div>
+      <dt class="text-sm font-medium text-slate-500">Floor</dt>
+      <dd id="locker-profile-floor" class="mt-1 text-slate-900"><%= current_user.saved_floor %></dd>
+    </div>
+
+    <div>
+      <dt class="text-sm font-medium text-slate-500">Locker number</dt>
+      <%# FR-004: having no locker is an ordinary state, so it is styled as plain
+          content rather than as a warning or an error. %>
+      <dd id="locker-profile-locker-number" class="mt-1 <%= current_user.saved_locker_number.present? ? "text-slate-900" : "text-slate-500" %>">
+        <%= current_user.saved_locker_number.presence || "No locker assigned" %>
+      </dd>
+    </div>
+  </dl>
+</div>

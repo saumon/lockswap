@@ -6,4 +6,28 @@ class User < ApplicationRecord
   # :validatable             — email format/uniqueness and the 8-character password minimum (FR-002)
   devise :database_authenticatable, :registerable,
          :rememberable, :lockable, :validatable
+
+  # "No locker" must reach the database as NULL, never "": a unique index treats
+  # NULLs as distinct, but two empty strings would collide (002 FR-002, FR-011).
+  normalizes :locker_number, with: ->(value) { value.blank? ? nil : value }
+
+  # Both rules are scoped to :locker_profile_update so they only apply on the
+  # locker-profile save path. A blanket validation would block every other save
+  # for a user who has not set a floor yet — including Devise's own account
+  # update — which is not what "the floor is required" means here (002 FR-007).
+  validates :floor, presence: true, on: :locker_profile_update
+  # The values as they are on file. While a rejected edit is being re-displayed
+  # the attributes hold the input being corrected, so anything reporting what is
+  # actually saved has to read past them.
+  def saved_floor = floor_in_database
+  def saved_locker_number = locker_number_in_database
+
+  # Says the locker is spoken for without identifying who holds it (002 FR-011).
+  # The controller reuses it for the same conflict caught by the unique index.
+  LOCKER_NUMBER_TAKEN_MESSAGE = "is not available — another account already has this locker".freeze
+
+  # allow_nil is load-bearing: the uniqueness validator does not skip nil on its
+  # own, so without it the second user with no locker is rejected as a duplicate.
+  validates :locker_number, uniqueness: { message: LOCKER_NUMBER_TAKEN_MESSAGE },
+            allow_nil: true, on: :locker_profile_update
 end

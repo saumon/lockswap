@@ -3,6 +3,11 @@ require "test_helper"
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ]
 
+  # Capybara's 2-second default is tight for a Selenium + Puma + Turbo round trip
+  # and produced intermittent failures — a login that had not landed yet read as a
+  # login that had failed. Waiting longer costs nothing when the page is ready.
+  Capybara.default_max_wait_time = 5
+
   private
 
     # Logs in through the real form, then waits for the homepage so that the

@@ -19,6 +19,10 @@ development:
 test:
   <<: *default
   database: storage/test.sqlite3
+  # System tests drive the app from a second thread while the test thread holds a
+  # transaction open, so a writer occasionally waits behind one. The default 5s
+  # was being exceeded and surfacing as "database is locked".
+  timeout: 15000
 
 # Store production database in the storage/ directory, which by default
 # is mounted as a persistent Docker volume in config/deploy.yml.

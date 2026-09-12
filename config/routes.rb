@@ -10,6 +10,9 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
+  # The homepage form posts here to save a floor / locker number (002 FR-001, FR-002).
+  resource :locker_profile, only: :update
+
   # Defines the root path route ("/") — the homepage a successful login lands on (FR-005).
   root "home#index"
 end
