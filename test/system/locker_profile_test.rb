@@ -86,12 +86,15 @@ class LockerProfileTest < ApplicationSystemTestCase
   end
 
   # Acceptance Scenario 4: rejected, and the other account stays anonymous.
-  test "submitting a locker number another account holds is rejected without naming them" do
+  # 006 FR-003: the floor is bob's own, because that is what makes this the same
+  # locker. On any other floor the identical number is a different one, and alice
+  # is entitled to it.
+  test "submitting a locker number another account holds on the same floor is rejected without naming them" do
     log_in_as users(:alice)
 
-    save_locker_details "Floor" => "4", "Locker number" => users(:bob).locker_number
+    save_locker_details "Floor" => users(:bob).floor, "Locker number" => users(:bob).locker_number
 
-    assert_text "Locker number is not available"
+    assert_text "Locker number is not available on that floor"
     # Scoped to the rejection itself: what FR-011 forbids is the conflict naming
     # who holds the locker. Elsewhere on this page alice may legitimately see the
     # same person for reasons of her own — 004 lists the swap proposals she sent,

@@ -153,10 +153,12 @@ class LockerSwapProposal < ApplicationRecord
         recipient_locker_number_at_resolution: recipient.locker_number }
     end
 
-    # locker_number is unique across users, and the check is immediate, so the
-    # two rows cannot simply be written over each other: for the moment between
-    # the two updates both would hold the same locker and the second would be
+    # The floor/locker_number pair is unique (006), and the check is immediate, so
+    # the two rows cannot simply be written over each other: for the moment between
+    # the two updates both would hold the same pair and the second would be
     # rejected. The requester's side is vacated first so that never happens.
+    # Narrowing the key to the pair does not lift that — a swap hands one side's
+    # exact pair to the other, which is precisely when the key collides.
     #
     # Plain update!, not update_columns: 002's presence and uniqueness rules are
     # scoped to :locker_profile_update and so do not fire here, which is what

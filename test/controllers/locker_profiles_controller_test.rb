@@ -19,6 +19,32 @@ class LockerProfilesControllerTest < ActionDispatch::IntegrationTest
     assert_nil users(:alice).reload.locker_number
   end
 
+  # 006 FR-002: the same number one floor up is a different locker, and the save
+  # path has to let it through — this is the case 002's rule wrongly refused.
+  test "a locker number already held on another floor is accepted" do
+    sign_in users(:carol)
+
+    patch locker_profile_path, params: { user: { floor: "9", locker_number: users(:bob).locker_number } }
+
+    assert_redirected_to root_path
+    assert_equal [ "9", "B12" ], [ users(:carol).reload.floor, users(:carol).locker_number ]
+  end
+
+  # 006 FR-003: the same number on the same floor is the same locker. Refused —
+  # and without naming who holds it, which is the half of the rule that is about
+  # the other account rather than about carol.
+  test "a locker number already held on the same floor is refused without naming the holder" do
+    sign_in users(:carol)
+
+    patch locker_profile_path,
+          params: { user: { floor: users(:bob).floor, locker_number: users(:bob).locker_number } }
+
+    assert_response 422
+    assert_includes response.body, "not available on that floor"
+    assert_not_includes response.body, users(:bob).email
+    assert_nil users(:carol).reload.locker_number
+  end
+
   # 005 FR-001/FR-003: bob is the recipient of alice_pending_to_bob, so his
   # details are spoken for until he answers it. The refusal has to say so, not
   # simply fail.

@@ -83,13 +83,35 @@ class UserTest < ActiveSupport::TestCase
     assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
   end
 
-  # 002 FR-011.
-  test "rejects a locker number another account already holds" do
+  # 006 FR-002: carol is on floor 2 and bob on floor 3, so bob's number names a
+  # locker she is not asking for. Under 002's rule this was refused; it is the
+  # case the feature exists to allow.
+  test "allows the same locker number on a different floor" do
     user = users(:carol)
+    user.locker_number = users(:bob).locker_number
+
+    assert_not_equal users(:bob).floor, user.floor
+    assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
+  end
+
+  # 006 FR-003: same floor, same number — one locker, two claims.
+  test "rejects a locker number another account already holds on the same floor" do
+    user = users(:carol)
+    user.floor = users(:bob).floor
     user.locker_number = users(:bob).locker_number
 
     assert_not user.valid?(:locker_profile_update)
     assert_includes user.errors[:locker_number], User::LOCKER_NUMBER_TAKEN_MESSAGE
+  end
+
+  # 006 FR-004: the holder is not a rival to themselves, so saving the form
+  # untouched cannot be a collision.
+  test "allows a user to resubmit their own current floor and locker number unchanged" do
+    user = users(:dave)
+    user.floor = user.floor
+    user.locker_number = user.locker_number
+
+    assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
   end
 
   test "stores a blank locker number as nil rather than an empty string" do
@@ -100,15 +122,67 @@ class UserTest < ActiveSupport::TestCase
     assert_nil user.reload.locker_number
   end
 
-  # 002 FR-011/SC-005: the unique index — not the validation above — is what holds
-  # under concurrency, so it has to reject a duplicate on its own.
-  test "the database rejects a duplicate locker number even when validation is skipped" do
+  # 006 FR-003/SC-003: the unique index — not the validation above — is what holds
+  # under concurrency, so it has to reject a duplicate on its own. The floor is
+  # set alongside the number because the index now spans the pair: leave carol on
+  # her own floor and there is nothing for the database to refuse.
+  test "the database rejects a duplicate locker number on the same floor even when validation is skipped" do
     user = users(:carol)
+    user.floor = users(:bob).floor
     user.locker_number = users(:bob).locker_number
 
     assert_raises ActiveRecord::RecordNotUnique do
       user.save(validate: false)
     end
+  end
+
+  # 006 FR-007/FR-008: the number is scoped to a floor, so there is no floor to
+  # scope it to until one is given. dave and carol are used for the moves below
+  # rather than bob: bob is the recipient of alice_pending_to_bob, and 005 holds
+  # a saved floor still for as long as a proposal is outstanding, which would
+  # answer these tests for a reason that has nothing to do with uniqueness.
+  test "rejects saving a locker number when no floor is on file or supplied" do
+    user = users(:alice)
+    user.locker_number = "Z99"
+
+    assert_not user.valid?(:locker_profile_update)
+    assert_includes user.errors[:floor], "can't be blank"
+  end
+
+  # 006 FR-005: the pair is re-checked against the floor being moved to, not the
+  # one being left.
+  test "allows moving a locker number to a different floor when that floor's slot is free" do
+    user = users(:dave)
+    user.floor = "9"
+
+    assert user.save(context: :locker_profile_update), user.errors.full_messages.to_sentence
+    assert_equal [ "9", "D07" ], [ user.reload.floor, user.locker_number ]
+  end
+
+  test "rejects moving a locker number onto a floor where another user already holds that same number" do
+    holder = users(:carol)
+    holder.update!(floor: "9", locker_number: "D07")
+
+    user = users(:dave)
+    user.floor = "9"
+
+    assert_not user.valid?(:locker_profile_update)
+    assert_includes user.errors[:locker_number], User::LOCKER_NUMBER_TAKEN_MESSAGE
+  end
+
+  # 006 FR-006: a pair is held, not owned — once its holder moves off it, it is
+  # immediately someone else's to take.
+  test "frees a vacated floor-and-locker pair for another user to claim" do
+    mover = users(:dave)
+    mover.floor = "9"
+
+    assert mover.save(context: :locker_profile_update), mover.errors.full_messages.to_sentence
+
+    claimant = users(:carol)
+    claimant.floor = "4"
+    claimant.locker_number = "D07"
+
+    assert claimant.valid?(:locker_profile_update), claimant.errors.full_messages.to_sentence
   end
 
   # 005 FR-001/FR-002: while a swap is being negotiated, these two values are what

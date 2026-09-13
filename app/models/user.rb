@@ -34,12 +34,17 @@ class User < ApplicationRecord
   def saved_locker_number = locker_number_in_database
 
   # Says the locker is spoken for without identifying who holds it (002 FR-011).
+  # Names the floor, because that is the whole scope of the refusal: the same
+  # number is free to take one floor up (006 FR-003).
   # The controller reuses it for the same conflict caught by the unique index.
-  LOCKER_NUMBER_TAKEN_MESSAGE = "is not available — another account already has this locker".freeze
+  LOCKER_NUMBER_TAKEN_MESSAGE =
+    "is not available on that floor — another account already has this locker".freeze
 
+  # 006 FR-001: the pair is the key. A number identifies a locker only once you
+  # know the floor it is on, so the same one on two floors is two lockers.
   # allow_nil is load-bearing: the uniqueness validator does not skip nil on its
   # own, so without it the second user with no locker is rejected as a duplicate.
-  validates :locker_number, uniqueness: { message: LOCKER_NUMBER_TAKEN_MESSAGE },
+  validates :locker_number, uniqueness: { scope: :floor, message: LOCKER_NUMBER_TAKEN_MESSAGE },
             allow_nil: true, on: :locker_profile_update
 
   # 005 FR-003: says why the field is refused, so the restriction reads as a
