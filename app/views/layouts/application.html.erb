@@ -23,11 +23,19 @@
   <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
     <header class="border-b border-slate-200 bg-white">
       <nav class="mx-auto flex max-w-3xl items-center justify-between px-5 py-4" aria-label="Main">
-        <span class="text-lg font-semibold tracking-tight">LockSwap</span>
+        <%# The wordmark is the way back to the homepage, as it is on most sites.
+            A visitor who is not logged in lands on the login page instead, the
+            same as any other attempt to reach the homepage. %>
+        <%= link_to "LockSwap", root_path,
+              class: "rounded-md text-lg font-semibold tracking-tight hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
 
         <%# FR-009: the sign-out control is only meaningful for a signed-in visitor. %>
         <% if user_signed_in? %>
           <div class="flex items-center gap-4">
+            <%# 003 FR-005: the "I'm looking for a locker" button lives on this page, so
+                it has to be reachable from wherever the user happens to be. %>
+            <%= link_to "Locker wishes", locker_wishes_path,
+                  class: "text-sm font-medium text-slate-700 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
             <span class="hidden text-sm text-slate-600 sm:inline"><%= current_user.email %></span>
             <%= button_to "Log out", destroy_user_session_path, method: :delete,
                   class: "rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>

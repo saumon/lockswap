@@ -61,6 +61,7 @@ The project starts with the foundations: without user accounts, no locker swap i
 | --- | --- |
 | **001 — Signup and login** | ✅ Shipped |
 | **002 — Floor and locker details** | ✅ Shipped |
+| **003 — Locker search wish** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 | Offering and accepting a swap | ⏳ To be specified |
 | History of changes | ⏳ To be specified |
@@ -85,6 +86,21 @@ What feature 002 adds — see
   holds it, and the database enforces that even when two people submit at the same moment;
 * the details can be changed later, behind an **Edit locker details** control so the homepage reports
   a settled state instead of standing permanently open for editing.
+
+What feature 003 adds — see
+[`specs/003-locker-search-wish/spec.md`](specs/003-locker-search-wish/spec.md):
+
+* a **I'm looking for a locker** button declares that you are looking for a locker, and asks which floor
+  before recording anything;
+* one wish per account — declaring again moves the existing wish to the new floor instead of adding a
+  second, and the database enforces that even when two declarations land at the same moment;
+* the floor is required (blank or whitespace is refused) and free-form, exactly as on the profile;
+* having no locker assigned is no obstacle to declaring a wish, and already holding one is precisely
+  the point of a swap — neither blocks anything;
+* a **Locker wishes** page lists every active wish to any logged-in user: who is looking (by email),
+  the floor they are after, and the floor and locker they hold today — or that they hold none, said
+  plainly rather than as an error — so a worthwhile swap is obvious at a glance;
+* a wish can be cancelled at any time, which takes it off that list for everyone.
 
 ## 🧭 Method: Spec-Driven Development
 
@@ -149,7 +165,7 @@ start at `/users/sign_up`.
 
 ```sh
 bin/rails test         # models and controllers
-bin/rails test:system  # end-to-end signup, login, lockout, redirect, and locker-details flows
+bin/rails test:system  # end-to-end signup, login, lockout, redirect, locker-details, and wish flows
 bin/rubocop            # lint (zero warnings tolerated)
 bin/brakeman           # static security analysis
 ```
@@ -165,7 +181,10 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   signup, login, the 30-day session, logout, the generic failure message, and the 15-minute lockout;
 * [`specs/002-locker-floor-profile/quickstart.md`](specs/002-locker-floor-profile/quickstart.md) —
   filling in a floor with and without a locker number, the rejected blank floor, a locker number
-  already taken by someone else, and editing either value afterwards.
+  already taken by someone else, and editing either value afterwards;
+* [`specs/003-locker-search-wish/quickstart.md`](specs/003-locker-search-wish/quickstart.md) —
+  declaring a wish, the rejected blank floor, moving an existing wish to another floor, the list as
+  other people see it, and cancelling.
 
 ## 🚢 Deploy
 

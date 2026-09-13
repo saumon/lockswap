@@ -7,6 +7,10 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :rememberable, :lockable, :validatable
 
+  # 003: the locker this user is looking for, once they have declared a wish.
+  # A wish cannot outlive the account that declared it.
+  has_one :locker_wish, dependent: :destroy
+
   # "No locker" must reach the database as NULL, never "": a unique index treats
   # NULLs as distinct, but two empty strings would collide (002 FR-002, FR-011).
   normalizes :locker_number, with: ->(value) { value.blank? ? nil : value }

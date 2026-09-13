@@ -1,0 +1,47 @@
+<%# 003 FR-005/FR-006: the entry point is a button, and the floor question appears
+    only once it is clicked. <details> gives that disclosure keyboard and screen
+    reader support without any JavaScript of its own, matching 002's edit control.
+    A rejected submission reopens it, otherwise the error would have nowhere to
+    show. %>
+<div id="locker-wish-panel" class="rounded-lg border border-slate-200 bg-white shadow-sm">
+  <% if @locker_wish.persisted? %>
+    <div class="p-6">
+      <h2 class="text-lg font-semibold tracking-tight">Your locker search</h2>
+
+      <dl class="mt-4">
+        <dt class="text-sm font-medium text-slate-500">Looking for a locker on floor</dt>
+        <%# The floor on file, not the attribute: while a rejected change is being
+            re-displayed the attribute holds the input still being corrected. %>
+        <dd id="locker-wish-floor" class="mt-1 text-slate-900"><%= @locker_wish.saved_floor %></dd>
+      </dl>
+
+      <%# FR-009: withdrawing is its own decision, separate from moving the wish
+          to another floor, so it gets its own control rather than sharing the
+          form below. %>
+      <div class="mt-6">
+        <%= button_to "Cancel wish", locker_wish_path, method: :delete,
+              class: "cursor-pointer rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
+      </div>
+    </div>
+
+    <details class="border-t border-slate-200" <%= "open" if @locker_wish.errors.any? %>>
+      <summary class="cursor-pointer px-6 py-4 font-medium text-slate-900 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400">
+        Change floor
+      </summary>
+
+      <div class="border-t border-slate-200 p-6">
+        <%= render "locker_wishes/locker_wish_form" %>
+      </div>
+    </details>
+  <% else %>
+    <details <%= "open" if @locker_wish.errors.any? %>>
+      <summary class="cursor-pointer rounded-lg px-6 py-4 font-medium text-slate-900 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400">
+        I'm looking for a locker
+      </summary>
+
+      <div class="border-t border-slate-200 p-6">
+        <%= render "locker_wishes/locker_wish_form" %>
+      </div>
+    </details>
+  <% end %>
+</div>

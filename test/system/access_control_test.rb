@@ -23,6 +23,18 @@ class AccessControlTest < ApplicationSystemTestCase
     assert_text "Welcome to LockSwap"
   end
 
+  # 003 FR-013 / Edge Case: the wish list is not public — an anonymous visitor
+  # sees the login page instead of who is looking for a locker. The two write
+  # verbs a browser cannot issue on its own are covered in
+  # test/controllers/locker_wishes_controller_test.rb.
+  test "an unauthenticated visitor is sent from the wish list to the login page" do
+    visit locker_wishes_path
+
+    assert_current_path new_user_session_path
+    assert_no_text "Everyone looking for a locker"
+    assert_text "You need to sign in or sign up before continuing."
+  end
+
   test "a logged-in visitor is sent from the signup page to the homepage" do
     log_in_as @user
 
