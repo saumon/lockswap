@@ -35,6 +35,18 @@ class AccessControlTest < ApplicationSystemTestCase
     assert_text "You need to sign in or sign up before continuing."
   end
 
+  # 004 FR-016: the proposal history is not public either. The five write verbs
+  # this feature adds — POST /locker_swap_proposals, DELETE one, and the accept,
+  # decline and confirm PATCHes — a browser cannot issue on its own, so they are
+  # covered in test/controllers/locker_swap_proposals_controller_test.rb.
+  test "an unauthenticated visitor is sent from the proposal history to the login page" do
+    visit locker_swap_proposals_path
+
+    assert_current_path new_user_session_path
+    assert_no_text "Your swap proposals"
+    assert_text "You need to sign in or sign up before continuing."
+  end
+
   test "a logged-in visitor is sent from the signup page to the homepage" do
     log_in_as @user
 

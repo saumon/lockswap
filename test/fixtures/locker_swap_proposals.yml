@@ -1,0 +1,25 @@
+# Swap-proposal fixtures (004). None of these is `accepted`: an accepted
+# proposal hides both parties' wishes from the wish list, which would quietly
+# break 003's tests that expect bob_wish and carol_wish to be listed. Tests that
+# need an exchange in progress build one themselves.
+alice_pending_to_bob:
+  requester: alice
+  recipient: bob
+  status: 0
+
+# Declined and not yet acknowledged, so it is still owed to dave as a homepage
+# notification (FR-007, FR-009).
+dave_declined_to_carol:
+  requester: dave
+  recipient: carol
+  status: 2
+  decline_comment: "Found another swap"
+  decided_at: <%= 1.day.ago %>
+
+# Withdrawn by its requester: final, non-actionable, but still part of both
+# parties' history (FR-020).
+alice_withdrawn_to_carol:
+  requester: alice
+  recipient: carol
+  status: 3
+  decided_at: <%= 2.days.ago %>

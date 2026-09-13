@@ -11,6 +11,13 @@ class User < ApplicationRecord
   # A wish cannot outlive the account that declared it.
   has_one :locker_wish, dependent: :destroy
 
+  # 004: the two sides of a swap proposal. Both foreign keys point back here, so
+  # each association has to name its own; neither can outlive the account.
+  has_many :sent_swap_proposals, class_name: "LockerSwapProposal",
+           foreign_key: :requester_id, dependent: :destroy, inverse_of: :requester
+  has_many :received_swap_proposals, class_name: "LockerSwapProposal",
+           foreign_key: :recipient_id, dependent: :destroy, inverse_of: :recipient
+
   # "No locker" must reach the database as NULL, never "": a unique index treats
   # NULLs as distinct, but two empty strings would collide (002 FR-002, FR-011).
   normalizes :locker_number, with: ->(value) { value.blank? ? nil : value }

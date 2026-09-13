@@ -55,16 +55,17 @@ The locker is only the starting point.
 
 ## 📍 Status
 
-The project starts with the foundations: without user accounts, no locker swap is possible.
+The project started with the foundations — without user accounts, no locker swap is possible — and
+now carries the swap through end to end: declare what you are looking for, offer a swap, answer one,
+and confirm it once the lockers have actually changed hands.
 
 | Feature | Status |
 | --- | --- |
 | **001 — Signup and login** | ✅ Shipped |
 | **002 — Floor and locker details** | ✅ Shipped |
 | **003 — Locker search wish** | ✅ Shipped |
+| **004 — Locker swap proposals** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
-| Offering and accepting a swap | ⏳ To be specified |
-| History of changes | ⏳ To be specified |
 
 What feature 001 covers today — see
 [`specs/001-user-authentication/spec.md`](specs/001-user-authentication/spec.md):
@@ -101,6 +102,32 @@ What feature 003 adds — see
   the floor they are after, and the floor and locker they hold today — or that they hold none, said
   plainly rather than as an error — so a worthwhile swap is obvious at a glance;
 * a wish can be cancelled at any time, which takes it off that list for everyone.
+
+What feature 004 adds — see
+[`specs/004-locker-swap-proposal/spec.md`](specs/004-locker-swap-proposal/spec.md):
+
+* a **Propose swap** control on every row of the **Locker wishes** page offers a swap to the person
+  looking for a locker there — the requester needs neither a locker nor a wish of their own;
+* where a swap cannot be offered, the row says why instead of holding out a control that would only
+  be refused: your own row, a proposal already pending with that person, or an exchange of your own
+  already under way;
+* the homepage is where proposals are answered, so none of them has to be hunted for — proposals
+  **for you** (Accept, or Decline behind a disclosure with an optional comment), proposals **you
+  sent** (Withdraw), the **exchange in progress**, and any decline that came back;
+* a decline is shown **once**, with whatever the decliner said about it, and then lives on in the
+  history rather than following the requester around forever;
+* a proposal can be withdrawn right up until it is answered, and one answer is final — a proposal
+  cannot be accepted or declined twice;
+* accepting marks the exchange in progress **for both people** and automatically declines every other
+  pending proposal either of them was part of, in either direction, telling each of those requesters
+  why — nobody is left holding a proposal that can no longer go anywhere;
+* nobody can be in two exchanges at once, and a wish stops being listed while its owner is mid-swap:
+  the need is spoken for, so it is no longer an open invitation;
+* **only the recipient who accepted** confirms that the swap actually happened; confirming swaps the
+  floor and locker number between the two accounts and clears both wishes, the need now being settled;
+* a **Proposal history** page lists every proposal you sent or received — direction, the other person,
+  the date, where it ended up, and any decline comment — read-only, because the homepage is where
+  proposals are acted on and this is where they are looked back at.
 
 ## 🧭 Method: Spec-Driven Development
 
@@ -165,7 +192,7 @@ start at `/users/sign_up`.
 
 ```sh
 bin/rails test         # models and controllers
-bin/rails test:system  # end-to-end signup, login, lockout, redirect, locker-details, and wish flows
+bin/rails test:system  # end-to-end signup, login, lockout, redirect, locker-details, wish, and swap flows
 bin/rubocop            # lint (zero warnings tolerated)
 bin/brakeman           # static security analysis
 ```
@@ -184,7 +211,11 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   already taken by someone else, and editing either value afterwards;
 * [`specs/003-locker-search-wish/quickstart.md`](specs/003-locker-search-wish/quickstart.md) —
   declaring a wish, the rejected blank floor, moving an existing wish to another floor, the list as
-  other people see it, and cancelling.
+  other people see it, and cancelling;
+* [`specs/004-locker-swap-proposal/quickstart.md`](specs/004-locker-swap-proposal/quickstart.md) —
+  proposing a swap, the refusals (yourself, a duplicate, someone already mid-swap), answering one
+  either way, withdrawing, confirming the exchange and watching both lockers change hands, and the
+  history screen.
 
 ## 🚢 Deploy
 

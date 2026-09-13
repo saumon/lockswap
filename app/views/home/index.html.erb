@@ -8,6 +8,15 @@
     </p>
   </div>
 
+  <%# 004 FR-009: each swap section appears only when it has something to say, so
+      a user with no proposals in either direction sees no swap content here.
+      Proposals awaiting this user's answer come first — they are the ones that
+      cannot move without them. %>
+  <%= render "home/swap_exchange_in_progress" if @exchange_in_progress %>
+  <%= render "home/swap_proposals_received" if @received_pending_proposals.any? %>
+  <%= render "home/swap_proposals_sent" if @sent_pending_proposals.any? %>
+  <%= render "home/swap_proposals_declined" if @recently_declined_sent.any? %>
+
   <%# 002: the saved floor is what decides whether this user has been asked yet,
       so an empty locker number reads as "none assigned" rather than as an open
       prompt, and someone who has answered is not asked again on every visit. %>
