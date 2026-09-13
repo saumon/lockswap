@@ -19,6 +19,41 @@ class LockerProfilesControllerTest < ActionDispatch::IntegrationTest
     assert_nil users(:alice).reload.locker_number
   end
 
+  # 005 FR-001/FR-003: bob is the recipient of alice_pending_to_bob, so his
+  # details are spoken for until he answers it. The refusal has to say so, not
+  # simply fail.
+  test "changing a saved floor is refused while a swap proposal is active" do
+    sign_in users(:bob)
+
+    patch locker_profile_path, params: { user: { floor: "9", locker_number: "B12" } }
+
+    assert_response 422
+    assert_includes response.body, "active swap proposal"
+    assert_equal "3", users(:bob).reload.floor
+  end
+
+  # FR-001/FR-002: alice has nothing on file yet, and an active proposal of her
+  # own. Holding her to a value she never set would leave her no way out.
+  test "a first-time floor and locker number are saved even with an active proposal" do
+    sign_in users(:alice)
+
+    patch locker_profile_path, params: { user: { floor: "5", locker_number: "C01" } }
+
+    assert_redirected_to root_path
+    assert_equal [ "5", "C01" ], [ users(:alice).reload.floor, users(:alice).locker_number ]
+  end
+
+  # The lock is the exception, not the new rule: dave's only proposal is decided,
+  # so 002's edit path is untouched for him.
+  test "changing a saved floor still works with no active proposal" do
+    sign_in users(:dave)
+
+    patch locker_profile_path, params: { user: { floor: "9", locker_number: "D07" } }
+
+    assert_redirected_to root_path
+    assert_equal "9", users(:dave).reload.floor
+  end
+
   private
 
     # No mocking gem is bundled (see Gemfile), so the stub is hand-rolled. The

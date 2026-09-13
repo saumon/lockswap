@@ -9,17 +9,28 @@ alice_pending_to_bob:
 
 # Declined and not yet acknowledged, so it is still owed to dave as a homepage
 # notification (FR-007, FR-009).
+#
+# The two resolved proposals below carry the 005 snapshot of what each side's
+# locker looked like when they were settled — matching the users fixtures, since
+# nothing has moved since. Written out rather than left null because that is what
+# resolving one now records; a null pair would only describe a proposal settled
+# before the columns existed.
 dave_declined_to_carol:
   requester: dave
   recipient: carol
   status: 2
   decline_comment: "Found another swap"
   decided_at: <%= 1.day.ago %>
+  requester_floor_at_resolution: "4"
+  requester_locker_number_at_resolution: "D07"
+  recipient_floor_at_resolution: "2"
 
 # Withdrawn by its requester: final, non-actionable, but still part of both
-# parties' history (FR-020).
+# parties' history (FR-020). alice has neither floor nor locker, so her side of
+# the record is empty — which is itself what was on offer.
 alice_withdrawn_to_carol:
   requester: alice
   recipient: carol
   status: 3
   decided_at: <%= 2.days.ago %>
+  recipient_floor_at_resolution: "2"

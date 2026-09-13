@@ -57,7 +57,9 @@ The locker is only the starting point.
 
 The project started with the foundations — without user accounts, no locker swap is possible — and
 now carries the swap through end to end: declare what you are looking for, offer a swap, answer one,
-and confirm it once the lockers have actually changed hands.
+and confirm it once the lockers have actually changed hands. The details being negotiated are held
+still while that plays out, and the history says what each proposal was about without anyone having
+had to write it down.
 
 | Feature | Status |
 | --- | --- |
@@ -65,6 +67,7 @@ and confirm it once the lockers have actually changed hands.
 | **002 — Floor and locker details** | ✅ Shipped |
 | **003 — Locker search wish** | ✅ Shipped |
 | **004 — Locker swap proposals** | ✅ Shipped |
+| **005 — Locker field lock and swap history** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -128,6 +131,27 @@ What feature 004 adds — see
 * a **Proposal history** page lists every proposal you sent or received — direction, the other person,
   the date, where it ended up, and any decline comment — read-only, because the homepage is where
   proposals are acted on and this is where they are looked back at.
+
+What feature 005 adds — see
+[`specs/005-swap-lock-history-comment/spec.md`](specs/005-swap-lock-history-comment/spec.md):
+
+* your floor and locker number are **held still while a swap is outstanding** — from the moment a
+  proposal is sent or received until it is declined, withdrawn, or completed — because a proposal is
+  an offer made on those exact values, and neither side should be able to move them out from under
+  the other halfway through;
+* the **Edit locker details** control gives way to a plain explanation of why it is not available,
+  rather than vanishing without a word or waiting to refuse the change after it has been typed;
+* only a value **already on file** is held: someone who has never recorded a floor or a locker number
+  is still asked for one, since offering a swap requires neither — holding people to a value they
+  never set would strand them behind their own proposal;
+* the hold lifts by itself as soon as the proposal is settled; there is nothing to unlock by hand;
+* every row of the **Proposal history** now says which lockers it was about, filled in by the
+  application rather than by either party — what is being *proposed* while a proposal is live, or was
+  proposed if it was declined or withdrawn, and what was actually *exchanged* once it is completed;
+* that summary has a column of its own, beside the decline comment rather than in place of it: one
+  says why a person answered as they did, the other what was on the table, and a row can carry both;
+* what a settled proposal says is **recorded as it settles**, so that a later change to either
+  person's locker never quietly rewrites the history of an exchange that already happened.
 
 ## 🧭 Method: Spec-Driven Development
 
@@ -215,7 +239,11 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
 * [`specs/004-locker-swap-proposal/quickstart.md`](specs/004-locker-swap-proposal/quickstart.md) —
   proposing a swap, the refusals (yourself, a duplicate, someone already mid-swap), answering one
   either way, withdrawing, confirming the exchange and watching both lockers change hands, and the
-  history screen.
+  history screen;
+* [`specs/005-swap-lock-history-comment/quickstart.md`](specs/005-swap-lock-history-comment/quickstart.md) —
+  the edit control giving way while a proposal is outstanding, first-time details still accepted from
+  someone who has none, the hold lifting once the swap is settled, and a history summary that stays
+  put after both profiles have moved on.
 
 ## 🚢 Deploy
 

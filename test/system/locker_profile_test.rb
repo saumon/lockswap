@@ -2,6 +2,14 @@ require "application_system_test_case"
 
 # Covers 002 spec.md User Story 1 (FR-003, FR-004).
 class LockerProfileTest < ApplicationSystemTestCase
+  # 004's "declined" notice is shown once and acknowledged as it is handed to the
+  # view, so it is on the homepage when a test arrives and gone from the re-render
+  # after it submits — moving the form between a click being aimed and landing.
+  # These tests are about the form, so the notice is spent before they start.
+  setup do
+    LockerSwapProposal.declined.update_all(requester_acknowledged_at: Time.current)
+  end
+
   # Someone who already has details saved reaches the form through the edit
   # control; someone who has nothing saved is shown it outright. Waiting on the
   # field keeps the caller from typing into a disclosure that has not opened yet.
@@ -63,14 +71,18 @@ class LockerProfileTest < ApplicationSystemTestCase
   end
 
   # Acceptance Scenario 3: a whitespace-only floor counts as missing.
+  #
+  # Every test below that opens the editor uses dave rather than bob: bob is the
+  # recipient of 004's alice_pending_to_bob fixture, which every test loads, so
+  # 005's lock hides his edit control. dave's only proposal is already decided.
   test "submitting a blank floor is rejected and leaves the saved floor untouched" do
-    log_in_as users(:bob)
+    log_in_as users(:dave)
     open_locker_editor
 
     save_locker_details "Floor" => "   "
 
     assert_text "Floor can't be blank"
-    assert_equal "3", users(:bob).reload.floor
+    assert_equal "4", users(:dave).reload.floor
   end
 
   # Acceptance Scenario 4: rejected, and the other account stays anonymous.
@@ -108,30 +120,30 @@ class LockerProfileTest < ApplicationSystemTestCase
 
   # Acceptance Scenario 1.
   test "changing only the floor leaves the locker number alone" do
-    log_in_as users(:bob)
+    log_in_as users(:dave)
     open_locker_editor
 
     save_locker_details "Floor" => "8"
 
     assert_selector "#locker-profile-floor", text: "8"
-    assert_selector "#locker-profile-locker-number", text: "B12"
-    assert_equal "B12", users(:bob).reload.locker_number
+    assert_selector "#locker-profile-locker-number", text: "D07"
+    assert_equal "D07", users(:dave).reload.locker_number
   end
 
   # Acceptance Scenario 2: the locker was reassigned away from them.
   test "clearing the locker number leaves the floor alone" do
-    log_in_as users(:bob)
+    log_in_as users(:dave)
     open_locker_editor
 
     save_locker_details "Locker number" => ""
 
     assert_selector "#locker-profile-locker-number", text: "No locker assigned"
-    assert_selector "#locker-profile-floor", text: "3"
-    assert_nil users(:bob).reload.locker_number
+    assert_selector "#locker-profile-floor", text: "4"
+    assert_nil users(:dave).reload.locker_number
   end
 
   test "the form stays out of the way until the user asks to edit" do
-    log_in_as users(:bob)
+    log_in_as users(:dave)
 
     assert_no_selector "input[name='user[floor]']"
     assert_no_selector "input[name='user[locker_number]']"
@@ -146,14 +158,54 @@ class LockerProfileTest < ApplicationSystemTestCase
   # The saved values must still be reported as they are on file, not as the
   # rejected input sitting in the form.
   test "a rejected edit reopens the form with the error and the saved values intact" do
-    log_in_as users(:bob)
+    log_in_as users(:dave)
     open_locker_editor
 
     save_locker_details "Floor" => ""
 
     assert_text "Floor can't be blank"
     assert_selector "input[name='user[floor]']"
+    assert_selector "#locker-profile-floor", text: "4"
+    assert_selector "#locker-profile-locker-number", text: "D07"
+  end
+
+  # 005 User Story 1: the details are held still while a swap is being decided.
+
+  # Acceptance Scenario 1 & 2: bob is the recipient of alice_pending_to_bob.
+  # Constitution Principle III — the restriction is explained where the control
+  # used to be, rather than the control silently disappearing.
+  test "the edit control is replaced by an explanation while a proposal is active" do
+    log_in_as users(:bob)
+
+    assert_no_selector "summary", text: "Edit locker details"
+    assert_selector "#locker-profile-locked", text: "active swap proposal"
     assert_selector "#locker-profile-floor", text: "3"
     assert_selector "#locker-profile-locker-number", text: "B12"
+  end
+
+  # Acceptance Scenario 5: resolving the proposal gives the control back.
+  test "the edit control returns once the proposal is resolved" do
+    locker_swap_proposals(:alice_pending_to_bob).decline!
+    log_in_as users(:bob)
+
+    assert_no_selector "#locker-profile-locked"
+    open_locker_editor
+    save_locker_details "Floor" => "8"
+
+    assert_selector "#locker-profile-floor", text: "8"
+    assert_equal "8", users(:bob).reload.floor
+  end
+
+  # Acceptance Scenario 6: alice has an active proposal too, but nothing on file
+  # yet — so she is still asked for it, exactly as in 002.
+  test "a user with nothing saved is still offered the form while a proposal is active" do
+    log_in_as users(:alice)
+
+    assert_no_selector "#locker-profile-locked"
+
+    save_locker_details "Floor" => "5", "Locker number" => "C01"
+
+    assert_selector "#locker-profile-floor", text: "5"
+    assert_equal [ "5", "C01" ], [ users(:alice).reload.floor, users(:alice).locker_number ]
   end
 end
