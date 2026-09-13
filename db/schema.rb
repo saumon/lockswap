@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_13_153718) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_13_165921) do
   create_table "locker_swap_proposals", force: :cascade do |t|
     t.datetime "completed_at"
     t.datetime "created_at", null: false
@@ -51,7 +51,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_153718) do
     t.datetime "remember_created_at"
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
-    t.index ["locker_number"], name: "index_users_on_locker_number", unique: true
+    t.index ["floor", "locker_number"], name: "index_users_on_floor_and_locker_number", unique: true
   end
 
   add_foreign_key "locker_swap_proposals", "users", column: "recipient_id"

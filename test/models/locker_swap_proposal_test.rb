@@ -203,7 +203,8 @@ class LockerSwapProposalTest < ActiveSupport::TestCase
 
   # FR-013 / User Story 4, Acceptance Scenarios 1 and 2: the whole point of the
   # feature — the lockers actually change hands. Both of these two hold a locker,
-  # which is the case that has to get past the unique index on locker_number.
+  # which is the case that has to get past the unique index on the
+  # floor/locker_number pair (006).
   test "confirming an exchange swaps both users' floor and locker" do
     proposal = LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob),
                                           status: :accepted)

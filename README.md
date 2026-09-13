@@ -44,7 +44,8 @@ LockSwap aims to cut the administrative work of managing lockers while giving em
 * **Collaborative** — employees find swap opportunities directly among themselves.
 * **Secure** — only authorised people can view or change assignments.
 * **Traceable** — every change is recorded.
-* **Reliable** — a locker can never be assigned to two people at once.
+* **Reliable** — one locker, one holder: a given number on a given floor can never be assigned to two
+  people at once.
 * **Extensible** — the application can progressively integrate with the company's tools and systems.
 
 ## 🚀 Vision
@@ -59,7 +60,7 @@ The project started with the foundations — without user accounts, no locker sw
 now carries the swap through end to end: declare what you are looking for, offer a swap, answer one,
 and confirm it once the lockers have actually changed hands. The details being negotiated are held
 still while that plays out, and the history says what each proposal was about without anyone having
-had to write it down.
+had to write it down. Locker numbers are counted per floor, the way they are on the doors.
 
 | Feature | Status |
 | --- | --- |
@@ -68,6 +69,7 @@ had to write it down.
 | **003 — Locker search wish** | ✅ Shipped |
 | **004 — Locker swap proposals** | ✅ Shipped |
 | **005 — Locker field lock and swap history** | ✅ Shipped |
+| **006 — Per-floor locker numbers** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -87,7 +89,8 @@ What feature 002 adds — see
 * the floor is required; the locker number is not, because having no locker assigned is an ordinary
   state and is displayed as such, never as an error;
 * a locker number belongs to one account at a time — a clash is refused without ever revealing who
-  holds it, and the database enforces that even when two people submit at the same moment;
+  holds it, and the database enforces that even when two people submit at the same moment (scoped to
+  a single floor since 006, below);
 * the details can be changed later, behind an **Edit locker details** control so the homepage reports
   a settled state instead of standing permanently open for editing.
 
@@ -152,6 +155,24 @@ What feature 005 adds — see
   says why a person answered as they did, the other what was on the table, and a row can carry both;
 * what a settled proposal says is **recorded as it settles**, so that a later change to either
   person's locker never quietly rewrites the history of an exchange that already happened.
+
+What feature 006 corrects — see
+[`specs/006-locker-floor-uniqueness/spec.md`](specs/006-locker-floor-uniqueness/spec.md):
+
+* locker 001 on floor 1 and locker 001 on floor 2 are **two different lockers**, and two people can
+  hold them at the same time — until now the application treated a number as if it named a locker on
+  its own, and refused the second person a locker that was genuinely free;
+* what has to be unique is the **pair**, floor and number together: a clash is still refused, still
+  without ever naming who holds it, and the database still enforces it when two people submit at the
+  same moment — but only when both of them name the same floor;
+* the refusal says which scope it is talking about — the number is unavailable **on that floor** —
+  because the same number one floor up may well be there for the taking;
+* changing floor re-checks the pair against the floor you are moving **to**, not the one you are
+  leaving, so a move is refused only when the locker is actually occupied where you are heading;
+* a pair stops being held the moment its holder moves off it, and is immediately free for anyone
+  else to claim — nothing has to be released by hand;
+* a locker number is still never stored without a floor: until a floor is given there is nothing to
+  scope the number to, so the floor stays required exactly as before.
 
 ## 🧭 Method: Spec-Driven Development
 
@@ -243,7 +264,11 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
 * [`specs/005-swap-lock-history-comment/quickstart.md`](specs/005-swap-lock-history-comment/quickstart.md) —
   the edit control giving way while a proposal is outstanding, first-time details still accepted from
   someone who has none, the hold lifting once the swap is settled, and a history summary that stays
-  put after both profiles have moved on.
+  put after both profiles have moved on;
+* [`specs/006-locker-floor-uniqueness/quickstart.md`](specs/006-locker-floor-uniqueness/quickstart.md) —
+  the same locker number claimed on two different floors, the clash still refused on one and the same
+  floor, moving a number to a free floor and being refused an occupied one, the vacated pair claimed
+  by someone else, and the floor still required before any number is stored.
 
 ## 🚢 Deploy
 
