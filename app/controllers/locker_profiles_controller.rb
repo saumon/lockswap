@@ -3,6 +3,10 @@
 # details are different concerns, and this is the only save path that applies the
 # :locker_profile_update rules.
 class LockerProfilesController < ApplicationController
+  # A rejected edit re-renders the homepage, which carries 004's proposal
+  # sections too — they must not vanish because a floor failed validation.
+  include LoadsHomepageProposals
+
   before_action :authenticate_user!
 
   # FR-009: the same action serves the first fill-in and every later edit.
@@ -12,6 +16,7 @@ class LockerProfilesController < ApplicationController
     if save_locker_profile
       redirect_to root_path, notice: "Locker details saved."
     else
+      load_homepage_proposals
       render "home/index", status: :unprocessable_entity
     end
   end

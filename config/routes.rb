@@ -19,6 +19,18 @@ Rails.application.routes.draw do
   resources :locker_wishes, only: :index
   resource :locker_wish, only: [ :create, :destroy ]
 
+  # 004: proposing a swap (:create), withdrawing one still pending (:destroy),
+  # and the read-only history screen (:index). The three decisions are member
+  # actions rather than a status param, so each one's own authorization and
+  # state rules stay separate (FR-001, FR-005, FR-012, FR-015, FR-019).
+  resources :locker_swap_proposals, only: [ :create, :destroy, :index ] do
+    member do
+      patch :accept
+      patch :decline
+      patch :confirm
+    end
+  end
+
   # Defines the root path route ("/") — the homepage a successful login lands on (FR-005).
   root "home#index"
 end

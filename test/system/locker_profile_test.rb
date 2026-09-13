@@ -80,7 +80,11 @@ class LockerProfileTest < ApplicationSystemTestCase
     save_locker_details "Floor" => "4", "Locker number" => users(:bob).locker_number
 
     assert_text "Locker number is not available"
-    assert_no_text users(:bob).email
+    # Scoped to the rejection itself: what FR-011 forbids is the conflict naming
+    # who holds the locker. Elsewhere on this page alice may legitimately see the
+    # same person for reasons of her own — 004 lists the swap proposals she sent,
+    # and one of them is to bob.
+    within("#error_explanation") { assert_no_text users(:bob).email }
     assert_nil users(:alice).reload.locker_number
   end
 

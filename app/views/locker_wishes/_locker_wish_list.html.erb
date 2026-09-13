@@ -14,7 +14,10 @@
             <th scope="col" class="py-2 pr-4 text-left font-medium">Looking for floor</th>
             <th scope="col" class="py-2 pr-4 text-left font-medium">Person</th>
             <th scope="col" class="py-2 pr-4 text-left font-medium">Their floor</th>
-            <th scope="col" class="py-2 text-left font-medium">Their locker</th>
+            <th scope="col" class="py-2 pr-4 text-left font-medium">Their locker</th>
+            <%# 004 FR-001: the swap starts here, on the row of the person being
+                asked. %>
+            <th scope="col" class="py-2 text-left font-medium">Swap</th>
           </tr>
         </thead>
 
@@ -33,8 +36,25 @@
               </td>
 
               <td id="<%= row_id %>-current-locker"
-                  class="py-3 <%= wish.user.saved_locker_number.present? ? "text-slate-900" : "text-slate-500" %>">
+                  class="py-3 pr-4 <%= wish.user.saved_locker_number.present? ? "text-slate-900" : "text-slate-500" %>">
                 <%= wish.user.saved_locker_number.presence || "No locker assigned" %>
+              </td>
+
+              <%# 004: every reason a swap cannot be proposed is said plainly on
+                  the row itself, rather than offering a control that is only
+                  going to be refused (FR-002, FR-004, FR-018). %>
+              <td id="<%= row_id %>-swap" class="py-3">
+                <% if wish.user_id == current_user.id %>
+                  <span class="text-slate-500">This is you</span>
+                <% elsif @viewer_in_progress %>
+                  <span class="text-slate-500">You already have an exchange in progress</span>
+                <% elsif @pending_recipient_ids.include?(wish.user_id) %>
+                  <span class="text-slate-500">Proposal pending</span>
+                <% else %>
+                  <%= button_to "Propose swap", locker_swap_proposals_path,
+                        params: { locker_swap_proposal: { recipient_id: wish.user_id } },
+                        class: "cursor-pointer rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2" %>
+                <% end %>
               </td>
             </tr>
           <% end %>

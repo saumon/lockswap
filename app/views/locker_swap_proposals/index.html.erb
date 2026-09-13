@@ -1,0 +1,59 @@
+<% content_for :title, "Proposal history" %>
+
+<%# 004 FR-015: every proposal this user sent or received, with its date, where
+    it ended up, and why if somebody said. Read-only by design — the homepage is
+    where proposals are acted on; this is where they are looked back at. %>
+<div class="space-y-6">
+  <div id="swap-proposal-history" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+    <h1 class="text-lg font-semibold tracking-tight">Your swap proposals</h1>
+
+    <% if @proposals.any? %>
+      <%# The table is the one thing here allowed to scroll sideways on a narrow
+          screen; the page itself must not. %>
+      <div class="mt-4 overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="border-b border-slate-200 text-slate-500">
+              <th scope="col" class="py-2 pr-4 text-left font-medium">Direction</th>
+              <th scope="col" class="py-2 pr-4 text-left font-medium">Person</th>
+              <th scope="col" class="py-2 pr-4 text-left font-medium">Sent</th>
+              <th scope="col" class="py-2 pr-4 text-left font-medium">Status</th>
+              <th scope="col" class="py-2 text-left font-medium">Comment</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% @proposals.each do |proposal| %>
+              <% sent = proposal.requester_id == current_user.id %>
+              <% row_id = "swap-proposal-history-row-#{proposal.id}" %>
+              <tr id="<%= row_id %>" class="border-b border-slate-100 last:border-0">
+                <td class="py-3 pr-4 font-medium text-slate-900"><%= sent ? "Sent" : "Received" %></td>
+                <td class="py-3 pr-4 text-slate-900">
+                  <%= sent ? proposal.recipient.email : proposal.requester.email %>
+                </td>
+                <td class="py-3 pr-4 text-slate-600"><%= l proposal.created_at, format: :long %></td>
+
+                <%# "accepted" is the spec's "exchange in progress"; the column
+                    says what a reader would call it, not what the column stores. %>
+                <td id="<%= row_id %>-status" class="py-3 pr-4 text-slate-900">
+                  <%= proposal.accepted? ? "Exchange in progress" : proposal.status.capitalize %>
+                </td>
+
+                <td id="<%= row_id %>-comment"
+                    class="py-3 <%= proposal.decline_comment.present? ? "text-slate-600" : "text-slate-400" %>">
+                  <%= proposal.decline_comment.presence || "—" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <%# Acceptance Scenario 4: never having proposed anything is an ordinary
+          state to report, not an error. %>
+      <p id="swap-proposal-history-empty" class="mt-4 text-slate-500">
+        You have not sent or received any swap proposals yet.
+      </p>
+    <% end %>
+  </div>
+</div>

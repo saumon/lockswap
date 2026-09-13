@@ -10,7 +10,24 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_13_094758) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_13_142103) do
+  create_table "locker_swap_proposals", force: :cascade do |t|
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "decided_at"
+    t.text "decline_comment"
+    t.integer "recipient_id", null: false
+    t.datetime "requester_acknowledged_at"
+    t.integer "requester_id", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["recipient_id"], name: "index_locker_swap_proposals_on_recipient_id"
+    t.index ["recipient_id"], name: "index_swap_proposals_accepted_recipient", unique: true, where: "status = 1"
+    t.index ["requester_id", "recipient_id"], name: "index_swap_proposals_pending_pair", unique: true, where: "status = 0"
+    t.index ["requester_id"], name: "index_locker_swap_proposals_on_requester_id"
+    t.index ["requester_id"], name: "index_swap_proposals_accepted_requester", unique: true, where: "status = 1"
+  end
+
   create_table "locker_wishes", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "floor", null: false
@@ -33,5 +50,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_094758) do
     t.index ["locker_number"], name: "index_users_on_locker_number", unique: true
   end
 
+  add_foreign_key "locker_swap_proposals", "users", column: "recipient_id"
+  add_foreign_key "locker_swap_proposals", "users", column: "requester_id"
   add_foreign_key "locker_wishes", "users"
 end

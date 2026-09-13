@@ -36,6 +36,10 @@
                 it has to be reachable from wherever the user happens to be. %>
             <%= link_to "Locker wishes", locker_wishes_path,
                   class: "text-sm font-medium text-slate-700 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
+            <%# 004 FR-015: the history is a separate screen, so it needs a way in
+                from anywhere too. %>
+            <%= link_to "Proposal history", locker_swap_proposals_path,
+                  class: "text-sm font-medium text-slate-700 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
             <span class="hidden text-sm text-slate-600 sm:inline"><%= current_user.email %></span>
             <%= button_to "Log out", destroy_user_session_path, method: :delete,
                   class: "rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>

@@ -1,0 +1,54 @@
+<%# 004 FR-005..FR-009: the proposals waiting on this user's answer. Accept is a
+    single button; declining opens a <details> disclosure holding the optional
+    comment, the same no-JavaScript pattern 002 and 003 use for deliberate
+    actions. %>
+<div id="swap-proposals-received" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+  <h2 class="text-lg font-semibold tracking-tight">Swap proposals for you</h2>
+
+  <ul class="mt-4 space-y-3">
+    <% @received_pending_proposals.each do |proposal| %>
+      <li id="swap-proposal-received-<%= proposal.id %>"
+          class="rounded-md border border-slate-200 p-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p class="text-slate-900">
+              <span class="font-medium"><%= proposal.requester.email %></span> would like to swap lockers with you
+            </p>
+            <p class="text-sm text-slate-500">
+              Floor <%= proposal.requester.saved_floor.presence || "not set" %> ·
+              Locker <%= proposal.requester.saved_locker_number.presence || "none assigned" %> ·
+              Sent <%= l proposal.created_at, format: :long %>
+            </p>
+          </div>
+
+          <%= button_to "Accept", accept_locker_swap_proposal_path(proposal), method: :patch,
+                class: "cursor-pointer rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2" %>
+        </div>
+
+        <details class="mt-3 border-t border-slate-100 pt-3">
+          <summary class="cursor-pointer rounded-md text-sm font-medium text-slate-700 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400">
+            Decline
+          </summary>
+
+          <%= form_with url: decline_locker_swap_proposal_path(proposal), method: :patch,
+                        class: "mt-3 space-y-3" do |f| %>
+            <%# The id has to carry the proposal's own id: several proposals can
+                be waiting at once, and repeating one id across them would be
+                invalid and would point every label at the first field. %>
+            <% comment_field_id = "decline-comment-#{proposal.id}" %>
+            <div>
+              <%= f.label :"locker_swap_proposal[decline_comment]", "Why? (optional)",
+                    for: comment_field_id,
+                    class: "block text-sm font-medium text-slate-700" %>
+              <%= f.text_area :"locker_swap_proposal[decline_comment]", rows: 2, id: comment_field_id,
+                    class: "mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400" %>
+            </div>
+
+            <%= f.submit "Confirm decline",
+                  class: "cursor-pointer rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400" %>
+          <% end %>
+        </details>
+      </li>
+    <% end %>
+  </ul>
+</div>

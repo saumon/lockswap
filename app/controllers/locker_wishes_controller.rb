@@ -8,7 +8,7 @@ class LockerWishesController < ApplicationController
 
   def index
     @locker_wish = own_locker_wish
-    @locker_wishes = all_locker_wishes
+    load_wish_list
   end
 
   # FR-001, FR-004: the same action records a first wish and moves an existing
@@ -20,7 +20,7 @@ class LockerWishesController < ApplicationController
     if save_locker_wish
       redirect_to locker_wishes_path, notice: "Locker search saved."
     else
-      @locker_wishes = all_locker_wishes
+      load_wish_list
       render :index, status: :unprocessable_entity
     end
   end
@@ -36,6 +36,16 @@ class LockerWishesController < ApplicationController
 
   private
 
+    # The list itself, plus what the viewer may do with each row. Both rendering
+    # paths need all three, since a rejected declare re-renders the whole page.
+    # The two eligibility answers are fetched once rather than per row, which
+    # would be a query per wish (Principle IV).
+    def load_wish_list
+      @locker_wishes = all_locker_wishes
+      @viewer_in_progress = LockerSwapProposal.in_progress_for?(current_user)
+      @pending_recipient_ids = current_user.sent_swap_proposals.pending.pluck(:recipient_id)
+    end
+
     # An unsaved wish stands in for "has not declared yet", so the view has
     # something to build the declare form from either way.
     def own_locker_wish
@@ -45,8 +55,13 @@ class LockerWishesController < ApplicationController
     # FR-011/FR-012: every active wish, oldest declaration first. The rows each
     # report their owner's saved floor and locker, so the users are loaded up
     # front rather than one query per row.
+    #
+    # 004 Edge Case: someone mid-swap is no longer an open invitation, so their
+    # wish drops out of the list until the exchange completes — which destroys
+    # the wish outright. The wish row itself is never touched here.
     def all_locker_wishes
-      LockerWish.includes(:user).order(created_at: :asc)
+      LockerWish.where.not(user_id: LockerSwapProposal.in_progress_user_ids)
+                .includes(:user).order(created_at: :asc)
     end
 
     def locker_wish_params
