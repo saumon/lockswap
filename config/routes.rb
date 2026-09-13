@@ -13,6 +13,12 @@ Rails.application.routes.draw do
   # The homepage form posts here to save a floor / locker number (002 FR-001, FR-002).
   resource :locker_profile, only: :update
 
+  # 003: the page listing everyone's active wishes (FR-011), and declaring one
+  # (FR-001). Singular for the write: a user only ever acts on their own single
+  # wish, so there is no :id to put in the path.
+  resources :locker_wishes, only: :index
+  resource :locker_wish, only: [ :create, :destroy ]
+
   # Defines the root path route ("/") — the homepage a successful login lands on (FR-005).
   root "home#index"
 end

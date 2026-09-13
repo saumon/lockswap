@@ -87,7 +87,12 @@ class AccountLockoutTest < ApplicationSystemTestCase
       fill_in "Email", with: @user.email
       fill_in "Password", with: password
       click_on "Log in"
-      # Wait for the response before the next attempt so the failures are counted.
-      assert_no_selector "form[action='#{user_session_path}'] input[value='']", wait: 0.1
+      # Block until the response has landed, so this attempt is counted before the
+      # next one starts. Every outcome — refused, locked out, or signed in —
+      # announces itself in the flash, so that is the thing to wait for. The wait
+      # has to be the ordinary one: a tight wait leaves Capybara no budget to retry
+      # the query it runs while the page is still being replaced, and the stale
+      # element it hits then fails whichever test lost that race.
+      assert_selector "[role=alert], [role=status]"
     end
 end

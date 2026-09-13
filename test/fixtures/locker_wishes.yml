@@ -1,0 +1,11 @@
+# Locker-wish fixtures (003). Between them these two cover both display cases the
+# wish list has to get right: bob has a floor and a locker on file, carol has a
+# floor but no locker. alice deliberately has no wish — she is the "has not
+# declared yet" case the declare flow is tested against.
+bob_wish:
+  user: bob
+  floor: "7"
+
+carol_wish:
+  user: carol
+  floor: "5"

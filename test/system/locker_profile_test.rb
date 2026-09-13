@@ -14,6 +14,15 @@ class LockerProfileTest < ApplicationSystemTestCase
     assert_selector "input[type=submit][value='Save locker details']"
   end
 
+  # Typing and submitting are separate round trips to the browser, and a page
+  # replaced in between loses the input silently — the submit then carries the
+  # old values and the failure surfaces somewhere far less obvious than here.
+  # Confirming what landed first turns that race into a wait.
+  def save_locker_details(fields)
+    fields.each { |label, value| fill_in_reliably label, with: value }
+    click_on "Save locker details"
+  end
+
   # Acceptance Scenario 1: a user with both values sees both.
   test "a user with a floor and a locker number sees both on the homepage" do
     log_in_as users(:bob)
@@ -46,8 +55,7 @@ class LockerProfileTest < ApplicationSystemTestCase
   test "submitting a floor with no locker number saves the floor and reports no locker" do
     log_in_as users(:alice)
 
-    fill_in "Floor", with: "5"
-    click_on "Save locker details"
+    save_locker_details "Floor" => "5"
 
     assert_selector "#locker-profile-floor", text: "5"
     assert_selector "#locker-profile-locker-number", text: "No locker assigned"
@@ -59,8 +67,7 @@ class LockerProfileTest < ApplicationSystemTestCase
     log_in_as users(:bob)
     open_locker_editor
 
-    fill_in "Floor", with: "   "
-    click_on "Save locker details"
+    save_locker_details "Floor" => "   "
 
     assert_text "Floor can't be blank"
     assert_equal "3", users(:bob).reload.floor
@@ -70,9 +77,7 @@ class LockerProfileTest < ApplicationSystemTestCase
   test "submitting a locker number another account holds is rejected without naming them" do
     log_in_as users(:alice)
 
-    fill_in "Floor", with: "4"
-    fill_in "Locker number", with: users(:bob).locker_number
-    click_on "Save locker details"
+    save_locker_details "Floor" => "4", "Locker number" => users(:bob).locker_number
 
     assert_text "Locker number is not available"
     assert_no_text users(:bob).email
@@ -83,9 +88,7 @@ class LockerProfileTest < ApplicationSystemTestCase
   test "saved locker details survive logging out and logging back in" do
     log_in_as users(:alice)
 
-    fill_in "Floor", with: "7"
-    fill_in "Locker number", with: "C09"
-    click_on "Save locker details"
+    save_locker_details "Floor" => "7", "Locker number" => "C09"
     assert_selector "#locker-profile-floor", text: "7"
 
     click_on "Log out"
@@ -104,8 +107,7 @@ class LockerProfileTest < ApplicationSystemTestCase
     log_in_as users(:bob)
     open_locker_editor
 
-    fill_in "Floor", with: "8"
-    click_on "Save locker details"
+    save_locker_details "Floor" => "8"
 
     assert_selector "#locker-profile-floor", text: "8"
     assert_selector "#locker-profile-locker-number", text: "B12"
@@ -117,8 +119,7 @@ class LockerProfileTest < ApplicationSystemTestCase
     log_in_as users(:bob)
     open_locker_editor
 
-    fill_in "Locker number", with: ""
-    click_on "Save locker details"
+    save_locker_details "Locker number" => ""
 
     assert_selector "#locker-profile-locker-number", text: "No locker assigned"
     assert_selector "#locker-profile-floor", text: "3"
@@ -144,8 +145,7 @@ class LockerProfileTest < ApplicationSystemTestCase
     log_in_as users(:bob)
     open_locker_editor
 
-    fill_in "Floor", with: ""
-    click_on "Save locker details"
+    save_locker_details "Floor" => ""
 
     assert_text "Floor can't be blank"
     assert_selector "input[name='user[floor]']"

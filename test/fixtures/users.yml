@@ -19,3 +19,13 @@ carol:
   encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
   failed_attempts: 0
   floor: "2"
+
+# 003: has both a floor and a locker on file, and deliberately no wish — the
+# "already has a locker, wants a different floor" case, without a test having to
+# delete a fixture wish before it can start.
+dave:
+  email: dave@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  failed_attempts: 0
+  floor: "4"
+  locker_number: "D07"
