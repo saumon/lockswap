@@ -10,15 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_13_142103) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_13_153718) do
   create_table "locker_swap_proposals", force: :cascade do |t|
     t.datetime "completed_at"
     t.datetime "created_at", null: false
     t.datetime "decided_at"
     t.text "decline_comment"
+    t.string "recipient_floor_at_resolution"
     t.integer "recipient_id", null: false
+    t.string "recipient_locker_number_at_resolution"
     t.datetime "requester_acknowledged_at"
+    t.string "requester_floor_at_resolution"
     t.integer "requester_id", null: false
+    t.string "requester_locker_number_at_resolution"
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["recipient_id"], name: "index_locker_swap_proposals_on_recipient_id"

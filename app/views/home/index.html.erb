@@ -23,19 +23,33 @@
   <% if current_user.saved_floor.present? %>
     <%= render "home/locker_profile" %>
 
-    <%# FR-009: editing is deliberate, so the form sits behind this control. A
-        rejected submission reopens it, otherwise the error would have nowhere to
-        show. <details> gives the disclosure keyboard and screen reader support
-        without any JavaScript of its own. %>
-    <details class="rounded-lg border border-slate-200 bg-white shadow-sm" <%= "open" if current_user.errors.any? %>>
-      <summary class="cursor-pointer rounded-lg px-6 py-4 font-medium text-slate-900 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400">
-        Edit locker details
-      </summary>
-
-      <div class="border-t border-slate-200 p-6">
-        <%= render "home/locker_profile_form" %>
+    <%# 005 FR-003: while a proposal is outstanding these values are what the
+        other party is answering, so the edit control gives way to the reason.
+        A rejected submission still gets the form back below — otherwise a
+        request that reached the controller some other way would be refused with
+        nowhere to read why. %>
+    <% if LockerSwapProposal.active_for?(current_user) && current_user.errors.empty? %>
+      <div id="locker-profile-locked" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <p class="text-slate-600">
+          Your floor and locker number cannot be changed while you have an active swap
+          proposal. They can be edited again once it is declined, withdrawn, or completed.
+        </p>
       </div>
-    </details>
+    <% else %>
+      <%# FR-009: editing is deliberate, so the form sits behind this control. A
+          rejected submission reopens it, otherwise the error would have nowhere to
+          show. <details> gives the disclosure keyboard and screen reader support
+          without any JavaScript of its own. %>
+      <details class="rounded-lg border border-slate-200 bg-white shadow-sm" <%= "open" if current_user.errors.any? %>>
+        <summary class="cursor-pointer rounded-lg px-6 py-4 font-medium text-slate-900 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400">
+          Edit locker details
+        </summary>
+
+        <div class="border-t border-slate-200 p-6">
+          <%= render "home/locker_profile_form" %>
+        </div>
+      </details>
+    <% end %>
   <% else %>
     <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
       <h2 class="mb-4 text-lg font-semibold tracking-tight">Add your locker details</h2>

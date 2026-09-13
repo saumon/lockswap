@@ -41,4 +41,27 @@ class User < ApplicationRecord
   # own, so without it the second user with no locker is rejected as a duplicate.
   validates :locker_number, uniqueness: { message: LOCKER_NUMBER_TAKEN_MESSAGE },
             allow_nil: true, on: :locker_profile_update
+
+  # 005 FR-003: says why the field is refused, so the restriction reads as a
+  # state the account is in rather than as something wrong with the input.
+  LOCKED_BY_SWAP_MESSAGE = "cannot be changed while you have an active swap proposal".freeze
+
+  # 005 FR-001, FR-002: a proposal is an offer made on these exact values, so
+  # neither side can move them out from under the other while one is outstanding.
+  validate :locker_details_held_by_active_swap, on: :locker_profile_update
+
+  private
+
+    # Only a value already on file is held: someone who has never recorded a
+    # floor or a locker number is still asked for it, since an offer cannot have
+    # been made on a value that does not exist (FR-001, FR-002). The query is
+    # asked only when there is a change to refuse.
+    def locker_details_held_by_active_swap
+      changing = { floor: floor_changed? && floor_was.present?,
+                   locker_number: locker_number_changed? && locker_number_was.present? }
+      return if changing.values.none?
+      return unless LockerSwapProposal.active_for?(self)
+
+      changing.each { |attribute, changed| errors.add(attribute, LOCKED_BY_SWAP_MESSAGE) if changed }
+    end
 end

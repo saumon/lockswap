@@ -18,7 +18,11 @@
               <th scope="col" class="py-2 pr-4 text-left font-medium">Person</th>
               <th scope="col" class="py-2 pr-4 text-left font-medium">Sent</th>
               <th scope="col" class="py-2 pr-4 text-left font-medium">Status</th>
-              <th scope="col" class="py-2 text-left font-medium">Comment</th>
+              <th scope="col" class="py-2 pr-4 text-left font-medium">Comment</th>
+              <%# 005 FR-005: its own column, not folded into the one above — one
+                  says why a person answered as they did, the other what was on
+                  the table, and a row can have both (FR-008). %>
+              <th scope="col" class="py-2 text-left font-medium">Locker details</th>
             </tr>
           </thead>
 
@@ -40,8 +44,14 @@
                 </td>
 
                 <td id="<%= row_id %>-comment"
-                    class="py-3 <%= proposal.decline_comment.present? ? "text-slate-600" : "text-slate-400" %>">
+                    class="py-3 pr-4 <%= proposal.decline_comment.present? ? "text-slate-600" : "text-slate-400" %>">
                   <%= proposal.decline_comment.presence || "—" %>
+                </td>
+
+                <%# FR-005: filled in for every row, whatever became of it, so
+                    the history never depends on anyone having written it down. %>
+                <td id="<%= row_id %>-locker-details" class="py-3 text-slate-600">
+                  <%= proposal.floor_and_locker_summary %>
                 </td>
               </tr>
             <% end %>

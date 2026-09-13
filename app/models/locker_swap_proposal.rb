@@ -31,7 +31,7 @@ class LockerSwapProposal < ApplicationRecord
   def withdraw!
     return false unless pending?
 
-    update!(status: :withdrawn, decided_at: Time.current)
+    update!(status: :withdrawn, decided_at: Time.current, **resolution_snapshot)
   end
 
   # FR-006: the recipient's yes. Two proposals sharing a party can be accepted a
@@ -59,7 +59,8 @@ class LockerSwapProposal < ApplicationRecord
   def decline!(comment = nil)
     return false unless pending?
 
-    update!(status: :declined, decided_at: Time.current, decline_comment: comment.presence)
+    update!(status: :declined, decided_at: Time.current, decline_comment: comment.presence,
+            **resolution_snapshot)
   end
 
   # FR-013: the exchange has happened in the building, so the records catch up —
@@ -69,8 +70,12 @@ class LockerSwapProposal < ApplicationRecord
     return false unless accepted?
 
     transaction do
+      # Read before the swap, not after: a moment later each side holds what it
+      # has just given away, and the record would have them the wrong way round
+      # (005 FR-009).
+      snapshot = resolution_snapshot
       swap_lockers
-      update!(status: :completed, completed_at: Time.current)
+      update!(status: :completed, completed_at: Time.current, **snapshot)
       requester.locker_wish&.destroy
       recipient.locker_wish&.destroy
     end
@@ -89,6 +94,40 @@ class LockerSwapProposal < ApplicationRecord
     accepted.exists?(requester_id: user.id) || accepted.exists?(recipient_id: user.id)
   end
 
+  # 005 FR-005, FR-006: what this proposal was about, said by the system rather
+  # than by either party — so the history explains itself on every row, including
+  # the ones nobody commented on.
+  #
+  # An undecided proposal reads live: the lock (FR-001, FR-002) is holding both
+  # sides' details still for exactly as long as that state lasts. A settled one
+  # reads the record, which is the only account left of what was on the table.
+  def floor_and_locker_summary
+    sides = if pending? || accepted?
+      [ [ requester.floor, requester.locker_number ], [ recipient.floor, recipient.locker_number ] ]
+    else
+      [ [ requester_floor_at_resolution, requester_locker_number_at_resolution ],
+        [ recipient_floor_at_resolution, recipient_locker_number_at_resolution ] ]
+    end
+
+    # Joined by a word rather than a ↔: read aloud, a screen reader set to low
+    # punctuation verbosity drops the symbol entirely and runs the two sides
+    # together (Principle III).
+    "#{completed? ? "Exchanged" : "Proposed"}: #{sides.map { |side| locker_details(*side) }.join(" for ")}"
+  end
+
+  # Whether this user has anything outstanding at all — waiting for an answer as
+  # well as already committed (005 FR-001, FR-002). Deliberately broader than
+  # in_progress_for?: a proposal still pending is an offer made on the strength
+  # of these locker details, so they are held still from the moment it is sent
+  # rather than from the moment it is accepted.
+  #
+  # Asked as separate exists? calls for the same reason as in_progress_for?.
+  def self.active_for?(user)
+    pending.exists?(requester_id: user.id) ||
+      pending.exists?(recipient_id: user.id) ||
+      in_progress_for?(user)
+  end
+
   # Everyone currently committed to an exchange. The wish list reads this to
   # stop showing wishes that are no longer open invitations (Edge Cases).
   def self.in_progress_user_ids
@@ -96,6 +135,23 @@ class LockerSwapProposal < ApplicationRecord
   end
 
   private
+
+    # One side of the summary, in the same words the homepage uses for the same
+    # two states (002 FR-004) — having no locker is ordinary, and reads that way.
+    def locker_details(floor, locker_number)
+      "#{floor.present? ? "Floor #{floor}" : "No floor"}, " \
+        "#{locker_number.present? ? "locker #{locker_number}" : "no locker assigned"}"
+    end
+
+    # What both sides' lockers look like right now, ready to be written onto the
+    # proposal as it settles (005 FR-009). Taken once, at that moment: afterwards
+    # the lock lifts and these two are free to change their details again.
+    def resolution_snapshot
+      { requester_floor_at_resolution: requester.floor,
+        requester_locker_number_at_resolution: requester.locker_number,
+        recipient_floor_at_resolution: recipient.floor,
+        recipient_locker_number_at_resolution: recipient.locker_number }
+    end
 
     # locker_number is unique across users, and the check is immediate, so the
     # two rows cannot simply be written over each other: for the moment between
@@ -130,8 +186,22 @@ class LockerSwapProposal < ApplicationRecord
         decided_at: Time.current,
         decline_comment: AUTO_DECLINE_COMMENT,
         requester_acknowledged_at: nil,
-        updated_at: Time.current
+        updated_at: Time.current,
+        # Each of these rows has its own two parties, so their details cannot be
+        # one value repeated across the update — they are looked up per row,
+        # which keeps this a single statement rather than a query each (005
+        # FR-009; Principle IV).
+        requester_floor_at_resolution: detail_of("requester_id", "floor"),
+        requester_locker_number_at_resolution: detail_of("requester_id", "locker_number"),
+        recipient_floor_at_resolution: detail_of("recipient_id", "floor"),
+        recipient_locker_number_at_resolution: detail_of("recipient_id", "locker_number")
       )
+    end
+
+    # Both arguments are literals written at the call site above — no value from
+    # a request ever reaches this string.
+    def detail_of(role_column, detail_column)
+      Arel.sql("(SELECT #{detail_column} FROM users WHERE users.id = locker_swap_proposals.#{role_column})")
     end
 
     # FR-002.

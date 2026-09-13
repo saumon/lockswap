@@ -286,6 +286,44 @@ class LockerSwapProposalTest < ApplicationSystemTestCase
     assert_selector "#swap-proposal-history-empty"
   end
 
+  # 005 User Story 2, FR-005/FR-006: every row says which lockers it was about,
+  # whatever became of it, without anyone having typed a word.
+  test "the history says which lockers each proposal was about, in every state" do
+    completed = LockerSwapProposal.create!(requester: users(:bob), recipient: users(:carol),
+                                           status: :accepted)
+    completed.confirm!
+
+    log_in_as users(:carol)
+    visit locker_swap_proposals_path
+
+    within("#swap-proposal-history-row-#{completed.id}-locker-details") do
+      assert_text "Exchanged"
+      assert_text "Floor 3, locker B12"
+      assert_text "Floor 2, no locker assigned"
+    end
+
+    within("#swap-proposal-history-row-#{locker_swap_proposals(:dave_declined_to_carol).id}-locker-details") do
+      assert_text "Proposed"
+      assert_text "Floor 4, locker D07"
+    end
+
+    within("#swap-proposal-history-row-#{locker_swap_proposals(:alice_withdrawn_to_carol).id}-locker-details") do
+      assert_text "Proposed"
+    end
+  end
+
+  # FR-008: the two comments answer different questions — one is why a person
+  # said no, the other is what was on the table. Neither stands in for the other.
+  test "the history shows a decline comment and the locker details side by side" do
+    log_in_as users(:dave)
+    visit locker_swap_proposals_path
+
+    row = "#swap-proposal-history-row-#{locker_swap_proposals(:dave_declined_to_carol).id}"
+
+    within("#{row}-comment") { assert_text "Found another swap" }
+    within("#{row}-locker-details") { assert_text "Floor 4, locker D07" }
+  end
+
   # The review surface stays a review surface: nothing here decides anything.
   test "the history offers no controls to act on a proposal" do
     log_in_as users(:bob)

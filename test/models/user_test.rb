@@ -110,4 +110,67 @@ class UserTest < ActiveSupport::TestCase
       user.save(validate: false)
     end
   end
+
+  # 005 FR-001/FR-002: while a swap is being negotiated, these two values are what
+  # the other party is answering — so they are held still until it is settled.
+  # bob is the recipient of alice_pending_to_bob, which every test loads.
+  test "a saved floor cannot be changed while a swap proposal is active" do
+    user = users(:bob)
+    user.floor = "9"
+
+    assert_not user.valid?(:locker_profile_update)
+    assert_includes user.errors[:floor], User::LOCKED_BY_SWAP_MESSAGE
+  end
+
+  test "a saved locker number cannot be changed while a swap proposal is active" do
+    user = users(:bob)
+    user.locker_number = "B99"
+
+    assert_not user.valid?(:locker_profile_update)
+    assert_includes user.errors[:locker_number], User::LOCKED_BY_SWAP_MESSAGE
+  end
+
+  # Saving the form untouched is not a change, so there is nothing to hold still.
+  test "resubmitting the same floor and locker number is allowed while locked" do
+    user = users(:bob)
+    user.floor = user.floor
+    user.locker_number = user.locker_number
+
+    assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
+  end
+
+  # FR-001/FR-002 "already-saved" clarification: a requester need not have a locker
+  # of their own (004), so locking the first entry would strand them — with an
+  # active proposal they can never withdraw their way out of.
+  test "a first-time floor and locker number can still be saved while locked" do
+    user = users(:alice)
+    user.floor = "5"
+    user.locker_number = "C01"
+
+    assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
+  end
+
+  # Acceptance Scenario 3: an accepted exchange holds the values just as a pending
+  # proposal does — this is the point where they are about to be swapped for real.
+  test "a saved floor cannot be changed while an exchange is in progress" do
+    LockerSwapProposal.create!(requester: users(:dave), recipient: users(:carol), status: :accepted)
+
+    requester = users(:dave)
+    requester.floor = "9"
+    recipient = users(:carol)
+    recipient.floor = "9"
+
+    assert_not requester.valid?(:locker_profile_update)
+    assert_not recipient.valid?(:locker_profile_update)
+  end
+
+  # Acceptance Scenario 5: the hold lasts exactly as long as the proposal does.
+  test "the floor can be changed again once the proposal is resolved" do
+    locker_swap_proposals(:alice_pending_to_bob).decline!
+
+    user = users(:bob)
+    user.floor = "9"
+
+    assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
+  end
 end
