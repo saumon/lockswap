@@ -50,4 +50,11 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # A third of what ships, because the system tests wait these countdowns out in
+  # real time and three seconds a piece adds up across the suite. Kept well clear
+  # of a Selenium round trip, so "it is still showing" stays a real assertion
+  # rather than a race. The shipped three seconds is asserted separately, in
+  # test/views/layouts/flash_test.rb.
+  config.x.notification_auto_dismiss_ms = 1000
 end
