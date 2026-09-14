@@ -60,7 +60,9 @@ The project started with the foundations — without user accounts, no locker sw
 now carries the swap through end to end: declare what you are looking for, offer a swap, answer one,
 and confirm it once the lockers have actually changed hands. The details being negotiated are held
 still while that plays out, and the history says what each proposal was about without anyone having
-had to write it down. Locker numbers are counted per floor, the way they are on the doors.
+had to write it down. Locker numbers are counted per floor, the way they are on the doors. What the
+application says back — saved, sent, refused — shows itself for a few seconds and then gets out of
+the way.
 
 | Feature | Status |
 | --- | --- |
@@ -70,6 +72,7 @@ had to write it down. Locker numbers are counted per floor, the way they are on 
 | **004 — Locker swap proposals** | ✅ Shipped |
 | **005 — Locker field lock and swap history** | ✅ Shipped |
 | **006 — Per-floor locker numbers** | ✅ Shipped |
+| **007 — Self-dismissing notifications** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -174,6 +177,29 @@ What feature 006 corrects — see
 * a locker number is still never stored without a floor: until a floor is given there is nothing to
   scope the number to, so the floor stays required exactly as before.
 
+What feature 007 changes — see
+[`specs/007-toast-notifications/spec.md`](specs/007-toast-notifications/spec.md):
+
+* the lines the application answers with — **Signed in successfully.**, **Locker details saved.**, and
+  every other one — used to be a block of text wedged at the top of the page that stayed there until
+  something else replaced it; they now arrive as a **notification that takes itself away after three
+  seconds**;
+* nothing moves when one comes or goes: the message floats at the top right, below the header,
+  instead of taking a strip out of the page — so the content underneath neither jumps down on arrival
+  nor springs back on departure, the navigation stays visible and clickable throughout, and on a wide
+  screen the message sits over the empty margin beside the content rather than over the content
+  itself;
+* **the countdown stops while the pointer is resting on a message, or while the keyboard has landed
+  on it**, and picks up where it left off once you move away — three seconds is not long enough for
+  every reader, and a message that vanishes mid-sentence cannot be asked for a second time;
+* a reader who is already done can dismiss one by hand rather than waiting the rest of the countdown
+  out;
+* a success still reads as a success and a refusal as a refusal, at a glance and without reading the
+  words — and each keeps the role that has a screen reader announce it, politely for a confirmation
+  and insistently for a failure;
+* two messages on the same page stack rather than one quietly standing in for the other, and a long
+  one wraps and grows downwards instead of spilling out of the window.
+
 ## 🧭 Method: Spec-Driven Development
 
 The project is built with **SDD** using [Spec Kit](https://github.com/github/spec-kit): the
@@ -204,6 +230,7 @@ A conventional Rails monolith, server-rendered, with no separate frontend.
 | Authentication | Devise (`database_authenticatable`, `registerable`, `rememberable`, `lockable`, `validatable`) |
 | Database | SQLite through Active Record |
 | Styling | Tailwind CSS 4.3 (the `tailwindcss-rails` gem, no Node dependency) |
+| Browser behaviour | Hotwire — Turbo, and Stimulus over importmap; no bundler, no `package.json` |
 | App server | Puma |
 | Tests | Minitest + Rails system tests (Capybara, headless Chrome) |
 | Quality | RuboCop (`rubocop-rails-omakase`), Brakeman |
@@ -236,8 +263,8 @@ start at `/users/sign_up`.
 ## ✅ Tests and quality
 
 ```sh
-bin/rails test         # models and controllers
-bin/rails test:system  # end-to-end signup, login, lockout, redirect, locker-details, wish, and swap flows
+bin/rails test         # models, controllers, and views
+bin/rails test:system  # end-to-end signup, login, lockout, redirect, locker-details, wish, swap, and notification flows
 bin/rubocop            # lint (zero warnings tolerated)
 bin/brakeman           # static security analysis
 ```
@@ -268,7 +295,11 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
 * [`specs/006-locker-floor-uniqueness/quickstart.md`](specs/006-locker-floor-uniqueness/quickstart.md) —
   the same locker number claimed on two different floors, the clash still refused on one and the same
   floor, moving a number to a free floor and being refused an occupied one, the vacated pair claimed
-  by someone else, and the floor still required before any number is stored.
+  by someone else, and the floor still required before any number is stored;
+* [`specs/007-toast-notifications/quickstart.md`](specs/007-toast-notifications/quickstart.md) —
+  a confirmation arriving and leaving on its own, a refusal doing the same in its own colour,
+  dismissing one by hand, the countdown holding while the pointer rests on it, two of them stacking,
+  and the page underneath staying exactly where it was.
 
 ## 🚢 Deploy
 

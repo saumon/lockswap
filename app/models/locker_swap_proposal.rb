@@ -200,10 +200,16 @@ class LockerSwapProposal < ApplicationRecord
       )
     end
 
-    # Both arguments are literals written at the call site above — no value from
-    # a request ever reaches this string.
+    # Built out of Arel nodes rather than an interpolated string: Arel quotes the
+    # column names it is handed, so the correlated subquery cannot be talked into
+    # meaning something else even if a caller one day passes something that did
+    # not start life as a literal here.
     def detail_of(role_column, detail_column)
-      Arel.sql("(SELECT #{detail_column} FROM users WHERE users.id = locker_swap_proposals.#{role_column})")
+      users = User.arel_table
+      subquery = users.project(users[detail_column])
+                      .where(users[:id].eq(self.class.arel_table[role_column]))
+
+      Arel::Nodes::Grouping.new(subquery.ast)
     end
 
     # FR-002.
