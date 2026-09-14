@@ -52,8 +52,15 @@ class NotificationTest < ApplicationSystemTestCase
     click_on "Log in"
 
     refusal = find("[role=alert]", text: FAILURE_MESSAGE)
-    assert_includes refusal[:class], "bg-rose-50"
-    assert_not_includes refusal[:class], "bg-emerald-50"
+
+    # 008: this asserted Tailwind class names until the visual refresh replaced
+    # them with a component class. Same behaviour, asserted one level lower —
+    # the colour a reader actually sees, rather than the name of the rule that
+    # produced it, so a future rename cannot break it again. The accent bar is
+    # the error tint (#9F1239) and not the success one (#07795A).
+    accent = refusal.native.css_value("border-left-color").delete(" ")
+    assert_match(/^rgba?\(159,18,57/, accent)
+    assert_no_match(/^rgba?\(7,121,90/, accent)
 
     assert_no_selector "[role=alert]", text: FAILURE_MESSAGE
   end

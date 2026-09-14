@@ -16,7 +16,13 @@ class FlashTest < ActionView::TestCase
     render partial: "layouts/flash",
            locals: { notice: "Locker details saved.", alert: "Swap proposal refused." }
 
-    assert_select "div.fixed.flex-col" do
+    # 008: this named the Tailwind utilities the container used to carry. The
+    # visual refresh moved that styling into a .toast-layer component class —
+    # sticky at the top of <main> rather than fixed at a hard-coded offset, so
+    # it stays clear of the header when the navigation wraps on a narrow screen.
+    # Same behaviour asserted: one container, both messages inside it, so
+    # neither can cover the other.
+    assert_select "div.toast-layer" do
       assert_select "[role=status]", count: 1
       assert_select "[role=alert]", count: 1
     end

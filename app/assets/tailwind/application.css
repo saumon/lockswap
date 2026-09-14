@@ -1,1 +1,988 @@
 @import "tailwindcss";
+
+/* ===========================================================================
+   008 — Design tokens.
+
+   Single source for every colour, type step, spacing step, radius, shadow and
+   motion duration on the site. Tailwind v4 generates the matching utilities
+   from each @theme entry, so `--color-brand-navy` yields `text-brand-navy`,
+   `bg-brand-navy` and `border-brand-navy` without any further declaration.
+
+   Screens reference these names. A raw hex value in a template is a defect.
+   =========================================================================== */
+
+@theme {
+  /* --- Brand colours, sampled from the source artwork ---------------------
+     These reproduce the logo. They are NOT a general-purpose palette: see the
+     contrast note on --color-brand-green below. */
+  --color-brand-navy: #0E2A47;
+  --color-brand-green: #0AB486;
+  --color-brand-blue: #0A77F1;
+
+  /* Mark artwork only — the locker faces and their shaded sides. */
+  --color-locker-blue: #2588F3;
+  --color-locker-blue-deep: #014DA7;
+  --color-locker-green: #41D5A5;
+  --color-locker-green-deep: #05776E;
+
+  /* --- Functional colours -------------------------------------------------
+     Derived so that every one of them actually passes contrast. Ratios are
+     against white and were computed, not estimated.
+
+     IMPORTANT: --color-brand-green is 2.66:1 on white. That fails the 4.5:1
+     text bar AND the 3:1 non-text bar. It is legal in the wordmark only
+     because WCAG 2.1 SC 1.4.3 exempts text that is part of a logo or brand
+     name. Everywhere else, green means --color-accent. */
+  --color-ink: #0E2A47;          /* 14.57:1 — body and headings */
+  --color-ink-muted: #50607A;    /*  6.37:1 — secondary and help text */
+  --color-accent: #07795A;       /*  5.40:1 — green text, primary fill */
+  --color-accent-strong: #06684D;/*  6.79:1 — primary hover/active */
+  --color-link: #0A5AC2;         /*  6.45:1 — link text, focus ring */
+  --color-canvas: #F7F9FB;       /* page ground */
+  --color-surface: #FFFFFF;      /* cards and panels */
+  --color-border: #D8E0E9;       /* decorative separation only */
+  --color-border-strong: #C7D2DE;/* input borders at rest */
+
+  /* --- Status pairs -------------------------------------------------------
+     Text-on-tint, each verified >= 4.5:1. Every badge also carries a text
+     label, so colour is never the only signal (FR-025). */
+  --color-status-success: #07795A;
+  --color-status-success-tint: #E6F7F1;   /* 4.87:1 */
+  --color-status-error: #9F1239;
+  --color-status-error-tint: #FFE4E6;     /* 6.68:1 */
+  --color-status-info: #0A5AC2;
+  --color-status-info-tint: #E3EDFD;      /* 5.47:1 */
+  --color-status-neutral: #0E2A47;
+  --color-status-neutral-tint: #EEF2F6;   /* 12.96:1 */
+
+  /* --- Typography ---------------------------------------------------------
+     One family, one variable file. The fallback stack is rounded-first so the
+     pre-swap paint is not a different shape from the loaded face. */
+  --font-brand: "Nunito", ui-rounded, "Segoe UI", system-ui, sans-serif;
+
+  --text-display: 2.5rem;
+  --text-display--line-height: 1.1;
+  --text-display--font-weight: 800;
+  --text-h1: 1.875rem;
+  --text-h1--line-height: 1.2;
+  --text-h1--font-weight: 800;
+  --text-h2: 1.25rem;
+  --text-h2--line-height: 1.3;
+  --text-h2--font-weight: 700;
+  --text-h3: 1rem;
+  --text-h3--line-height: 1.4;
+  --text-h3--font-weight: 700;
+  --text-body: 1rem;
+  --text-body--line-height: 1.6;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.5;
+  --text-label: 0.875rem;
+  --text-label--line-height: 1.4;
+  --text-label--font-weight: 600;
+
+  /* --- Spacing, radius, shadow -------------------------------------------
+     Shadows are tinted with the brand navy rather than neutral black: grey
+     shadow on a white canvas reads muddy, navy reads clean. */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.5rem;
+  --spacing-6: 2rem;
+  --spacing-7: 3rem;
+  --spacing-8: 4rem;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+
+  --shadow-sm: 0 1px 2px rgb(14 42 71 / 0.05);
+  --shadow-md: 0 4px 12px rgb(14 42 71 / 0.08);
+  --shadow-lg: 0 12px 32px rgb(14 42 71 / 0.12);
+
+  /* --- Motion -------------------------------------------------------------
+     FR-019 bounds: interaction feedback settles within 200ms, the page
+     entrance completes within 400ms. These sit inside those with headroom. */
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-entrance: 320ms;
+  --motion-brand: 1100ms;
+  --motion-flourish: 900ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Gentle and near-even across its length, so a fade reads as a fade. */
+  --ease-brand: cubic-bezier(0.33, 0.1, 0.35, 1);
+}
+
+/* ===========================================================================
+   Brand typeface, served from our own origin (FR-005a).
+
+   The url() is a bare filename on purpose: Propshaft resolves it against the
+   asset load path — which config/initializers/assets.rb extends with
+   app/assets/fonts — and rewrites it to the digested path at serve time.
+
+   font-display: swap keeps text visible while the face downloads (FR-026).
+   One variable file covers weights 200-1000, latin subset only (FR-005b).
+   =========================================================================== */
+
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 200 1000;
+  font-display: swap;
+  src: url("nunito-latin-variable.woff2") format("woff2");
+}
+
+/* ===========================================================================
+   Base shell.
+   =========================================================================== */
+
+@layer base {
+  html {
+    /* Anchors and any future in-page jumps ease rather than teleport; the
+       reduced-motion block below turns this off again. */
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-brand);
+    font-size: var(--text-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* FR-024: one focus treatment, everywhere, visible against every surface we
+     paint. :focus-visible rather than :focus so a mouse click does not leave a
+     ring behind, while keyboard users always get one. Never remove an outline
+     without putting this back. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+}
+
+/* ===========================================================================
+   Reduced motion (FR-020).
+
+   One global switch rather than per-component opt-outs, which get forgotten.
+
+   0.01ms rather than `none` on purpose: animationend and transitionend still
+   fire, so nothing that waits on those events hangs forever. FR-016b requires
+   content to be readable regardless, so entrance animations must also end on
+   their visible state — see the keyframes further down.
+   =========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+
+    /* Delays have to go too. A staggered entrance whose duration is flattened
+       but whose delay survives still holds its element at the keyframe's `from`
+       state — invisible, for as long as the stagger lasts — which is precisely
+       what someone asking for less motion does not want. */
+    animation-delay: 0ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/* ===========================================================================
+   Brand.
+   =========================================================================== */
+
+@layer components {
+  .brand-lockup {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+  }
+
+  .brand-wordmark {
+    font-size: var(--text-h2);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .brand-wordmark-display {
+    font-size: var(--text-display);
+    margin: 0;
+  }
+
+  .brand-wordmark-lock {
+    color: var(--color-brand-navy);
+  }
+
+  /* The artwork's green, 2.66:1 on white. Permitted here and nowhere else:
+     WCAG 2.1 SC 1.4.3 exempts text that is part of a logo or brand name. Any
+     other green text on this site uses --color-accent. */
+  .brand-wordmark-swap {
+    color: var(--color-brand-green);
+  }
+
+  .brand-stacked {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-2);
+    text-align: center;
+  }
+
+  .brand-tagline {
+    color: var(--color-ink-muted);
+    font-size: var(--text-sm);
+    margin: 0;
+  }
+}
+
+/* The mark lifts slightly when the header brand is hovered or focused. Scale
+   only — transform stays off the layout and paint path. */
+.brand-lockup .brand-mark {
+  transition: transform var(--motion-base) var(--ease-in-out);
+}
+
+.brand-lockup:hover .brand-mark,
+.brand-lockup:focus-visible .brand-mark {
+  transform: scale(1.03);
+}
+
+/* FR-022: the mark's one-off flourish on the full-brand screens is a fade.
+
+   This animates `filter: blur()`, which is the one place in the stylesheet that
+   leaves the transform/opacity-only rule. That rule exists to keep scrolling
+   smooth; this plays once, on a static screen with nothing to scroll, on a
+   single element, and the blur is what makes the entrance actually readable as
+   one. It is bounded: 16px, one pass, gone in about a second.
+
+   The arrows used to arrive separately, staggered inside the mark. Once the mark
+   itself began fading in, the two animations multiplied — an arrow at half
+   opacity inside a mark at half opacity is a quarter — and the arrows crawled in
+   looking washed out. One animation on the whole mark says the same thing and
+   says it cleanly.
+
+   Armed by the `flourish` local, so the 32px mark in the site header never does
+   this: a logo that fades in on every navigation is a tic, not a flourish. */
+/* Declared only when motion is welcome. An entrance that starts from opacity 0
+   and relies on fill-mode to ever reach 1 is one stalled animation away from an
+   invisible logo; scoping the rule means a reduced-motion visitor has no
+   animation at all and the brand is simply painted, at full opacity, first
+   frame. Safer than flattening the duration and trusting the fill to resolve
+   forwards (FR-016b, FR-020). */
+@media (prefers-reduced-motion: no-preference) {
+  .brand-mark-flourish {
+    animation: brand-fade-in var(--motion-brand) var(--ease-brand) 1 both;
+  }
+}
+
+/* ===========================================================================
+   Components.
+
+   One definition per recurring element, reused everywhere. Templates reference
+   these class names rather than restating a utility string; a second definition
+   of the same element is a defect (FR-011).
+
+   Every interactive component inherits the shared :focus-visible ring from the
+   base layer above — none of them may remove an outline without replacing it.
+   =========================================================================== */
+
+@layer components {
+
+  /* --- Buttons ------------------------------------------------------------
+     NOTE: .btn-primary has to work on <input type="submit">, which cannot have
+     pseudo-elements or children — two system tests assert on
+     input[type=submit][value='...']. So: no ::before, no icon slots, no
+     spinner elements. Turbo's data-turbo-submits-with handles the busy label. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-2);
+    min-height: 2.75rem;          /* 44px touch target */
+    padding: var(--spacing-3) var(--spacing-5);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: var(--text-label);
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  .btn-primary {
+    background-color: var(--color-accent);   /* white on this is 5.40:1 */
+    color: #FFFFFF;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-accent-strong);
+  }
+
+  .btn-secondary {
+    background-color: var(--color-surface);
+    border-color: var(--color-border-strong);
+    color: var(--color-ink);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-canvas);
+  }
+
+  .btn-destructive {
+    background-color: transparent;
+    border-color: var(--color-status-error);
+    color: var(--color-status-error);
+  }
+
+  .btn-destructive:hover:not(:disabled) {
+    background-color: var(--color-status-error-tint);
+  }
+
+  /* A text button that still reads as an action. */
+  .btn-quiet {
+    background-color: transparent;
+    color: var(--color-link);
+    padding-inline: var(--spacing-2);
+  }
+
+  .btn-quiet:hover:not(:disabled) {
+    background-color: var(--color-status-info-tint);
+  }
+
+  /* --- Forms --------------------------------------------------------------- */
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+  }
+
+  .field-label {
+    color: var(--color-ink);
+    font-size: var(--text-label);
+    font-weight: 600;
+  }
+
+  /* font-size must stay >= 1rem: anything smaller makes iOS Safari zoom the
+     whole page when the field takes focus. */
+  .field-input {
+    width: 100%;
+    padding: var(--spacing-3) var(--spacing-4);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    color: var(--color-ink);
+    font-family: inherit;
+    font-size: var(--text-body);
+    line-height: 1.4;
+  }
+
+  .field-input:hover {
+    border-color: var(--color-ink-muted);
+  }
+
+  .field-input:focus-visible {
+    border-color: var(--color-link);
+  }
+
+  .field-input:disabled {
+    background-color: var(--color-canvas);
+    color: var(--color-ink-muted);
+  }
+
+  .field-hint {
+    color: var(--color-ink-muted);
+    font-size: var(--text-sm);
+  }
+
+  /* FR-025: the glyph means the error is never carried by colour alone. */
+  .field-error {
+    color: var(--color-status-error);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .field-error::before {
+    content: "⚠ ";
+  }
+
+  /* --- Cards and panels ---------------------------------------------------- */
+  .card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: var(--spacing-6);
+  }
+
+  .card-tight {
+    padding: var(--spacing-5);
+  }
+
+  .card-title {
+    color: var(--color-ink);
+    font-size: var(--text-h2);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .card-lead {
+    color: var(--color-ink-muted);
+    margin: 0;
+  }
+
+  .page-title {
+    color: var(--color-ink);
+    font-size: var(--text-h1);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+
+  .section-title {
+    color: var(--color-ink);
+    font-size: var(--text-h3);
+    font-weight: 700;
+    margin: 0;
+  }
+
+  /* --- Disclosure ---------------------------------------------------------
+     Native <details>/<summary>, kept native: it is the accessible, JS-free
+     choice, and two tests find the summary by its text. */
+  .disclosure {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+
+  .disclosure-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-3);
+    padding: var(--spacing-5) var(--spacing-6);
+    color: var(--color-ink);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .disclosure-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .disclosure-summary::after {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-right: 2px solid var(--color-ink-muted);
+    border-bottom: 2px solid var(--color-ink-muted);
+    transform: rotate(45deg);
+    flex: none;
+  }
+
+  .disclosure[open] > .disclosure-summary::after {
+    transform: rotate(-135deg);
+  }
+
+  .disclosure-body {
+    border-top: 1px solid var(--color-border);
+    padding: var(--spacing-6);
+  }
+
+  /* --- Status badges ------------------------------------------------------
+     Each pair is verified >= 4.5:1, and every badge carries its label as text
+     so colour is never the only signal (FR-025). */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    padding: var(--spacing-1) var(--spacing-3);
+    border-radius: 9999px;
+    font-size: var(--text-label);
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  .badge-success { background-color: var(--color-status-success-tint); color: var(--color-status-success); }
+  .badge-error   { background-color: var(--color-status-error-tint);   color: var(--color-status-error); }
+  .badge-info    { background-color: var(--color-status-info-tint);    color: var(--color-status-info); }
+  .badge-neutral { background-color: var(--color-status-neutral-tint); color: var(--color-status-neutral); }
+
+  /* --- Empty state --------------------------------------------------------- */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-7) var(--spacing-5);
+    text-align: center;
+    color: var(--color-ink-muted);
+  }
+
+  .empty-state svg {
+    opacity: 0.25;
+    margin-bottom: var(--spacing-2);
+  }
+
+  /* --- Toast (007's behaviour, 008's appearance) --------------------------
+     Stays in a fixed overlay: notification_test.rb asserts <main>'s rectangle
+     is identical with and without a notification present. */
+  .toast {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-3);
+    width: 100%;
+    max-width: 28rem;
+    padding: var(--spacing-4) var(--spacing-5);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-ink-muted);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    color: var(--color-ink);
+    font-size: var(--text-sm);
+  }
+
+  .toast-success { border-left-color: var(--color-status-success); }
+  .toast-error   { border-left-color: var(--color-status-error); }
+
+  .toast-dismiss {
+    flex: none;
+    margin-inline-start: auto;
+    padding: 0 var(--spacing-1);
+    background: none;
+    border: 0;
+    color: var(--color-ink-muted);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .toast-dismiss:hover {
+    color: var(--color-ink);
+  }
+
+  /* --- Shell --------------------------------------------------------------- */
+  .site-header {
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-4);
+    margin-inline: auto;
+    max-width: 64rem;
+    padding: var(--spacing-4) var(--spacing-5);
+  }
+
+  .site-nav-link {
+    color: var(--color-ink-muted);
+    font-size: var(--text-label);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .site-nav-link:hover {
+    color: var(--color-ink);
+  }
+
+  .site-main {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 64rem;
+    padding-inline: var(--spacing-5);
+    padding-block: var(--spacing-7);
+  }
+
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-5);
+  }
+
+  .stack-tight {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-3);
+  }
+
+  .meta {
+    color: var(--color-ink-muted);
+    font-size: var(--text-sm);
+  }
+
+  /* The signed-in user's email: this is what gives way on a narrow screen, not
+     the brand and not the controls. */
+  .site-nav-identity {
+    color: var(--color-ink-muted);
+    font-size: var(--text-sm);
+    max-width: 16rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* --- Auth screens, detail lists and tables --------------------------------- */
+
+@layer components {
+  .auth-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-6);
+    margin-inline: auto;
+    width: 100%;
+    max-width: 26rem;
+  }
+
+  .auth-link {
+    color: var(--color-link);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .auth-link:hover {
+    text-decoration: none;
+  }
+
+  .strong {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  .quote {
+    color: var(--color-ink-muted);
+    font-style: italic;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-4);
+  }
+
+  @media (min-width: 40rem) {
+    .detail-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .detail-term {
+    color: var(--color-ink-muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .detail-value {
+    color: var(--color-ink);
+    margin-top: var(--spacing-1);
+  }
+
+  /* Never having a value set is an ordinary state, not a warning. */
+  .detail-value-empty {
+    color: var(--color-ink-muted);
+  }
+
+  /* A row inside a card: the list items on the homepage swap sections. */
+  .tile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+    padding: var(--spacing-4);
+    background-color: var(--color-canvas);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .tile-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-3);
+  }
+
+  .tile-line { margin: 0; }
+
+  .tile-disclosure {
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--spacing-3);
+  }
+
+  .tile-disclosure-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    color: var(--color-ink-muted);
+    font-size: var(--text-label);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .tile-disclosure-summary::-webkit-details-marker { display: none; }
+
+  .tile-disclosure-summary::after {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+  }
+
+  .tile-disclosure[open] > .tile-disclosure-summary::after {
+    transform: rotate(-135deg);
+  }
+
+  .tile-disclosure-body { margin-top: var(--spacing-3); }
+
+  .disclosure-nested {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .btn-sm {
+    min-height: 2.25rem;
+    padding: var(--spacing-2) var(--spacing-4);
+  }
+
+  /* The table is the one thing allowed to scroll sideways on a narrow screen;
+     the page body must not (FR-014). */
+  .table-scroll {
+    overflow-x: auto;
+    margin-inline: calc(var(--spacing-2) * -1);
+    padding-inline: var(--spacing-2);
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+    text-align: left;
+  }
+
+  .data-table th {
+    padding: var(--spacing-2) var(--spacing-4) var(--spacing-2) 0;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-ink-muted);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .data-table td {
+    padding: var(--spacing-3) var(--spacing-4) var(--spacing-3) 0;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-ink);
+    vertical-align: middle;
+  }
+
+  .data-table tr:last-child td { border-bottom: 0; }
+
+  /* --- Form-level error summary ------------------------------------------- */
+  .form-errors {
+    padding: var(--spacing-4) var(--spacing-5);
+    background-color: var(--color-status-error-tint);
+    border: 1px solid var(--color-status-error);
+    border-radius: var(--radius-md);
+  }
+
+  .form-errors-title {
+    color: var(--color-status-error);
+    font-size: var(--text-label);
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .form-errors-list {
+    margin: var(--spacing-2) 0 0;
+    padding-inline-start: var(--spacing-5);
+    list-style: disc outside;
+    color: var(--color-status-error);
+    font-size: var(--text-sm);
+  }
+
+  .form-errors-list li + li { margin-top: var(--spacing-1); }
+}
+
+/* ===========================================================================
+   Motion.
+
+   Only transform and opacity are animated. Animating width, height, top or
+   box-shadow would put every frame back through layout or paint, which is what
+   makes a page stutter on a mid-range phone (FR-021).
+
+   Everything here is switched off by the prefers-reduced-motion block above.
+   =========================================================================== */
+
+/* FR-017 / FR-019: interaction feedback, settled well inside the 200ms bound. */
+.btn,
+.field-input,
+.site-nav-link,
+.auth-link,
+.toast-dismiss,
+.disclosure-summary,
+.tile-disclosure-summary {
+  transition:
+    background-color var(--motion-fast) var(--ease-in-out),
+    border-color var(--motion-fast) var(--ease-in-out),
+    color var(--motion-fast) var(--ease-in-out),
+    transform var(--motion-base) var(--ease-in-out);
+}
+
+/* No transition on .card: every card on this site is a container, not a
+   control, so nothing triggers a hover state on one. The component contract
+   reserves the lift for interactive cards, and there are none yet — a
+   transition with no trigger is dead weight, and animating box-shadow would
+   also break the transform/opacity-only rule for no visible benefit. */
+
+/* FR-017: the lift applies to keyboard focus as well as the pointer — a
+   keyboard user should get the same feedback, not a lesser one. */
+.btn:hover:not(:disabled),
+.btn:focus-visible:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* The chevron turns rather than jumping (FR-017). */
+.disclosure-summary::after,
+.tile-disclosure-summary::after {
+  transition: transform var(--motion-base) var(--ease-in-out);
+}
+
+/* FR-016: one brief entrance per render. Turbo Drive replaces the body on
+   navigation, so this replays on every page without any JavaScript.
+
+   FR-016b: the keyframe ends on the visible state and the element is not
+   hidden to begin with beyond the first frames, so content is readable whether
+   or not the animation runs — and under reduced motion it is over in 0.01ms. */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .page-enter {
+    animation: page-enter var(--motion-entrance) var(--ease-out) 1 both;
+  }
+}
+
+/* FR-018: Turbo swaps a submit button's label while the form is in flight. The
+   button also stops inviting another click while that is true. */
+.btn[disabled],
+form[aria-busy="true"] .btn {
+  cursor: progress;
+}
+
+/* The notification layer: sticky at the top of the content, zero height so it
+   occupies no space, and clear of the header at every width. */
+@layer components {
+  .toast-layer {
+    position: sticky;
+    top: var(--spacing-4);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--spacing-3);
+    height: 0;
+    pointer-events: none;
+  }
+}
+
+/* The full-brand screens lead with the mark, so it is sized generously and
+   scales with the viewport rather than sitting at one fixed size. Height drives
+   it and width follows the viewBox, so the artwork's proportions are kept. */
+.brand-stacked .brand-mark {
+  width: auto;
+  /* Larger than the box the vector trace needed: the supplied PNG carries
+     transparent padding — the artwork occupies 1273x890 of its 1448x1086
+     canvas — so the same box height would render the mark about a fifth
+     smaller. The file is untouched; only the box it is drawn into grew. */
+  height: clamp(8.5rem, 34vw, 16rem);
+}
+
+/* The logo fades in on the sign-in and sign-up screens (FR-022).
+
+   Three parts, a beat apart, so the brand assembles rather than all arriving at
+   once: the mark, then the wordmark, then the tagline. The whole thing is over
+   in under a second and plays exactly once — `1 both`, never a loop.
+
+   Opacity and a slight scale only, so no frame touches layout or paint. The
+   keyframe ends on the resting state and `both` holds it there afterwards, so
+   the brand is complete and correct once it has run; under reduced motion the
+   global block flattens both duration and delay and it is simply there. */
+@keyframes brand-fade-in {
+  from {
+    opacity: 0;
+    filter: blur(16px);
+    transform: scale(0.92);
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .brand-stacked .brand-wordmark,
+  .brand-stacked .brand-tagline {
+    animation: brand-fade-in var(--motion-brand) var(--ease-brand) 1 both;
+  }
+
+  .brand-stacked .brand-wordmark {
+    animation-delay: 180ms;
+  }
+
+  .brand-stacked .brand-tagline {
+    animation-delay: 340ms;
+  }
+}
+
+.brand-stacked .brand-wordmark-display {
+  font-size: clamp(2rem, 11vw, var(--text-display));
+}

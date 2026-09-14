@@ -1,59 +1,57 @@
 <%# 003 FR-011: every active wish, with enough of each wisher's own locker details
     for a reader to judge whether a swap is worth proposing. The viewer's own wish
     is listed like anyone else's. %>
-<div id="locker-wish-list" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-  <h2 class="text-lg font-semibold tracking-tight">Everyone looking for a locker</h2>
+<div id="locker-wish-list" class="card stack-tight">
+  <h2 class="card-title">Everyone looking for a locker</h2>
 
   <% if @locker_wishes.any? %>
     <%# The table is the one thing here allowed to scroll sideways on a narrow
         screen; the page itself must not. %>
-    <div class="mt-4 overflow-x-auto">
-      <table class="w-full text-left text-sm">
+    <div class="table-scroll">
+      <table class="data-table">
         <thead>
-          <tr class="border-b border-slate-200 text-slate-500">
-            <th scope="col" class="py-2 pr-4 text-left font-medium">Looking for floor</th>
-            <th scope="col" class="py-2 pr-4 text-left font-medium">Person</th>
-            <th scope="col" class="py-2 pr-4 text-left font-medium">Their floor</th>
-            <th scope="col" class="py-2 pr-4 text-left font-medium">Their locker</th>
+          <tr>
+            <th scope="col">Looking for floor</th>
+            <th scope="col">Person</th>
+            <th scope="col">Their floor</th>
+            <th scope="col">Their locker</th>
             <%# 004 FR-001: the swap starts here, on the row of the person being
                 asked. %>
-            <th scope="col" class="py-2 text-left font-medium">Swap</th>
+            <th scope="col">Swap</th>
           </tr>
         </thead>
 
         <tbody>
           <% @locker_wishes.each do |wish| %>
             <% row_id = "locker-wish-row-#{wish.user_id}" %>
-            <tr id="<%= row_id %>" class="border-b border-slate-100 last:border-0">
-              <td id="<%= row_id %>-floor" class="py-3 pr-4 font-medium text-slate-900"><%= wish.floor %></td>
-              <td id="<%= row_id %>-person" class="py-3 pr-4 text-slate-900"><%= wish.user.email %></td>
+            <tr id="<%= row_id %>">
+              <td id="<%= row_id %>-floor" class="strong"><%= wish.floor %></td>
+              <td id="<%= row_id %>-person"><%= wish.user.email %></td>
 
               <%# Edge Case: never having saved a floor is distinct from having no
                   locker, and neither is an error — both are plain status text. %>
-              <td id="<%= row_id %>-current-floor"
-                  class="py-3 pr-4 <%= wish.user.saved_floor.present? ? "text-slate-900" : "text-slate-500" %>">
+              <td id="<%= row_id %>-current-floor" class="<%= "detail-value-empty" if wish.user.saved_floor.blank? %>">
                 <%= wish.user.saved_floor.presence || "Not set" %>
               </td>
 
-              <td id="<%= row_id %>-current-locker"
-                  class="py-3 pr-4 <%= wish.user.saved_locker_number.present? ? "text-slate-900" : "text-slate-500" %>">
+              <td id="<%= row_id %>-current-locker" class="<%= "detail-value-empty" if wish.user.saved_locker_number.blank? %>">
                 <%= wish.user.saved_locker_number.presence || "No locker assigned" %>
               </td>
 
               <%# 004: every reason a swap cannot be proposed is said plainly on
                   the row itself, rather than offering a control that is only
                   going to be refused (FR-002, FR-004, FR-018). %>
-              <td id="<%= row_id %>-swap" class="py-3">
+              <td id="<%= row_id %>-swap">
                 <% if wish.user_id == current_user.id %>
-                  <span class="text-slate-500">This is you</span>
+                  <span class="meta">This is you</span>
                 <% elsif @viewer_in_progress %>
-                  <span class="text-slate-500">You already have an exchange in progress</span>
+                  <span class="meta">You already have an exchange in progress</span>
                 <% elsif @pending_recipient_ids.include?(wish.user_id) %>
-                  <span class="text-slate-500">Proposal pending</span>
+                  <span class="badge badge-info">Proposal pending</span>
                 <% else %>
                   <%= button_to "Propose swap", locker_swap_proposals_path,
                         params: { locker_swap_proposal: { recipient_id: wish.user_id } },
-                        class: "cursor-pointer rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2" %>
+                        class: "btn btn-primary btn-sm", form: { data: { turbo_submits_with: "Proposing…" } } %>
                 <% end %>
               </td>
             </tr>
@@ -63,7 +61,7 @@
     </div>
   <% else %>
     <%# Acceptance Scenario 2: nobody looking is an ordinary state to report. %>
-    <p id="locker-wish-list-empty" class="mt-4 text-slate-500">
+    <p id="locker-wish-list-empty" class="empty-state">
       Nobody is looking for a locker right now.
     </p>
   <% end %>

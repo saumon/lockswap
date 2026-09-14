@@ -14,6 +14,13 @@ class LockerProfileTest < ApplicationSystemTestCase
   # control; someone who has nothing saved is shown it outright. Waiting on the
   # field keeps the caller from typing into a disclosure that has not opened yet.
   def open_locker_editor
+    # 008: wait out any Turbo preview before clicking. Opening the disclosure on a
+    # cached snapshot acts on a DOM about to be replaced, and the fresh page
+    # arrives with it shut again. This guards that race; it is not a cure for the
+    # separate, pre-existing keystroke-drop flakiness this file also suffers on a
+    # loaded machine (see fill_in_reliably).
+    wait_for_turbo
+
     find("summary", text: "Edit locker details").click
     # Opening the disclosure reflows the page. Waiting for the submit button —
     # the last thing to settle — keeps a later click from being aimed at where

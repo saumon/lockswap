@@ -4,8 +4,8 @@
     the content underneath twice — once on arrival and again on departure. %>
 <%
   notifications = [
-    [ notice, "status", "border-emerald-200 bg-emerald-50 text-emerald-800" ],
-    [ alert,  "alert",  "border-rose-200 bg-rose-50 text-rose-800" ]
+    [ notice, "status", "toast-success" ],
+    [ alert,  "alert",  "toast-error" ]
   ].select { |message, _role, _palette| message.present? }
 %>
 
@@ -18,11 +18,17 @@
       both hide and take the clicks for — and over the empty margin beside the
       content rather than over the content itself. The container stays full
       width so a narrow screen shrinks the message instead of pushing it off
-      the left edge. %>
-  <div data-turbo-temporary
-       class="pointer-events-none fixed inset-x-0 top-20 z-50 flex flex-col items-end gap-3 px-4">
+      the left edge.
+
+      008: the layer is sticky at the top of <main> with zero height rather than
+      fixed at a hard-coded offset. A fixed offset assumed a one-line header; at
+      360px the navigation wraps and the message landed on top of it. Anchoring
+      to <main> keeps it clear of the header at every width with no magic number,
+      and zero height means it still takes no layout space — notification_test
+      asserts <main>'s rectangle is identical with and without a message. %>
+  <div data-turbo-temporary class="toast-layer">
     <% notifications.each do |message, role, palette| %>
-      <div class="pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-md border px-4 py-3 text-sm shadow-lg <%= palette %>"
+      <div class="toast pointer-events-auto <%= palette %>"
            role="<%= role %>"
            data-controller="notification"
            data-notification-duration-value="<%= Rails.configuration.x.notification_auto_dismiss_ms %>"
@@ -37,7 +43,7 @@
         <button type="button"
                 aria-label="Dismiss notification"
                 data-action="notification#dismiss"
-                class="-mr-1 shrink-0 rounded px-1 text-lg leading-none opacity-60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-current">
+                class="toast-dismiss">
           &times;
         </button>
       </div>

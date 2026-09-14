@@ -62,7 +62,8 @@ and confirm it once the lockers have actually changed hands. The details being n
 still while that plays out, and the history says what each proposal was about without anyone having
 had to write it down. Locker numbers are counted per floor, the way they are on the doors. What the
 application says back — saved, sent, refused — shows itself for a few seconds and then gets out of
-the way.
+the way. And it now looks like a product rather than a scaffold: a logo, a typeface, a white canvas
+and a small amount of movement, applied the same way on every screen.
 
 | Feature | Status |
 | --- | --- |
@@ -73,6 +74,7 @@ the way.
 | **005 — Locker field lock and swap history** | ✅ Shipped |
 | **006 — Per-floor locker numbers** | ✅ Shipped |
 | **007 — Self-dismissing notifications** | ✅ Shipped |
+| **008 — Visual identity and white theme** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -200,6 +202,57 @@ What feature 007 changes — see
 * two messages on the same page stack rather than one quietly standing in for the other, and a long
   one wraps and grows downwards instead of spilling out of the window.
 
+What feature 008 brings — see
+[`specs/008-visual-identity-refresh/spec.md`](specs/008-visual-identity-refresh/spec.md):
+
+* the application has a **logo**: two lockers changing places, with arrows circling them. The sign-in
+  and sign-up screens show the supplied artwork as an image, downscaled but otherwise untouched, at
+  more than twice the size it is ever drawn at so it stays crisp on any display; the master it came
+  from is kept alongside it in `brand/`. Everywhere the mark has to be small or animated — the header
+  of every signed-in page, the browser tab, the installed-app icon, where it replaces the red circle
+  Rails ships as a placeholder — it is a vector form of the same mark, traced from that artwork by
+  colour rather than redrawn by eye;
+* **the sign-in and sign-up screens have no menu bar.** They open on the logo instead, shown large
+  with the wordmark and the tagline beneath it — a header there would have put the brand on the page
+  twice and held nothing else, since every control in it belongs to someone already signed in;
+* the **wordmark is real text, not a picture**: `Lock` in the brand navy and `Swap` in the brand
+  green, set in the brand typeface. It stays selectable, it is read out properly by a screen reader,
+  and if the drawing ever fails to load the name is still there and still links home;
+* the **colours come from the artwork itself**, sampled rather than eyeballed, and are declared once
+  as named tokens that every screen refers to — so there is one place to change a colour, and no
+  screen can quietly drift away from the others;
+* **the brand green is not used for text.** Against white it sits at 2.66:1, which is below the
+  legibility floor for reading. It stays in the logo, where the accessibility standard exempts a
+  brand name, and everything else that needs to be green — buttons, confirmations, saved states —
+  uses a darker green chosen to pass comfortably. A logo may be a logo; a button has to be readable;
+* the typeface is **served from this application, never from a font host**. A third-party font
+  service sees the address of every visitor who loads a page, and that is not a thing to hand over
+  for a typeface. One file, 39 kB, covers every weight the site uses;
+* **every screen was restyled**, including the account-settings page, which until now was the
+  unstyled scaffold Devise generates. Buttons, form fields, cards, badges, empty states and
+  notifications each have one definition and are reused, in place of the same long string of styling
+  copied from template to template;
+* nothing was **added, removed or reworded**. Layouts were rearranged where that made a screen
+  clearer; what is on each screen, and what you can do there, is exactly what it was. The one
+  exception is the tagline on the sign-in and sign-up pages;
+* there is **movement, and it is restrained**: content eases in as a page loads, controls answer the
+  pointer and the keyboard, and a button says it is working while a form is in flight. There are no
+  reveals that wait for you to scroll, and no animation between pages — both age badly, and the
+  first can leave content invisible;
+* on the sign-in and sign-up screens **the logo comes out of a fog**: it fades up from a blur over
+  about a second, the mark first and then the wordmark and the tagline a beat behind it, so the brand
+  assembles rather than landing all at once. It plays once and never repeats, it settles sharp, and
+  the mark in the header of the signed-in screens does not do it at all — a logo that animates on
+  every navigation is a tic;
+* **anyone who has asked their system to reduce motion gets none of it**, with every screen still
+  complete and fully usable. That is not an afterthought switch: it is asserted by the test suite;
+* every screen is checked for **accessibility on every test run** — contrast, a visible focus ring on
+  everything reachable by keyboard, names on every control, headings in order — so a regression fails
+  the build rather than reaching a reader. The keyboard is also walked across the rearranged screens
+  to confirm it still moves through them in the order the eye does;
+* the refresh **cost nothing in speed**: the page paints at the same moment it did before, measured
+  before and after, and the whole visual identity adds about 40 kB.
+
 ## 🧭 Method: Spec-Driven Development
 
 The project is built with **SDD** using [Spec Kit](https://github.com/github/spec-kit): the
@@ -229,10 +282,11 @@ A conventional Rails monolith, server-rendered, with no separate frontend.
 | Framework | Ruby on Rails 8.1.3 |
 | Authentication | Devise (`database_authenticatable`, `registerable`, `rememberable`, `lockable`, `validatable`) |
 | Database | SQLite through Active Record |
-| Styling | Tailwind CSS 4.3 (the `tailwindcss-rails` gem, no Node dependency) |
+| Styling | Tailwind CSS 4.3 (the `tailwindcss-rails` gem, no Node dependency), with the design tokens declared in `@theme` |
+| Typeface | Nunito, self-hosted (SIL OFL) — one variable file, latin subset, no third-party font host |
 | Browser behaviour | Hotwire — Turbo, and Stimulus over importmap; no bundler, no `package.json` |
 | App server | Puma |
-| Tests | Minitest + Rails system tests (Capybara, headless Chrome) |
+| Tests | Minitest + Rails system tests (Capybara, headless Chrome), with axe-core accessibility audits |
 | Quality | RuboCop (`rubocop-rails-omakase`), Brakeman |
 | Deployment | Docker + Kamal |
 
@@ -264,13 +318,19 @@ start at `/users/sign_up`.
 
 ```sh
 bin/rails test         # models, controllers, and views
-bin/rails test:system  # end-to-end signup, login, lockout, redirect, locker-details, wish, swap, and notification flows
+bin/rails test:system  # end-to-end signup, login, lockout, redirect, locker-details, wish, swap, and notification flows,
+                       # plus an accessibility audit of every screen and the reduced-motion behaviour
 bin/rubocop            # lint (zero warnings tolerated)
 bin/brakeman           # static security analysis
 ```
 
 CI replays all of it on every pull request ([`.github/workflows/ci.yml`](.github/workflows/ci.yml));
 a failure blocks the merge.
+
+The accessibility audit runs as an ordinary system test, screen by screen, so a contrast failure or a
+control that cannot be reached by keyboard breaks the build like any other regression. It carries one
+documented exemption — the colour contrast of the brand wordmark, which the WCAG standard exempts as
+a logotype — and that exemption is scoped to that one element and that one rule.
 
 ## 🔍 Validate a feature by hand
 
@@ -299,7 +359,12 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
 * [`specs/007-toast-notifications/quickstart.md`](specs/007-toast-notifications/quickstart.md) —
   a confirmation arriving and leaving on its own, a refusal doing the same in its own colour,
   dismissing one by hand, the countdown holding while the pointer rests on it, two of them stacking,
-  and the page underneath staying exactly where it was.
+  and the page underneath staying exactly where it was;
+* [`specs/008-visual-identity-refresh/quickstart.md`](specs/008-visual-identity-refresh/quickstart.md) —
+  walking all twelve screens, the reduced-motion switch removing every animation while leaving the
+  interface whole, no content waiting on a scroll to appear, the keyboard showing where it is
+  throughout, nothing scrolling sideways at 360 px, the typeface loading without a flash of invisible
+  text, and no request leaving for a third party.
 
 ## 🚢 Deploy
 

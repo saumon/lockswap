@@ -1,4 +1,6 @@
 require "test_helper"
+require "axe/api"
+require "axe/core"
 
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ]
@@ -16,7 +18,207 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   # login that had failed. Waiting longer costs nothing when the page is ready.
   Capybara.default_max_wait_time = 5
 
+  # 008 FR-028: every screen is audited for accessibility as part of the standard
+  # suite, so a violation blocks merge rather than waiting to be noticed.
+  #
+  # axe-core-api ships no Minitest matcher — be_axe_clean is RSpec-only — so this
+  # wraps the plain API. Capybara's `page` is handed straight to Axe::Core, whose
+  # wrap_driver unwraps anything responding to #driver.
+  #
+  #   within:    audit only part of the page, for screens not yet restyled
+  #   excluding: drop a subtree from the audit
+  #   skipping:  drop a rule, which needs a comment at the call site saying why
+  def assert_axe_clean(within: nil, excluding: nil, skipping: nil)
+    # Audit the settled page. The entrance animation fades content in over a few
+    # hundred milliseconds, and axe measures whatever colour is on screen at the
+    # moment it runs — mid-fade that is the text blended into the background,
+    # which reports a contrast failure that no reader ever sees. Waiting is not
+    # papering over anything: the settled state is the state being asserted.
+    wait_for_entrance
+
+    exclusions = Array(excluding) + [ LOGOTYPE ]
+
+    # Pass one: every rule, everywhere except the wordmark.
+    audit_page(within:, excluding: exclusions, skipping:)
+
+    # Pass two: the wordmark, under every rule except colour contrast.
+    #
+    # The brand green is #0AB486, which is 2.66:1 on white — below both the
+    # 4.5:1 text bar and the 3:1 non-text bar. It stays that colour because
+    # WCAG 2.1 SC 1.4.3 exempts "text that is part of a logo or brand name"
+    # from the contrast requirement, and this is the wordmark. axe cannot know
+    # an element is a logotype, so the exemption has to be stated here.
+    #
+    # The exemption is deliberately narrow: one rule, one element. Every other
+    # rule still applies to the wordmark, and every other element on the page
+    # is still held to contrast — including anything else green, which uses
+    # --color-accent (#07795A, 5.40:1) precisely because this exemption does
+    # not extend to it.
+    audit_page(within: LOGOTYPE, skipping: Array(skipping) + [ "color-contrast" ]) if page.has_css?(LOGOTYPE, wait: 0)
+  end
+
+  # FR-015b: restructuring a layout is allowed, but the keyboard must still walk
+  # it in the order the eye does. Driving this with real Tab presses rather than
+  # reading the DOM is the point — tabindex, disabled and visibility all change
+  # what is reachable, and only the browser knows the true answer.
+  def assert_tab_order_follows_visual_order(row_tolerance: 24)
+    rects = keyboard_tab_rects
+    assert_operator rects.size, :>=, 2, "expected at least two focusable elements on the page"
+
+    rects.each_cons(2) do |a, b|
+      same_row = (b["top"] - a["top"]).abs <= row_tolerance
+      ordered = same_row ? b["left"] >= a["left"] : b["top"] > a["top"]
+
+      assert ordered,
+        "tab order jumps backwards: #{a["name"].inspect} at (#{a["top"]},#{a["left"]}) " \
+        "then #{b["name"].inspect} at (#{b["top"]},#{b["left"]})"
+    end
+  end
+
+  # The brand wordmark, which carries the one documented axe exemption.
+  LOGOTYPE = ".brand-wordmark".freeze
+
+  # Blocks until Turbo has replaced its cached preview with the real page.
+  #
+  # Turbo Drive paints a cached snapshot first and marks it with
+  # <html data-turbo-preview> while the fresh copy is still in flight. A click
+  # that lands on the preview acts on a DOM about to be thrown away: a disclosure
+  # opened there is closed again the moment the real page arrives, and the test
+  # then fails looking for a field that is present but hidden. Waiting for the
+  # attribute to clear removes the race at its source rather than retrying
+  # around it.
+  def wait_for_turbo(timeout: 5)
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
+
+    loop do
+      previewing = page.evaluate_script(
+        "document.documentElement.hasAttribute('data-turbo-preview')"
+      )
+      return unless previewing
+      return if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+
+      sleep 0.05
+    end
+  end
+
+  # Emulates the OS "reduce motion" preference for the rest of the test.
+  # Chromium's driver carries DriverExtensions::HasCDP, so this is available
+  # without any extra gem.
+  #
+  # The emulation is cleared in teardown. The browser is shared across tests in
+  # this single-worker suite, so leaving it set would silently put every later
+  # test into reduced motion — and a test asserting motion exists would then
+  # pass for the wrong reason.
+  def emulate_reduced_motion
+    @emulated_media = true
+    page.driver.browser.execute_cdp(
+      "Emulation.setEmulatedMedia",
+      features: [ { name: "prefers-reduced-motion", value: "reduce" } ]
+    )
+  end
+
+  teardown do
+    if @emulated_media
+      page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", features: [])
+      @emulated_media = nil
+    end
+  end
+
+  # Chrome reports a 0.01ms duration as "1e-05s", so compare numerically rather
+  # than against a spelling.
+  def seconds_in(css_duration)
+    css_duration.to_s.split(",").first.to_s.strip.sub(/s\z/, "").to_f
+  end
+
   private
+
+    # Blocks until the page entrance has finished, so colours are measured at
+    # their final values. Returns immediately on a page with no entrance.
+    def wait_for_entrance(timeout: 5)
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
+
+      loop do
+        settled = page.evaluate_script(<<~JS)
+          (() => {
+            const el = document.querySelector(".page-enter");
+            if (!el) return true;
+            if (typeof document.getAnimations !== "function") return true;
+            return document.getAnimations().every(a => a.playState !== "running");
+          })()
+        JS
+
+        return if settled
+        return if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+
+        sleep 0.05
+      end
+    end
+
+    def audit_page(within: nil, excluding: nil, skipping: nil)
+      run = Axe::API::Run.new.according_to(:wcag2a, :wcag2aa, :wcag21a, :wcag21aa)
+      run = run.within(*Array(within)) if within
+      run = run.excluding(*Array(excluding)) if excluding.present?
+      run = run.skipping(*Array(skipping)) if skipping.present?
+
+      audit = Axe::Core.new(page).call(run)
+      assert audit.passed?, audit.failure_message
+    end
+
+    # Walks the page with real Tab presses, returning the position and a readable
+    # name for each element the keyboard reaches inside <main>, in the order it
+    # reaches them.
+    #
+    # Scoped to the content of <main> deliberately, and fixed overlays are
+    # skipped. The header banner and the notification overlay are both pinned to
+    # the viewport, so their coordinates say nothing about the reading order of
+    # the document; and the walk wraps back round to the header once it runs off
+    # the end of the content. The notification also dismisses itself after a few
+    # seconds, so counting it would make the walk depend on timing.
+    def keyboard_tab_rects(limit: 60)
+      # Reset sequential focus navigation to the start of the document. Clicking
+      # the body is not enough: Chrome resumes tabbing from wherever the click
+      # landed, so the walk would start in the middle of the page.
+      page.execute_script(<<~JS)
+        document.body.setAttribute("tabindex", "-1");
+        document.body.focus();
+        document.body.removeAttribute("tabindex");
+        window.scrollTo(0, 0);
+      JS
+
+      rects = []
+      entered_main = false
+
+      limit.times do
+        page.driver.browser.action.send_keys(:tab).perform
+        focused = page.evaluate_script(<<~JS)
+          (() => {
+            const el = document.activeElement;
+            if (!el || el === document.body) return null;
+            const r = el.getBoundingClientRect();
+            const name = (el.innerText || el.value || el.getAttribute("aria-label") || el.tagName || "").trim();
+            const overlay = el.closest("[role=status], [role=alert]") ||
+                            (el.closest("main > div") && getComputedStyle(el.closest("main > div")).position === "fixed");
+            return {
+              inMain: !!el.closest("main") && !overlay,
+              top: Math.round(r.top),
+              left: Math.round(r.left),
+              name: name.slice(0, 40)
+            };
+          })()
+        JS
+
+        break if focused.nil?
+
+        if focused["inMain"]
+          entered_main = true
+          rects << focused.slice("top", "left", "name")
+        elsif entered_main
+          break # walked off the end of the content and back into the chrome
+        end
+      end
+
+      rects
+    end
 
     # ChromeDriver drops keystrokes when the machine is busy: they are reported
     # as delivered, the field stays empty, and the form then submits blank — the

@@ -11,46 +11,63 @@
 
     <%= yield :head %>
 
+    <%# 008 FR-006: the brand mark, not the scaffold placeholder. %>
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
+    <meta name="theme-color" content="#0E2A47">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
-    <header class="border-b border-slate-200 bg-white">
-      <nav class="mx-auto flex max-w-3xl items-center justify-between px-5 py-4" aria-label="Main">
-        <%# The wordmark is the way back to the homepage, as it is on most sites.
-            A visitor who is not logged in lands on the login page instead, the
-            same as any other attempt to reach the homepage. %>
-        <%= link_to "LockSwap", root_path,
-              class: "rounded-md text-lg font-semibold tracking-tight hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
+  <body>
+    <%# 008: sign-in and sign-up opt out of the header. They already lead with the
+        full stacked lock-up, so a header would put the brand on the page twice;
+        and the bar carries nothing else for a visitor who is not signed in — the
+        navigation and the sign-out control are both behind user_signed_in?. Set
+        explicitly by those two templates rather than inferred from the session,
+        so a future public page still gets a header unless it asks not to. %>
+    <% unless content_for?(:hide_site_header) %>
+      <header class="site-header">
+        <nav class="site-nav" aria-label="Main">
+          <%# The brand is the way back to the homepage, as it is on most sites.
+              A visitor who is not logged in lands on the login page instead, the
+              same as any other attempt to reach the homepage. %>
+          <%= render "shared/brand_lockup" %>
 
-        <%# FR-009: the sign-out control is only meaningful for a signed-in visitor. %>
-        <% if user_signed_in? %>
-          <div class="flex items-center gap-4">
-            <%# 003 FR-005: the "I'm looking for a locker" button lives on this page, so
-                it has to be reachable from wherever the user happens to be. %>
-            <%= link_to "Locker wishes", locker_wishes_path,
-                  class: "text-sm font-medium text-slate-700 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
-            <%# 004 FR-015: the history is a separate screen, so it needs a way in
-                from anywhere too. %>
-            <%= link_to "Proposal history", locker_swap_proposals_path,
-                  class: "text-sm font-medium text-slate-700 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
-            <span class="hidden text-sm text-slate-600 sm:inline"><%= current_user.email %></span>
-            <%= button_to "Log out", destroy_user_session_path, method: :delete,
-                  class: "rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
-          </div>
-        <% end %>
-      </nav>
-    </header>
+          <%# FR-009: the sign-out control is only meaningful for a signed-in visitor. %>
+          <% if user_signed_in? %>
+            <div class="row">
+              <%# 003 FR-005: the "I'm looking for a locker" button lives on that page,
+                  so it has to be reachable from wherever the user happens to be. %>
+              <%= link_to "Locker wishes", locker_wishes_path, class: "site-nav-link" %>
 
-    <main class="mx-auto w-full max-w-3xl px-5 py-10">
+              <%# 004 FR-015: the history is a separate screen, so it needs a way in
+                  from anywhere too. %>
+              <%= link_to "Proposal history", locker_swap_proposals_path, class: "site-nav-link" %>
+
+              <%# 008: the email is what truncates on a narrow screen — never the
+                  brand, never the controls. %>
+              <span class="site-nav-identity"><%= current_user.email %></span>
+
+              <%= button_to "Log out", destroy_user_session_path, method: :delete,
+                    class: "btn btn-secondary" %>
+            </div>
+          <% end %>
+        </nav>
+      </header>
+    <% end %>
+
+    <main class="site-main">
       <%= render "layouts/flash" %>
-      <%= yield %>
+
+      <%# 008 FR-016: content eases in once per render. Turbo Drive replaces the
+          body on navigation, so this replays without any JavaScript. %>
+      <div class="page-enter">
+        <%= yield %>
+      </div>
     </main>
   </body>
 </html>
