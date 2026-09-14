@@ -1,24 +1,19 @@
 <%# 004 FR-009/FR-019: the proposals this user is waiting on an answer for, each
     withdrawable right up until that answer lands. Rendered only when there is
     something here, so a user with no swap activity sees no swap section at all. %>
-<div id="swap-proposals-sent" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-  <h2 class="text-lg font-semibold tracking-tight">Proposals you sent</h2>
+<div id="swap-proposals-sent" class="card stack-tight">
+  <h2 class="card-title">Proposals you sent</h2>
 
-  <ul class="mt-4 space-y-3">
+  <ul class="stack-tight">
     <% @sent_pending_proposals.each do |proposal| %>
-      <li id="swap-proposal-sent-<%= proposal.id %>"
-          class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 p-4">
+      <li id="swap-proposal-sent-<%= proposal.id %>" class="tile tile-head">
         <div>
-          <p class="text-slate-900">
-            Waiting on <span class="font-medium"><%= proposal.recipient.email %></span>
-          </p>
-          <p class="text-sm text-slate-500">
-            Sent <%= l proposal.created_at, format: :long %>
-          </p>
+          <p>Waiting on <span class="strong"><%= proposal.recipient.email %></span></p>
+          <p class="meta">Sent <%= l proposal.created_at, format: :long %></p>
         </div>
 
         <%= button_to "Withdraw", locker_swap_proposal_path(proposal), method: :delete,
-              class: "cursor-pointer rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400" %>
+              class: "btn btn-secondary btn-sm", form: { data: { turbo_submits_with: "Withdrawing…" } } %>
       </li>
     <% end %>
   </ul>

@@ -1,30 +1,35 @@
 <% content_for :title, "Log in" %>
+<% content_for :hide_site_header, true %>
 
-<div class="mx-auto w-full max-w-sm">
-  <h1 class="mb-6 text-2xl font-semibold tracking-tight">Log in</h1>
+<div class="auth-page">
+  <%# 008 FR-003: sign-in and sign-up are the full-brand screens. %>
+  <%= render "shared/brand_stacked" %>
 
-  <%# novalidate: a failed login is always answered by the same generic
-      server-side message (FR-006), never by a browser-specific one. %>
-  <%= form_for(resource, as: resource_name, url: session_path(resource_name),
-               html: { class: "space-y-5", novalidate: true }) do |f| %>
-    <div>
-      <%= f.label :email, class: "block text-sm font-medium text-slate-700" %>
-      <%= f.email_field :email, autofocus: true, autocomplete: "email",
-            class: "mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400" %>
-    </div>
+  <div class="card stack">
+    <h1 class="page-title">Log in</h1>
 
-    <div>
-      <%= f.label :password, class: "block text-sm font-medium text-slate-700" %>
-      <%= f.password_field :password, autocomplete: "current-password",
-            class: "mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400" %>
-    </div>
+    <%# novalidate: a failed login is always answered by the same generic
+        server-side message (FR-006), never by a browser-specific one. %>
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name),
+                 html: { class: "stack-tight", novalidate: true }) do |f| %>
+      <div class="field">
+        <%= f.label :email, class: "field-label" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "field-input" %>
+      </div>
 
-    <%= f.submit "Log in",
-          class: "w-full cursor-pointer rounded-md bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2" %>
-  <% end %>
+      <div class="field">
+        <%= f.label :password, class: "field-label" %>
+        <%= f.password_field :password, autocomplete: "current-password", class: "field-input" %>
+      </div>
 
-  <p class="mt-6 text-sm text-slate-600">
-    Don't have an account?
-    <%= link_to "Sign up", new_user_registration_path, class: "font-medium text-slate-900 underline underline-offset-2 hover:no-underline" %>
-  </p>
+      <%# 008 FR-018: Turbo swaps the label while the form is in flight, so the
+          control says it is working rather than appearing frozen. %>
+      <%= f.submit "Log in", class: "btn btn-primary w-full", data: { turbo_submits_with: "Logging in…" } %>
+    <% end %>
+
+    <p class="meta">
+      Don't have an account?
+      <%= link_to "Sign up", new_user_registration_path, class: "auth-link" %>
+    </p>
+  </div>
 </div>

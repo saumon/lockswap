@@ -1,0 +1,18 @@
+<%#
+  008 FR-003: the horizontal lockup — mark beside wordmark — used in the site
+  header on every page.
+
+  The wordmark is live HTML text, not SVG paths. That keeps it selectable and
+  natively announced, gives FR-027's fallback for free (if the SVG fails to
+  render there is still a styled, correctly coloured, clickable wordmark), and
+  keeps `click_on "LockSwap"` working: Capybara matches links by visible text,
+  and this project does not set Capybara.enable_aria_label, so an image-only
+  brand would break test/system/navigation_test.rb.
+
+  The two spans carry no whitespace between them so the accessible name reads
+  as the single word "LockSwap".
+%>
+<%= link_to root_path, class: "brand-lockup" do %>
+  <%= render "shared/brand_mark", size: 32 %>
+  <span class="brand-wordmark"><span class="brand-wordmark-lock">Lock</span><span class="brand-wordmark-swap">Swap</span></span>
+<% end %>

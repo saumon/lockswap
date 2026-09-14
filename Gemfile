@@ -63,6 +63,16 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+
+  # Accessibility assertions for the system suite (008 FR-028). The gem bundles
+  # its own axe.min.js, so there is no npm step and nothing to pin in the
+  # importmap. Deliberately not axe-core-capybara: that gem's configure step
+  # reassigns Capybara.default_driver and would discard the headless Chrome
+  # driver and screen size set in test/application_system_test_case.rb.
+  # require: false because the gem ships no axe-core-api.rb — its entry points are
+  # "axe/api" and "axe/core", which test/application_system_test_case.rb requires
+  # directly. Without this, Bundler's auto-require fails at boot.
+  gem "axe-core-api", require: false
 end
 
 gem "devise", "~> 5.0"

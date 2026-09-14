@@ -1,0 +1,42 @@
+<%#
+  008 FR-003: the stacked lockup — mark over wordmark over tagline — for the
+  full-brand screens, which are sign-in and sign-up.
+
+  These two screens use the supplied artwork as a raster image. The master is
+  kept untouched at brand/brand-mark-source.png (1448x1086, 500KB, byte-for-byte
+  what was handed over); what ships is a straight downscale of it to 800x600,
+  which is still well over twice the largest size it is ever drawn at and is
+  indistinguishable from the master at that size, while costing 59KB instead of
+  500KB. The vector trace in shared/_brand_mark is what the header and the icons
+  use, where the mark is small and has to recolour.
+
+  FR-003a: the tagline is rendered in English so it matches the interface. The
+  French original from the source artwork stays in the brand files and must not
+  appear on any page.
+
+  FR-022: the logo fades up out of a blur once, and never loops.
+%>
+<div class="brand-stacked">
+  <%# Deliberately large here: sign-in and sign-up are the full-brand screens,
+      and the mark is the thing a visitor should meet first. The stylesheet
+      scales it down fluidly on a narrow screen.
+
+      alt is empty on purpose — the wordmark right below it already names the
+      brand, so a screen reader announcing the image too would just repeat it.
+
+      width and height are the file's own, so the box is reserved before the
+      image arrives and nothing jumps when it does. %>
+  <%# fetchpriority high because this is the hero of the page: it should be
+      fetched ahead of anything else the browser finds. %>
+  <%= image_tag "brand-mark.png",
+        alt: "",
+        width: 800,
+        height: 600,
+        fetchpriority: "high",
+        data: { brand_mark: true },
+        class: "brand-mark brand-mark-flourish" %>
+
+  <p class="brand-wordmark brand-wordmark-display"><span class="brand-wordmark-lock">Lock</span><span class="brand-wordmark-swap">Swap</span></p>
+
+  <p class="brand-tagline">Find the locker that suits you</p>
+</div>

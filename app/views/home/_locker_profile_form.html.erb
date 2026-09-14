@@ -6,24 +6,30 @@
 <%# novalidate: the server decides what is valid, so every failure is reported
     the same way rather than some by the browser and some by the app. %>
 <%= form_with model: current_user, url: locker_profile_path, method: :patch,
-              html: { class: "space-y-5", novalidate: true } do |f| %>
-  <div>
-    <%= f.label :floor, class: "block text-sm font-medium text-slate-700" %>
-    <%= f.text_field :floor, autocomplete: "off",
-          class: "mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400" %>
+              html: { class: "stack-tight", novalidate: true } do |f| %>
+  <div class="field">
+    <%= f.label :floor, class: "field-label" %>
+    <%= f.text_field :floor, autocomplete: "off", class: "field-input" %>
   </div>
 
-  <div>
-    <%= f.label :locker_number, class: "block text-sm font-medium text-slate-700" %>
+  <div class="field">
+    <%= f.label :locker_number, class: "field-label" %>
     <%= f.text_field :locker_number, autocomplete: "off",
-          aria: { describedby: "locker_number_hint" },
-          class: "mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400" %>
+          aria: { describedby: "locker_number_hint" }, class: "field-input" %>
     <%# FR-002/FR-008: say up front that this one is optional. %>
-    <p id="locker_number_hint" class="mt-1 text-sm text-slate-500">
+    <p id="locker_number_hint" class="field-hint">
       Leave empty if you have no locker assigned.
     </p>
   </div>
 
-  <%= f.submit "Save locker details",
-        class: "w-full cursor-pointer rounded-md bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2" %>
+  <%# 008 FR-018: deliberately NO data-turbo-submits-with here.
+      Turbo swaps this control's value attribute while the form is in flight, and
+      a page snapshot taken during that window caches the button showing the busy
+      label. A later restore then renders a button whose value no longer matches,
+      and the next click lands on an element Turbo is about to replace — the
+      submit is silently dropped. Reproduced against locker_profile_test.rb: the
+      edit saved in isolation and did nothing once other tests had populated the
+      cache. The in-progress cue for this form is the disabled/progress cursor
+      rule in the stylesheet, which needs no attribute swap. %>
+  <%= f.submit "Save locker details", class: "btn btn-primary" %>
 <% end %>

@@ -6,17 +6,19 @@
 <%# novalidate: the server decides what is valid, so every failure is reported the
     same way rather than some by the browser and some by the app. %>
 <%= form_with model: @locker_wish, url: locker_wish_path, method: :post,
-              html: { class: "space-y-5", novalidate: true } do |f| %>
-  <div>
-    <%= f.label :floor, class: "block text-sm font-medium text-slate-700" %>
+              html: { class: "stack-tight", novalidate: true } do |f| %>
+  <div class="field">
+    <%= f.label :floor, class: "field-label" %>
     <%= f.text_field :floor, autocomplete: "off",
-          aria: { describedby: "locker_wish_floor_hint" },
-          class: "mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400" %>
-    <p id="locker_wish_floor_hint" class="mt-1 text-sm text-slate-500">
+          aria: { describedby: "locker_wish_floor_hint" }, class: "field-input" %>
+    <p id="locker_wish_floor_hint" class="field-hint">
       The floor you would like a locker on.
     </p>
   </div>
 
-  <%= f.submit "Save my wish",
-        class: "w-full cursor-pointer rounded-md bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2" %>
+  <%# 008 FR-018: no data-turbo-submits-with — see the note in
+      app/views/home/_locker_profile_form.html.erb. Turbo's label swap on an
+      <input type="submit"> interacts badly with the page cache, and this
+      control's value is asserted on by locker_wish_test.rb. %>
+  <%= f.submit "Save my wish", class: "btn btn-primary" %>
 <% end %>

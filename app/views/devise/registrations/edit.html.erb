@@ -1,42 +1,57 @@
-<h2>Edit <%= resource_name.to_s.humanize %></h2>
+<% content_for :title, "Account settings" %>
 
-<%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
-  <%= render "devise/shared/error_messages", resource: resource %>
+<div class="auth-page">
+  <div class="card stack">
+    <h1 class="page-title">Edit <%= resource_name.to_s.humanize %></h1>
 
-  <div class="field">
-    <p><%= f.label :email %></p>
-    <p><%= f.email_field :email, autofocus: true, autocomplete: "email" %></p>
-  </div>
+    <%= render "devise/shared/error_messages", resource: resource %>
 
-  <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-    <div>Currently waiting confirmation for: <%= resource.unconfirmed_email %></div>
-  <% end %>
+    <%= form_for(resource, as: resource_name, url: registration_path(resource_name),
+                 html: { method: :put, class: "stack-tight" }) do |f| %>
+      <div class="field">
+        <%= f.label :email, class: "field-label" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "field-input" %>
+      </div>
 
-  <div class="field">
-    <p><%= f.label :password %> <i>(leave blank if you don't want to change it)</i></p>
-    <p><%= f.password_field :password, autocomplete: "new-password" %></p>
-    <% if @minimum_password_length %>
-      <p><em><%= @minimum_password_length %> characters minimum</em></p>
+      <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+        <p class="field-hint">Currently waiting confirmation for: <%= resource.unconfirmed_email %></p>
+      <% end %>
+
+      <div class="field">
+        <%= f.label :password, class: "field-label" %>
+        <%= f.password_field :password, autocomplete: "new-password",
+              aria: { describedby: "edit_password_hint" }, class: "field-input" %>
+        <p id="edit_password_hint" class="field-hint">
+          (leave blank if you don't want to change it)<% if @minimum_password_length %> — <%= @minimum_password_length %> characters minimum<% end %>
+        </p>
+      </div>
+
+      <div class="field">
+        <%= f.label :password_confirmation, class: "field-label" %>
+        <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "field-input" %>
+      </div>
+
+      <div class="field">
+        <%= f.label :current_password, class: "field-label" %>
+        <%= f.password_field :current_password, autocomplete: "current-password",
+              aria: { describedby: "current_password_hint" }, class: "field-input" %>
+        <p id="current_password_hint" class="field-hint">
+          (we need your current password to confirm your changes)
+        </p>
+      </div>
+
+      <%= f.submit "Update", class: "btn btn-primary", data: { turbo_submits_with: "Updating…" } %>
     <% end %>
   </div>
 
-  <div class="field">
-    <p><%= f.label :password_confirmation %></p>
-    <p><%= f.password_field :password_confirmation, autocomplete: "new-password" %></p>
+  <div class="card stack-tight">
+    <h2 class="card-title">Cancel my account</h2>
+    <p class="card-lead">Unhappy?</p>
+    <div class="row">
+      <%= button_to "Cancel my account", registration_path(resource_name),
+            data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" },
+            method: :delete, class: "btn btn-destructive" %>
+      <%= link_to "Back", :back, class: "btn btn-secondary" %>
+    </div>
   </div>
-
-  <div class="field">
-    <p><%= f.label :current_password %> <i>(we need your current password to confirm your changes)</i></p>
-    <p><%= f.password_field :current_password, autocomplete: "current-password" %></p>
-  </div>
-
-  <div class="actions">
-    <%= f.submit "Update" %>
-  </div>
-<% end %>
-
-<h3>Cancel my account</h3>
-
-<div>Unhappy? <%= button_to "Cancel my account", registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete %></div>
-
-<%= link_to "Back", :back %>
+</div>
