@@ -5,43 +5,52 @@
   <h2 class="card-title">Everyone looking for a locker</h2>
 
   <% if @locker_wishes.any? %>
-    <%# The table is the one thing here allowed to scroll sideways on a narrow
-        screen; the page itself must not. %>
+    <%# 012 FR-005: below the breakpoint this stops being a table and becomes one
+        stacked card per record — every field labelled from its data-label, the
+        row's action right there, nothing behind a sideways swipe. Above it, the
+        table it has always been, which is why .table-scroll stays: at that width
+        a long row is still allowed its own scroll container, and the page still
+        is not.
+
+        The explicit roles are what make the restack safe. Changing an element's
+        display drops its implicit table role, so restating the roles keeps the
+        accessibility tree correct in both forms (FR-005d). Above the breakpoint
+        they duplicate what the element already provides, harmlessly. %>
     <div class="table-scroll">
-      <table class="data-table">
+      <table class="data-table" role="table">
         <thead>
-          <tr>
-            <th scope="col">Looking for floor</th>
-            <th scope="col">Person</th>
-            <th scope="col">Their floor</th>
-            <th scope="col">Their locker</th>
+          <tr role="row">
+            <th scope="col" role="columnheader">Looking for floor</th>
+            <th scope="col" role="columnheader">Person</th>
+            <th scope="col" role="columnheader">Their floor</th>
+            <th scope="col" role="columnheader">Their locker</th>
             <%# 004 FR-001: the swap starts here, on the row of the person being
                 asked. %>
-            <th scope="col">Swap</th>
+            <th scope="col" role="columnheader">Swap</th>
           </tr>
         </thead>
 
         <tbody>
           <% @locker_wishes.each do |wish| %>
             <% row_id = "locker-wish-row-#{wish.user_id}" %>
-            <tr id="<%= row_id %>">
-              <td id="<%= row_id %>-floor" class="strong"><%= wish.floor %></td>
-              <td id="<%= row_id %>-person"><%= wish.user.email %></td>
+            <tr id="<%= row_id %>" role="row">
+              <td id="<%= row_id %>-floor" class="strong" role="cell" data-label="Looking for floor"><%= wish.floor %></td>
+              <td id="<%= row_id %>-person" role="cell" data-label="Person"><%= wish.user.email %></td>
 
               <%# Edge Case: never having saved a floor is distinct from having no
                   locker, and neither is an error — both are plain status text. %>
-              <td id="<%= row_id %>-current-floor" class="<%= "detail-value-empty" if wish.user.saved_floor.blank? %>">
+              <td id="<%= row_id %>-current-floor" role="cell" data-label="Their floor" class="<%= "detail-value-empty" if wish.user.saved_floor.blank? %>">
                 <%= wish.user.saved_floor.presence || "Not set" %>
               </td>
 
-              <td id="<%= row_id %>-current-locker" class="<%= "detail-value-empty" if wish.user.saved_locker_number.blank? %>">
+              <td id="<%= row_id %>-current-locker" role="cell" data-label="Their locker" class="<%= "detail-value-empty" if wish.user.saved_locker_number.blank? %>">
                 <%= wish.user.saved_locker_number.presence || "No locker assigned" %>
               </td>
 
               <%# 004: every reason a swap cannot be proposed is said plainly on
                   the row itself, rather than offering a control that is only
                   going to be refused (FR-002, FR-004, FR-018). %>
-              <td id="<%= row_id %>-swap">
+              <td id="<%= row_id %>-swap" role="cell" data-label="Swap">
                 <% if wish.user_id == current_user.id %>
                   <span class="meta">This is you</span>
                 <% elsif @viewer_in_progress %>

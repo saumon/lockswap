@@ -177,4 +177,74 @@ class AccessibilityTest < ApplicationSystemTestCase
   # The proposal history is deliberately absent here: it is read-only, with no
   # focusable control inside <main> at all, so there is no tab order on it to
   # get wrong. Its restructuring is covered by the axe audit above instead.
+
+  # --- 012: the narrow treatment --------------------------------------------
+
+  # FR-024: the accessibility audit runs at the phone width too, to the same
+  # conformance level, and covers the state with the menu panel open — which is
+  # a state that only exists below the breakpoint and would otherwise never be
+  # audited at all.
+  test "the homepage is accessible at the phone width" do
+    log_in_as @user
+
+    with_viewport(:phone) do
+      assert_axe_clean
+    end
+  end
+
+  test "the open menu panel is accessible" do
+    log_in_as @user
+
+    with_viewport(:phone) do
+      find(".site-menu-toggle").click
+      assert_selector ".site-menu-panel a", text: "Locker wishes", visible: true
+
+      assert_axe_clean
+    end
+  end
+
+  # FR-005d: the restacked lists are the R2 gate. Flipping display on table
+  # elements drops their implicit roles, so this is what proves the explicit
+  # roles put them back — and that a screen-reader user still meets each record
+  # as a set of labelled fields rather than as loose text.
+  test "the locker wishes list is accessible as stacked cards" do
+    log_in_as @user
+    visit locker_wishes_path
+
+    with_viewport(:phone) do
+      # Guard against a vacuous pass: an empty list renders no table at all, and
+      # auditing the empty state would prove nothing about the restack.
+      assert_selector ".data-table tbody tr", minimum: 1
+
+      assert_axe_clean
+    end
+  end
+
+  test "the proposal history is accessible as stacked cards" do
+    log_in_as users(:bob)
+    visit locker_swap_proposals_path
+
+    with_viewport(:phone) do
+      assert_selector ".data-table tbody tr", minimum: 1
+
+      assert_axe_clean
+    end
+  end
+
+  # FR-024 for the signed-out screens. They carry no header, so the menu is not
+  # in play here — what is being audited is the auth column itself at the width
+  # a new visitor most often meets it at.
+  test "sign in is accessible at the phone width" do
+    with_viewport(:phone) do
+      visit new_user_session_path
+      assert_axe_clean
+    end
+  end
+
+  test "sign up is accessible at the phone width" do
+    with_viewport(:phone) do
+      visit new_user_registration_path
+      assert_axe_clean
+    end
+  end
 end

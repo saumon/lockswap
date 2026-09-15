@@ -144,11 +144,127 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
     )
   end
 
+  # 012 FR-022: the viewports this feature is held to. One breakpoint at 48rem
+  # (768px) separates the narrow treatment from the wide one, so :phone is a
+  # width that is unambiguously below it and :desktop one unambiguously above —
+  # :desktop is the suite's existing screen_size, so every test that does not
+  # ask for a viewport keeps running at exactly the size it always did.
+  #
+  # :minimum is the 320px floor from FR-022a. It is swept for overflow only: it
+  # is the width where a layout breaks first, and it is not otherwise sampled.
+  VIEWPORTS = {
+    minimum: [ 320, 568 ],
+    phone: [ 390, 844 ],
+    desktop: [ 1400, 1400 ]
+  }.freeze
+
+  # Runs the block with the viewport overridden to one of VIEWPORTS.
+  #
+  # This drives the *viewport*, not the OS window. resize_to sets the outer
+  # window, which leaves the viewport smaller by whatever the browser chrome
+  # happens to occupy — an unknown offset, and useless for a test whose entire
+  # subject is a breakpoint at an exact width. setDeviceMetricsOverride sets the
+  # number media queries actually read.
+  #
+  # Cleared in teardown for the same reason emulate_reduced_motion is: the
+  # browser is shared across tests in this single-worker suite, so a leaked
+  # override would silently put every later test at phone width — and a test
+  # asserting the desktop bar would then fail for a reason that has nothing to
+  # do with the code under test.
+  def with_viewport(name)
+    width, height = VIEWPORTS.fetch(name)
+    @emulated_metrics = true
+    page.driver.browser.execute_cdp(
+      "Emulation.setDeviceMetricsOverride",
+      width: width, height: height, deviceScaleFactor: 0, mobile: name != :desktop
+    )
+    yield
+  ensure
+    clear_viewport_override
+  end
+
+  # FR-001 / FR-022a: the page itself must never scroll sideways. The table is
+  # allowed its own scroll container above the breakpoint; the document is not.
+  def assert_no_horizontal_overflow(context = nil)
+    overflow = page.evaluate_script(<<~JS)
+      (() => {
+        const el = document.documentElement;
+        return { scroll: el.scrollWidth, client: el.clientWidth };
+      })()
+    JS
+
+    assert_operator overflow["scroll"], :<=, overflow["client"],
+      "page scrolls horizontally#{" at #{context}" if context}: " \
+      "scrollWidth #{overflow["scroll"]} exceeds clientWidth #{overflow["client"]}"
+  end
+
+  # FR-007 / FR-025: standalone controls have to be a real target under a thumb.
+  #
+  # Measured rather than asserted by inspection, and scoped to the controls the
+  # requirement actually names. Links sitting inline in a sentence are exempt
+  # (FR-007a) — a 44px-tall link inside a paragraph would wreck the line
+  # spacing, which is why the recognised target-size guidance carves them out.
+  # checkVisibility rather than a rect test. A control inside a closed <details>,
+  # or inside the treatment container that is display:none at this width, still
+  # reports a bounding box — measuring those would fail this assertion on
+  # controls no one can reach, and would have hidden the ones that matter.
+  STANDALONE_CONTROLS = ".btn, .site-nav-link, summary, input[type=submit], button".freeze
+  INLINE_LINK_EXEMPT = ".auth-link".freeze
+
+  def assert_touch_targets_at_least(minimum = 44)
+    # Measure the settled page, for the same reason assert_axe_clean does.
+    # Content fades in, and checkVisibility(checkOpacity: true) reports an
+    # element mid-fade as not visible — so a control measured too early is not
+    # measured at all, and the assertion quietly has nothing to check. The
+    # signed-in screens happened to be past their entrance by the time the
+    # assertion ran; the auth screens, which carry the longer brand flourish,
+    # were not.
+    wait_for_entrance
+
+    measured = page.evaluate_script(<<~JS)
+      (() => {
+        const exempt = #{INLINE_LINK_EXEMPT.inspect};
+        return Array.from(document.querySelectorAll(#{STANDALONE_CONTROLS.inspect}))
+          .filter(el => !el.matches(exempt) && !el.closest(exempt))
+          .filter(el => el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }))
+          .map(el => {
+            const r = el.getBoundingClientRect();
+            const name = (el.innerText || el.value || el.getAttribute("aria-label") || el.tagName || "").trim();
+            return { name: name.slice(0, 40), w: Math.round(r.width), h: Math.round(r.height) };
+          });
+      })()
+    JS
+
+    # Without this, a page where the selector matched nothing — or where the
+    # visibility filter turned out to reject everything — would pass this
+    # assertion silently, and would keep passing after the rule it is meant to
+    # protect had been deleted.
+    assert_not_empty measured,
+      "no standalone controls were measured; the assertion would pass vacuously"
+
+    undersized = measured.select { |t| t["w"] < minimum || t["h"] < minimum }
+
+    assert_empty undersized,
+      "controls below the #{minimum}px touch target: " +
+        undersized.map { |t| "#{t["name"].inspect} #{t["w"]}x#{t["h"]}" }.join(", ")
+  end
+
   teardown do
     if @emulated_media
       page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", features: [])
       @emulated_media = nil
     end
+
+    clear_viewport_override
+  end
+
+  # 012: safe to call when nothing is overridden, so teardown does not have to
+  # know whether the test used with_viewport.
+  def clear_viewport_override
+    return unless @emulated_metrics
+
+    page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
+    @emulated_metrics = nil
   end
 
   # Chrome reports a 0.01ms duration as "1e-05s", so compare numerically rather

@@ -24,6 +24,41 @@ class NavigationTest < ApplicationSystemTestCase
     assert_link "Proposal history"
   end
 
+  # 012 FR-009: at and above the breakpoint the destinations are in the bar, with
+  # nothing to open first. The suite's default screen size is already wide, but
+  # asserting the viewport explicitly keeps this true if that default ever moves.
+  test "the wide treatment puts the destinations in the bar with no toggle" do
+    log_in_as users(:carol)
+
+    with_viewport(:desktop) do
+      assert_no_selector ".site-menu-toggle", visible: true
+      assert_selector ".site-bar", visible: true
+
+      within ".site-bar" do
+        assert_link "Locker wishes"
+        assert_link "Proposal history"
+        assert_button "Log out"
+      end
+    end
+  end
+
+  # 012: each treatment has its own container, so exactly one copy of each
+  # control may ever be on screen — FR-011 and the "no control appears twice"
+  # edge case. This is the assertion that would catch a display rule going
+  # missing and both containers showing at once.
+  test "exactly one copy of each destination is visible at any width" do
+    log_in_as users(:carol)
+
+    with_viewport(:desktop) do
+      assert_selector "header a", text: "Locker wishes", count: 1, visible: true
+    end
+
+    with_viewport(:phone) do
+      find(".site-menu-toggle").click
+      assert_selector "header a", text: "Locker wishes", count: 1, visible: true
+    end
+  end
+
   test "the wordmark takes a logged-in visitor back to the homepage" do
     log_in_as users(:carol)
     visit locker_wishes_path

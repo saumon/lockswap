@@ -1,0 +1,58 @@
+<%#
+  012 — the signed-in menu, in its two treatments.
+
+  Below the breakpoint the menu is a disclosure: the bar is the brand and a
+  toggle, and the panel holds everything else. At and above it, the bar this
+  header has always had.
+
+  WHY TWO CONTAINERS RATHER THAN ONE.
+
+  The first attempt rendered a single <details> and took it apart on wide
+  screens with `display: contents` plus `::details-content { content-visibility:
+  visible }`. Visually that works — the panel lays out in the bar with a real
+  box, and Chrome reports the content as visible. It was still wrong.
+
+  Content inside a closed <details> is treated as hidden by the platform no
+  matter what the computed style says. The WebDriver displayedness algorithm
+  states it outright: a non-summary descendant of a <details> without `open` is
+  not displayed. Tooling built on that agrees, and it is a fair bet assistive
+  technology does too. A desktop bar whose links are "visible" only to sighted
+  users reading pixels is not a bar that satisfies FR-011, and it would have
+  been a silent accessibility regression rather than a visible bug.
+
+  So each treatment gets its own container and exactly one is ever displayed —
+  `display: none` on the other, which removes it from the accessibility tree
+  entirely. No control is ever announced twice, and no control is ever present
+  but unreachable. Both containers are filled from shared/_site_menu_items, so
+  there is still one source of truth for what the menu contains.
+
+  The disclosure is <details> because that is the site's disclosure already
+  (002/009's locker editor, 003's wish panel, 005's decline form), and because
+  opening, closing, keyboard operation and expanded/collapsed announcement are
+  native — the menu works with no script at all (FR-010b). Escape and
+  outside-click come from site_menu_controller.js on top of that; if it never
+  loads, the toggle still opens and closes the panel (FR-010b-ii).
+
+  Do not hand-write aria-expanded, aria-controls or role on the summary. The
+  element supplies them, and overriding them is how this pattern gets broken.
+%>
+
+<%# The narrow treatment. Hidden at and above the breakpoint. %>
+<details class="site-menu" data-controller="site-menu">
+  <%# The accessible name describes the destination, not the drawing: someone
+      hearing it announced needs to know this is the way into the navigation,
+      which is what FR-017 asks for. aria-label rather than visible text because
+      the control is an icon — the same choice 009's pencil made. %>
+  <summary class="site-menu-toggle" aria-label="Menu">
+    <span class="site-menu-toggle-bars" aria-hidden="true"></span>
+  </summary>
+
+  <div class="site-menu-panel">
+    <%= render "shared/site_menu_items" %>
+  </div>
+</details>
+
+<%# The wide treatment. Hidden below the breakpoint. %>
+<div class="site-bar">
+  <%= render "shared/site_menu_items" %>
+</div>

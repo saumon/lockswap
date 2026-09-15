@@ -37,25 +37,11 @@
               same as any other attempt to reach the homepage. %>
           <%= render "shared/brand_lockup" %>
 
-          <%# FR-009: the sign-out control is only meaningful for a signed-in visitor. %>
-          <% if user_signed_in? %>
-            <div class="row">
-              <%# 003 FR-005: the "I'm looking for a locker" button lives on that page,
-                  so it has to be reachable from wherever the user happens to be. %>
-              <%= link_to "Locker wishes", locker_wishes_path, class: "site-nav-link" %>
-
-              <%# 004 FR-015: the history is a separate screen, so it needs a way in
-                  from anywhere too. %>
-              <%= link_to "Proposal history", locker_swap_proposals_path, class: "site-nav-link" %>
-
-              <%# 008: the email is what truncates on a narrow screen — never the
-                  brand, never the controls. %>
-              <span class="site-nav-identity"><%= current_user.email %></span>
-
-              <%= button_to "Log out", destroy_user_session_path, method: :delete,
-                    class: "btn btn-secondary" %>
-            </div>
-          <% end %>
+          <%# FR-009: the sign-out control is only meaningful for a signed-in visitor.
+              012: the menu itself moved to shared/_site_menu, which carries both
+              treatments. It stays a sibling of the brand rather than wrapping it,
+              so the brand is never inside the collapsed disclosure (FR-012). %>
+          <%= render "shared/site_menu" if user_signed_in? %>
         </nav>
       </header>
     <% end %>
