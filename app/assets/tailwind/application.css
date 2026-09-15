@@ -220,6 +220,16 @@
     margin: 0;
   }
 
+  /* The wordmark inside a running line of text, where it is the sentence that
+     sets the type and the wordmark only brings its colours. Without this the
+     brand name would shrink to the lock-up's own size mid-heading. */
+  .brand-wordmark-inline {
+    font-size: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+  }
+
   .brand-wordmark-lock {
     color: var(--color-brand-navy);
   }
@@ -423,6 +433,30 @@
     content: "⚠ ";
   }
 
+  /* 009 FR-001: the first-entry choice controls. They read as text rather than
+     as buttons on purpose — one of them sits under the locker number field as a
+     way past it, and a second filled button next to Save would compete with it
+     for the eye. align-self keeps each one the width of its own words inside the
+     form's column. */
+  .field-link-action {
+    align-self: flex-start;
+    padding: var(--spacing-1) 0;
+    background: none;
+    border: 0;
+    color: var(--color-link);
+    font-family: inherit;
+    font-size: var(--text-label);
+    font-weight: 600;
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+
+  .field-link-action:hover {
+    text-decoration: none;
+  }
+
   /* --- Cards and panels ---------------------------------------------------- */
   .card {
     background-color: var(--color-surface);
@@ -466,7 +500,8 @@
 
   /* --- Disclosure ---------------------------------------------------------
      Native <details>/<summary>, kept native: it is the accessible, JS-free
-     choice, and two tests find the summary by its text. */
+     choice. The labelled variant below is found in tests by its summary text;
+     the icon-only one (009) by its aria-label, since it has no text to find. */
   .disclosure {
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -508,6 +543,55 @@
   .disclosure-body {
     border-top: 1px solid var(--color-border);
     padding: var(--spacing-6);
+  }
+
+  /* 009 FR-007: the same disclosure, reduced to a pencil in the corner of the
+     card it edits. The summary is taken out of the flow rather than placed in a
+     row with the heading: <summary> and the form it opens have to be siblings,
+     so anything that put the pencil beside the title would open the form there
+     too, in the width left over next to a heading.
+
+     That leaves the <details> itself an empty box until it is opened, which is
+     why the rule that separates the form from the values below sits on the body
+     and not on the box — a closed editor would otherwise draw a line across the
+     card for no reason. */
+  .locker-profile {
+    position: relative;
+  }
+
+  .locker-profile-editor-summary {
+    position: absolute;
+    /* Centred against the card title's line box, and pulled out by its own
+       padding so the drawing lines up with the card's content edge rather than
+       the hit area's. */
+    top: calc(var(--spacing-6) - 0.125rem);
+    right: var(--spacing-5);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Same 2.25rem floor as .btn-sm: a control this small still has to be a
+       reasonable target on a touchscreen. */
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-sm);
+    color: var(--color-ink-muted);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .locker-profile-editor-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .locker-profile-editor-summary:hover {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+  }
+
+  .locker-profile-editor-body {
+    border-top: 1px solid var(--color-border);
+    margin-top: var(--spacing-5);
+    padding-top: var(--spacing-5);
   }
 
   /* --- Status badges ------------------------------------------------------
@@ -853,7 +937,9 @@
 .auth-link,
 .toast-dismiss,
 .disclosure-summary,
-.tile-disclosure-summary {
+.tile-disclosure-summary,
+.locker-profile-editor-summary,
+.field-link-action {
   transition:
     background-color var(--motion-fast) var(--ease-in-out),
     border-color var(--motion-fast) var(--ease-in-out),

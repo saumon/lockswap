@@ -2,7 +2,13 @@
 
 <div class="stack">
   <div class="card stack-tight">
-    <h1 class="page-title">Welcome to LockSwap</h1>
+    <%# The brand name set in the brand's own two colours, the same treatment the
+        header and the sign-in lock-up give it. It carries .brand-wordmark because
+        that is what the accessibility audit keys its logotype exemption on — the
+        green is 2.66:1 and is allowed on a brand name and nowhere else. No
+        whitespace between the two halves: "LockSwap" has to keep reading as one
+        word, which is what every log-in assertion in the suite looks for. %>
+    <h1 class="page-title">Welcome to <span class="brand-wordmark brand-wordmark-inline"><span class="brand-wordmark-lock">Lock</span><span class="brand-wordmark-swap">Swap</span></span></h1>
     <p class="card-lead">
       You are logged in as <span class="strong"><%= current_user.email %></span>.
     </p>
@@ -21,39 +27,30 @@
       so an empty locker number reads as "none assigned" rather than as an open
       prompt, and someone who has answered is not asked again on every visit. %>
   <% if current_user.saved_floor.present? %>
-    <%= render "home/locker_profile" %>
-
     <%# 005 FR-003: while a proposal is outstanding these values are what the
         other party is answering, so the edit control gives way to the reason.
-        A rejected submission still gets the form back below — otherwise a
-        request that reached the controller some other way would be refused with
-        nowhere to read why. %>
-    <% if LockerSwapProposal.active_for?(current_user) && current_user.errors.empty? %>
+        A rejected submission still gets the form back — otherwise a request that
+        reached the controller some other way would be refused with nowhere to
+        read why. 009: the control now lives in the card, so what is withheld
+        here is the card's pencil rather than a block of its own. %>
+    <% locked = LockerSwapProposal.active_for?(current_user) && current_user.errors.empty? %>
+
+    <%= render "home/locker_profile", editable: !locked %>
+
+    <% if locked %>
       <div id="locker-profile-locked" class="card">
         <p class="card-lead">
           Your floor and locker number cannot be changed while you have an active swap
           proposal. They can be edited again once it is declined, withdrawn, or completed.
         </p>
       </div>
-    <% else %>
-      <%# FR-009: editing is deliberate, so the form sits behind this control. A
-          rejected submission reopens it, otherwise the error would have nowhere to
-          show. <details> gives the disclosure keyboard and screen reader support
-          without any JavaScript of its own. %>
-      <details class="disclosure" <%= "open" if current_user.errors.any? %>>
-        <summary class="disclosure-summary">
-          Edit locker details
-        </summary>
-
-        <div class="disclosure-body">
-          <%= render "home/locker_profile_form" %>
-        </div>
-      </details>
     <% end %>
   <% else %>
     <div class="card stack-tight">
       <h2 class="card-title">Add your locker details</h2>
-      <%= render "home/locker_profile_form" %>
+      <%# 009 FR-001: only here is the choice offered — a first answer is the one
+          place where "no locker" is still an open question. %>
+      <%= render "home/locker_profile_form", show_no_locker_choice: true %>
     </div>
   <% end %>
 </div>

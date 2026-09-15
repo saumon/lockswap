@@ -3,7 +3,34 @@ require "axe/api"
 require "axe/core"
 
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
-  driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ]
+  # Tells chromedriver where Chrome is, which Rails otherwise leaves it to guess.
+  #
+  # Rails resolves the chromedriver path eagerly — Browser#preload, so parallel
+  # workers do not race to download it — and assigns it to Service.driver_path.
+  # Selenium's DriverFinder then short-circuits on that path for the rest of the
+  # run (paths_from_service), returning a driver path and nothing else: the
+  # browser path Selenium Manager hands back alongside it is dropped, so
+  # options.binary is never set and chromedriver is left to find Chrome itself.
+  #
+  # It finds one on any machine with a system install, which is why CI and most
+  # laptops never see this. Where the only Chrome is the one Selenium Manager
+  # downloaded into ~/.cache/selenium — no system install, the common case under
+  # WSL — there is nothing on PATH to find and every system test dies before it
+  # starts, on "session not created: cannot find Chrome binary".
+  #
+  # Asking Selenium Manager directly bypasses the short-circuit. Where a system
+  # Chrome does exist this resolves to it and changes nothing; CHROME_BIN is
+  # there to point at a specific build without editing this file.
+  driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ] do |options|
+    options.binary ||= ENV["CHROME_BIN"].presence || begin
+      Selenium::WebDriver::SeleniumManager.binary_paths("--browser", "chrome")["browser_path"]
+    rescue StandardError => e
+      # Leave it unset rather than failing here: where Chrome is on PATH,
+      # chromedriver still finds it on its own and the run is unaffected.
+      Rails.logger.debug { "Selenium Manager could not resolve a Chrome binary: #{e.message}" }
+      nil
+    end
+  end
 
   # One process, whatever the suite grows to. Minitest parallelises past 50 tests,
   # and 003 pushed the system suite over that line: eleven workers meant eleven
