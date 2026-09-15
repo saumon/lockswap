@@ -101,33 +101,33 @@ class MotionTest < ApplicationSystemTestCase
     assert_no_selector ".turbo-page-transition"
   end
 
-  # FR-022: the logo fades in on the full-brand screens, once, and settles fully
-  # visible. Staged — mark, then wordmark, then tagline — so the brand assembles
-  # rather than arriving all at once.
+  # 008 FR-022: the logo fades in on the full-brand screens, once, and settles
+  # fully visible. Staged — mark, then wordmark, then tagline — so the brand
+  # assembles rather than arriving all at once.
+  #
+  # 011 adds a second animation to the mark, the perpetual pulse. The entrance is
+  # still a single pass and is still what this test is about; the pulse gets its
+  # own tests below.
   test "the logo fades in on the sign-in screen and settles" do
     visit new_user_session_path
-
-    assert_equal "brand-fade-in", page.evaluate_script(
-      "getComputedStyle(document.querySelector('.brand-mark-flourish')).animationName"
-    )
-
-    # Wait for the whole entrance, not just the opacity: the blur runs on past the
-    # point where the logo is fully opaque, and stopping at opacity would assert
-    # against a logo that is still soft.
-    Timeout.timeout(5) do
-      sleep 0.05 until page.evaluate_script(
-        "document.getAnimations().every(a => a.playState !== 'running')"
-      )
-    end
-
-    assert_equal [ 1.0, 1.0, 1.0 ], brand_opacities
 
     # Asserted on the declaration rather than by watching playState: an animation
     # reports its final opacity a frame before it reports itself finished, so
     # polling for "nothing running" races the last frame for no added meaning.
-    assert_equal "1", page.evaluate_script(
-      "getComputedStyle(document.querySelector('.brand-mark-flourish')).animationIterationCount"
-    ), "the flourish must play once, never loop (FR-022)"
+    assert_equal "1", animations_on(".brand-mark-flourish").fetch("brand-fade-in")["iterations"],
+      "the entrance itself must still be a single pass (008 FR-022)"
+
+    # Wait for the whole entrance, not just the opacity: the blur runs on past the
+    # point where the logo is fully opaque, and stopping at opacity would assert
+    # against a logo that is still soft.
+    wait_for_brand_entrance
+
+    # By now the pulse is running, and more often than not it is mid-dip. Park it
+    # at full opacity first: what this measures is where the entrance left the
+    # brand, not where the loop happens to have got to.
+    park_brand_pulse
+
+    assert_equal [ 1.0, 1.0, 1.0 ], brand_opacities
 
     # It resolves sharp: a blur left behind would be a permanently soft logo.
     # The animation's fill holds the final keyframe, so this reads blur(0px)
@@ -161,6 +161,48 @@ class MotionTest < ApplicationSystemTestCase
       "expected a pronounced blur partway through the fade, got #{blur}")
   end
 
+  # 011 FR-001 / FR-004 / FR-005 / FR-006: once the entrance has had its one say,
+  # the mark keeps breathing, so the brand stays the thing that catches the eye on
+  # the screen a visitor meets first.
+  test "the sign-in logo keeps pulsing after the entrance settles" do
+    visit new_user_session_path
+
+    declared = animations_on(".brand-mark-flourish")
+    pulse = declared.fetch("brand-fade-pulse")
+
+    assert_equal "infinite", pulse["iterations"], "the pulse must never stop (FR-005)"
+    assert_in_delta 3.0, seconds_in(pulse["duration"]), 0.001,
+      "one dim-and-brighten cycle is ~3s (FR-005)"
+
+    # Chained to the entrance by delay rather than by an animationend listener:
+    # the pulse's first frame lands exactly where the entrance's held final frame
+    # already is, so the hand-off is invisible and the two never compound.
+    assert_in_delta seconds_in(declared.fetch("brand-fade-in")["duration"]),
+      seconds_in(pulse["delay"]), 0.001,
+      "the loop must wait out the entrance before it starts (FR-006)"
+
+    trough = at_pulse_trough(".brand-mark-flourish")
+
+    assert_equal "0.6", trough["opacity"],
+      "the mark dims to 60% at the bottom of the cycle, never further (FR-004)"
+    assert_equal trough["before"], trough["at"],
+      "the pulse must not move or resize the mark (FR-008)"
+  end
+
+  # FR-002: and the sign-up screen is the same screen as far as the brand is
+  # concerned — both are full-brand, both get the loop.
+  test "the sign-up logo keeps pulsing after the entrance settles" do
+    visit new_user_registration_path
+
+    assert_equal "infinite",
+      animations_on(".brand-mark-flourish").fetch("brand-fade-pulse")["iterations"]
+
+    trough = at_pulse_trough(".brand-mark-flourish")
+
+    assert_equal "0.6", trough["opacity"]
+    assert_equal trough["before"], trough["at"]
+  end
+
   # FR-020 / FR-016b: a reduced-motion visitor gets no fade at all, rather than a
   # flattened one — the animation is not declared for them, so the logo is simply
   # painted at full opacity and can never be left invisible by an entrance that
@@ -171,6 +213,11 @@ class MotionTest < ApplicationSystemTestCase
     assert_selector ".brand-stacked"
 
     assert_equal [ 1.0, 1.0, 1.0 ], brand_opacities
+
+    # Exactly "none", which is also what makes this the 011 FR-007 assertion: the
+    # pulse is declared in the same no-preference block as the entrance, so a
+    # reduced-motion visitor gets neither. Anything else here — including a
+    # flattened "brand-fade-pulse" — means the loop escaped the block.
     assert_equal "none", page.evaluate_script(
       "getComputedStyle(document.querySelector('.brand-mark-flourish')).animationName"
     )
@@ -180,17 +227,127 @@ class MotionTest < ApplicationSystemTestCase
     )
   end
 
-  # The header mark must not fade: a logo that animates on every navigation is a
-  # tic rather than a flourish.
-  test "the header mark does not fade" do
+  # 011 FR-003: the header mark pulses too, so the brand is alive wherever it
+  # appears rather than only on the way in.
+  #
+  # It still must not carry the entrance — a logo that fades up out of a blur on
+  # every navigation is a tic rather than a flourish, which is why `flourish` and
+  # `pulse` stayed two separate locals instead of one.
+  test "the header mark pulses" do
+    log_in_as @user
+
+    declared = animations_on("header [data-brand-mark]")
+
+    assert_equal [ "brand-fade-pulse" ], declared.keys,
+      "the header mark loops, and does nothing else — no entrance (008 FR-022)"
+    assert_equal "infinite", declared["brand-fade-pulse"]["iterations"]
+
+    # Nothing in front of it to wait for, unlike the full-brand screens.
+    assert_in_delta 0.0, seconds_in(declared["brand-fade-pulse"]["delay"]), 0.001
+
+    trough = at_pulse_trough("header [data-brand-mark]")
+
+    assert_equal "0.6", trough["opacity"]
+    assert_equal trough["before"], trough["at"],
+      "the pulse must not move or resize the header mark (FR-008)"
+  end
+
+  # FR-003: on every page, not just the one the user landed on.
+  test "the header mark keeps pulsing across page navigation" do
+    log_in_as @user
+    assert_equal "infinite",
+      animations_on("header [data-brand-mark]").fetch("brand-fade-pulse")["iterations"]
+
+    click_on "Locker wishes"
+    assert_selector "#locker-wish-list"
+
+    assert_equal "infinite",
+      animations_on("header [data-brand-mark]").fetch("brand-fade-pulse")["iterations"]
+  end
+
+  # FR-007: and the reduced-motion visitor gets a still header mark, for the same
+  # reason and by the same mechanism as the full-brand screens above.
+  test "reduced motion leaves the header mark still" do
+    emulate_reduced_motion
     log_in_as @user
 
     assert_equal "none", page.evaluate_script(
       "getComputedStyle(document.querySelector('header [data-brand-mark]')).animationName"
     )
+    assert_equal "1", page.evaluate_script(
+      "getComputedStyle(document.querySelector('header [data-brand-mark]')).opacity"
+    )
   end
 
   private
+
+    # Every CSS animation declared on the first element matching `selector`, keyed
+    # by name. The shorthand can declare more than one at a time — the full-brand
+    # mark runs its one-off entrance and its perpetual pulse together — and
+    # getComputedStyle reports those as parallel comma-separated lists, so reading
+    # any single property in isolation tells you nothing about which animation it
+    # belongs to.
+    def animations_on(selector)
+      page.evaluate_script(<<~JS, selector)
+        (() => {
+          const style = getComputedStyle(document.querySelector(arguments[0]));
+          const parts = (value) => value.split(",").map(v => v.trim());
+          const names = parts(style.animationName);
+          const durations = parts(style.animationDuration);
+          const delays = parts(style.animationDelay);
+          const iterations = parts(style.animationIterationCount);
+          return Object.fromEntries(names.map((name, i) => [ name, {
+            duration: durations[i], delay: delays[i], iterations: iterations[i]
+          } ]));
+        })()
+      JS
+    end
+
+    # Blocks until the brand entrance has finished. The pulse is excluded because
+    # it never finishes by design — waiting on "every animation" would wait out
+    # the timeout on every call.
+    def wait_for_brand_entrance(timeout: 5)
+      Timeout.timeout(timeout) do
+        sleep 0.05 until page.evaluate_script(<<~JS)
+          document.getAnimations()
+            .filter(a => a.animationName !== 'brand-fade-pulse')
+            .every(a => a.playState !== 'running')
+        JS
+      end
+    end
+
+    # Pins every pulse to the start of its delay — ahead of its first frame, where
+    # the mark is at full opacity — and freezes it, so a measurement taken after
+    # this is not racing the loop.
+    def park_brand_pulse
+      page.execute_script(<<~JS)
+        document.getAnimations()
+          .filter(a => a.animationName === 'brand-fade-pulse')
+          .forEach(a => { a.currentTime = 0; a.pause(); });
+      JS
+    end
+
+    # Winds the mark's pulse to the bottom of its cycle and reports both what the
+    # dip costs in opacity and whether the box moved getting there. Opacity is the
+    # only property the keyframes touch, so the two boxes must be identical.
+    def at_pulse_trough(selector)
+      page.evaluate_script(<<~JS, selector)
+        (() => {
+          const mark = document.querySelector(arguments[0]);
+          const box = () => {
+            const r = mark.getBoundingClientRect();
+            return [ r.x, r.y, r.width, r.height ];
+          };
+          const before = box();
+          const pulse = mark.getAnimations()
+            .find(a => a.animationName === 'brand-fade-pulse');
+          const timing = pulse.effect.getComputedTiming();
+          pulse.currentTime = (timing.delay || 0) + (timing.duration / 2);
+          pulse.pause();
+          return { opacity: getComputedStyle(mark).opacity, before: before, at: box() };
+        })()
+      JS
+    end
 
     def brand_opacities
       page.evaluate_script(<<~JS).map(&:to_f)

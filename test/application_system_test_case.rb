@@ -161,6 +161,18 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
 
     # Blocks until the page entrance has finished, so colours are measured at
     # their final values. Returns immediately on a page with no entrance.
+    #
+    # "Finished" means every animation that is going to finish has: the entrance
+    # is staggered across descendants — the tagline on the full-brand screens
+    # starts 340ms in and is real text that the colour-contrast audit reads — so
+    # this deliberately waits on the whole document rather than on .page-enter's
+    # own animations, and stopping at the wrapper would measure text mid-fade.
+    #
+    # Animations declared to loop forever (011: the brand mark's pulse, which is
+    # on screen on every page) are excluded rather than waited for. They never
+    # reach a non-running state, so including them would turn every call into a
+    # full `timeout` stall, and they are perpetual by design: there is no settled
+    # state of theirs to wait for.
     def wait_for_entrance(timeout: 5)
       deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
 
@@ -170,7 +182,9 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
             const el = document.querySelector(".page-enter");
             if (!el) return true;
             if (typeof document.getAnimations !== "function") return true;
-            return document.getAnimations().every(a => a.playState !== "running");
+            return document.getAnimations()
+              .filter(a => a.effect.getTiming().iterations !== Infinity)
+              .every(a => a.playState !== "running");
           })()
         JS
 

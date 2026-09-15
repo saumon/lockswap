@@ -67,7 +67,9 @@ and a small amount of movement, applied the same way on every screen. The first 
 is asked is a question with two answers rather than a form with an optional field in it, and the way
 back into those details is a pencil in the corner of the card instead of a bar announcing itself
 underneath it. And the homepage no longer keeps quiet about what someone is looking for: it says
-which floor they are after, or asks them, in the words that fit what they already hold.
+which floor they are after, or asks them, in the words that fit what they already hold. The logo has
+stopped standing still, too: on the way in, and in the corner of every page after it, the mark
+breathes — slowly, by itself, and not at all for anyone who has asked their system for less movement.
 
 | Feature | Status |
 | --- | --- |
@@ -81,6 +83,7 @@ which floor they are after, or asks them, in the words that fit what they alread
 | **008 — Visual identity and white theme** | ✅ Shipped |
 | **009 — First-entry choice and pencil edit** | ✅ Shipped |
 | **010 — Homepage locker wish block** | ✅ Shipped |
+| **011 — Looping logo fade** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -249,9 +252,10 @@ What feature 008 brings — see
   first can leave content invisible;
 * on the sign-in and sign-up screens **the logo comes out of a fog**: it fades up from a blur over
   about a second, the mark first and then the wordmark and the tagline a beat behind it, so the brand
-  assembles rather than landing all at once. It plays once and never repeats, it settles sharp, and
-  the mark in the header of the signed-in screens does not do it at all — a logo that animates on
-  every navigation is a tic;
+  assembles rather than landing all at once. That entrance plays once and settles sharp, and the mark
+  in the header of the signed-in screens does not do it at all — a logo that fades up out of a blur on
+  every navigation is a tic. (Both marks have gone on quietly breathing since 011, below — a separate
+  animation that starts where this one stops, not a repeat of it);
 * **anyone who has asked their system to reduce motion gets none of it**, with every screen still
   complete and fully usable. That is not an afterthought switch: it is asserted by the test suite;
 * every screen is checked for **accessibility on every test run** — contrast, a visible focus ring on
@@ -307,6 +311,36 @@ What feature 010 adds — see
 * an **outstanding swap proposal changes nothing here**. It freezes the locker card below, because
   those values are what the other side agreed to — but a wish says what someone wants, which no
   proposal has a claim on.
+
+What feature 011 changes — see
+[`specs/011-logo-fade-loop/spec.md`](specs/011-logo-fade-loop/spec.md):
+
+* **the logo no longer goes still.** On the sign-in and sign-up screens it used to arrive out of its
+  blur and then sit there for the rest of the visit; it now keeps **breathing** — fading down to 60%
+  and back over about three seconds, for as long as the screen is up. A logo that moved once, before
+  the reader had settled, was a logo nobody saw move;
+* **the mark in the header does it too**, on every page, for as long as you are signed in. It starts
+  breathing at first paint rather than waiting: there is no entrance in front of it to wait for, and
+  008's reason for keeping the header still was about *that* entrance — a blur fading up on every
+  navigation — not about movement as such;
+* the two animations are **chained, never overlapped**. On the full-brand screens the pulse is held
+  back by exactly as long as the entrance lasts, so its first frame lands on the frame the entrance
+  has just finished holding. Both are at full opacity there, which is why the hand-off cannot be
+  seen — and why the entrance is not left fighting the loop for the same property halfway through;
+* **only the mark breathes, not the wordmark beside it.** In the header the artwork dims while
+  `LockSwap` holds steady: a lock-up whose two halves faded in step would read as the logo coming
+  apart rather than as one mark breathing;
+* it **dims to 60% and no further**. Deep enough to be plainly noticeable — the point is to catch the
+  eye — and shallow enough that the mark never looks like it is failing to load, or disappearing;
+* nothing **moves, resizes or becomes harder to click**. The animation touches opacity and nothing
+  else, so it stays off the layout entirely and rides the compositor rather than repainting — which
+  matters for something that now runs on every page, including while the reader is scrolling. The
+  header logo is a working link to the homepage at every point in the cycle, and the test suite
+  measures the mark's box at the top and the bottom of a pulse to prove it has not budged;
+* **anyone who has asked their system to reduce motion gets none of it**, on either screen. Not a
+  flattened version of it: the rule is not declared for them at all, so the mark is simply painted,
+  still and fully opaque, on the first frame — a loop that relied on being interrupted to reach its
+  resting state is a loop that can leave a logo stranded half-faded.
 
 ## 🧭 Method: Spec-Driven Development
 
@@ -428,7 +462,11 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
 * [`specs/010-homepage-locker-wish-block/quickstart.md`](specs/010-homepage-locker-wish-block/quickstart.md) —
   each of the three states on the account that produces it, the block absent entirely for an account
   that has filled in nothing, the wish appearing and disappearing on the homepage as it is declared
-  and cancelled elsewhere, and the invitation still standing while a swap is outstanding.
+  and cancelled elsewhere, and the invitation still standing while a swap is outstanding;
+* [`specs/011-logo-fade-loop/quickstart.md`](specs/011-logo-fade-loop/quickstart.md) —
+  the sign-in and sign-up logo doing its one-off entrance and then breathing on past it, the header
+  mark breathing from first paint and still going after a navigation, the mark still clicking through
+  to the homepage mid-fade, and the reduced-motion switch leaving both of them perfectly still.
 
 ## 🚢 Deploy
 

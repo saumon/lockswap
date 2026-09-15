@@ -17,16 +17,22 @@
     aria_hidden true when adjacent text already names the brand, which is the
                 usual case; false makes it a labelled standalone image
     flourish    true to arm the one-off arrow animation (sign-in / sign-up only)
+    pulse       true to arm the perpetual opacity loop (011 FR-003)
+
+  flourish and pulse are independent on purpose. The header takes the pulse and
+  not the flourish: an entrance that replays on every navigation is a tic, while
+  a loop is the same motion wherever the mark appears.
 %>
 <%
   size ||= 32
   aria_hidden = true if !defined?(aria_hidden) || aria_hidden.nil?
   flourish = false if !defined?(flourish) || flourish.nil?
+  pulse = false if !defined?(pulse) || pulse.nil?
   width = (size * 649.0 / 547.0).round
   gradient_scope = "ls#{SecureRandom.hex(3)}"
 %>
 <svg data-brand-mark
-     class="brand-mark<%= " brand-mark-flourish" if flourish %>"
+     class="brand-mark<%= " brand-mark-flourish" if flourish %><%= " brand-mark-loop" if pulse %>"
      width="<%= width %>"
      height="<%= size %>"
      viewBox="0 0 649 547"

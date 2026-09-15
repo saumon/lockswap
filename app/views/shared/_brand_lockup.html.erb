@@ -13,6 +13,9 @@
   as the single word "LockSwap".
 %>
 <%= link_to root_path, class: "brand-lockup" do %>
-  <%= render "shared/brand_mark", size: 32 %>
+  <%# 011 FR-003: the mark pulses here too, on every page. Not the wordmark
+      beside it — the loop is on the artwork, and a wordmark dimming in step
+      with it would read as the lock-up coming apart rather than breathing. %>
+  <%= render "shared/brand_mark", size: 32, pulse: true %>
   <span class="brand-wordmark"><span class="brand-wordmark-lock">Lock</span><span class="brand-wordmark-swap">Swap</span></span>
 <% end %>
