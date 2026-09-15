@@ -29,3 +29,14 @@ dave:
   failed_attempts: 0
   floor: "4"
   locker_number: "D07"
+
+# 010: has answered the locker question — floor on file — and said they have no
+# locker, with no wish declared. That is the "I want a locker! 🙏" state on the
+# homepage, and no earlier fixture covers it: carol is floor-only too, but she
+# already carries carol_wish, and deleting a fixture wish inside a test is what
+# the note in locker_wishes.yml exists to avoid.
+erin:
+  email: erin@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  failed_attempts: 0
+  floor: "5"

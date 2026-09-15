@@ -85,6 +85,17 @@ class AccessibilityTest < ApplicationSystemTestCase
   end
 
   # bob is the recipient of alice_pending_to_bob.
+  # 010: the third state of the locker wish block — erin has answered the locker
+  # question with "no locker" and declared no wish. The other two states are
+  # already on screen in the audits around this one: carol carries a wish, dave
+  # carries a locker and no wish.
+  test "home with the ask-for-a-locker invitation is accessible" do
+    log_in_as users(:erin)
+
+    assert_selector "#home-locker-wish"
+    assert_axe_clean
+  end
+
   test "home with a received proposal is accessible" do
     log_in_as users(:bob)
     assert_selector "#swap-proposals-received"

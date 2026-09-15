@@ -35,6 +35,16 @@
         here is the card's pencil rather than a block of its own. %>
     <% locked = LockerSwapProposal.active_for?(current_user) && current_user.errors.empty? %>
 
+    <%# 010 FR-001a: the block lives inside this branch deliberately. Someone who
+        has not answered yet is being asked one question, and a second card
+        inviting them to wish for a locker would compete with it — so the wish
+        block waits until there are details to sit under.
+
+        010 FR-012: and it sits directly above them. The proposal sections above
+        are waiting on an answer, so they keep precedence; the locker card below
+        is reference, so the wish goes in front of it. %>
+    <%= render "home/locker_wish" %>
+
     <%= render "home/locker_profile", editable: !locked %>
 
     <% if locked %>

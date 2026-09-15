@@ -37,6 +37,23 @@ Deferred / TODO placeholders:
     should be recorded instead.
 
 Follow-up TODOs: none blocking.
+
+Amendment 2026-09-15
+====================
+Version change: 1.0.0 → 1.0.1 (PATCH)
+Reason: The constitution named `master` as the integration branch at ratification,
+but the repository's default branch is `dev` (origin/HEAD -> origin/dev) and every
+feature merged so far (001-009) has gone to `dev`. A `master` branch still exists
+but is not where work lands. This corrects a factual branch name so the rule
+describes the repository that exists; no obligation changes, which is why it is a
+PATCH and not a MAJOR.
+
+Modified sections:
+  - II. Testing Standards — coverage-floor branch `master` → `dev`
+  - Development Workflow — pull-request target `master` → `dev`
+
+Raised by /speckit-analyze on feature 010 as finding C1 (CRITICAL): the feature's
+tasks targeted `dev` while this document required `master`.
 -->
 
 # LockSwap Constitution
@@ -73,7 +90,7 @@ Automated tests are the primary evidence that code works and keeps working.
 - Tests MUST be deterministic. Flaky tests MUST be fixed or removed, not
   silenced with retries or skips used as a permanent workaround.
 - Test coverage for core business logic MUST NOT regress below the level
-  established on the `master` branch; a coverage drop MUST be justified in
+  established on the `dev` branch; a coverage drop MUST be justified in
   the pull request description or the change MUST add the missing tests.
 
 **Rationale**: A financial/swap-adjacent codebase fails silently and
@@ -146,9 +163,9 @@ constitution violation.
 
 ## Development Workflow
 
-- Work MUST proceed through pull requests against `master`; direct pushes to
-  `master` are prohibited except for the repository owner correcting a
-  broken build.
+- Work MUST proceed through pull requests against `dev`, the repository's
+  default integration branch; direct pushes to `dev` are prohibited except
+  for the repository owner correcting a broken build.
 - Every pull request MUST state which Core Principles are relevant and how
   the change satisfies them (this MAY be brief for principles that are
   clearly not implicated).
@@ -185,4 +202,4 @@ compliance or amending the constitution with a documented rationale. There
 is no grandfathering of non-compliant code beyond the pull request in which
 the non-compliance is identified.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-12 | **Last Amended**: 2026-09-12
+**Version**: 1.0.1 | **Ratified**: 2026-09-12 | **Last Amended**: 2026-09-15
