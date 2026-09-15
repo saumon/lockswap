@@ -1,15 +1,41 @@
-# LockSwap
+<!--
+  The stacked lock-up, in the same order the sign-in screen uses it: mark over
+  wordmark over tagline. The artwork is the one that ships — app/assets/images,
+  the 800x600 downscale of brand/brand-mark-source.png — rather than a copy kept
+  for this file, so there is one image to change if the brand ever moves.
 
-[![RuboCop](https://img.shields.io/badge/code_style-rubocop--rails--omakase-brightgreen?style=flat-square)](.rubocop.yml)
-[![SDD](https://img.shields.io/badge/SDD-Spec--Driven%20Development-6E56CF?style=flat-square)](#-method-spec-driven-development)
-[![Spec Kit](https://img.shields.io/badge/Spec%20Kit-github%2Fspec--kit-24292F?style=flat-square&logo=github&logoColor=white)](https://github.com/github/spec-kit)
+  Its background is transparent, so it sits on GitHub's light and dark themes
+  alike. Drawn at 220px from an 800px source, which keeps it sharp on a retina
+  display. The wordmark is text rather than part of the image: it stays the
+  document's <h1>, so GitHub still has a title to put in its own chrome, and it
+  stays selectable and readable to a screen reader.
 
-[![Ruby](https://img.shields.io/badge/Ruby-3.4.6-CC342D?style=flat-square&logo=ruby&logoColor=white)](.ruby-version)
-[![Rails](https://img.shields.io/badge/Rails-8.1.3-D30001?style=flat-square&logo=rubyonrails&logoColor=white)](Gemfile)
-[![Devise](https://img.shields.io/badge/Auth-Devise-525252?style=flat-square)](config/initializers/devise.rb)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4.3-38BDF8?style=flat-square&logo=tailwindcss&logoColor=white)](app/assets/tailwind/application.css)
-[![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=flat-square&logo=sqlite&logoColor=white)](config/database.yml)
-[![Kamal](https://img.shields.io/badge/Deploy-Kamal-0A66C2?style=flat-square&logo=docker&logoColor=white)](config/deploy.yml)
+  alt is empty on purpose — the <h1> immediately below already names the brand,
+  and a screen reader announcing both would simply say it twice. Same reasoning
+  as shared/_brand_stacked.html.erb.
+-->
+<p align="center">
+  <img src="app/assets/images/brand-mark.png" alt="" width="350">
+</p>
+
+<h1 align="center">LockSwap</h1>
+
+<p align="center"><em>Find the locker that suits you</em></p>
+
+<p align="center">
+  <a href=".rubocop.yml"><img alt="RuboCop" src="https://img.shields.io/badge/code_style-rubocop--rails--omakase-brightgreen?style=flat-square"></a>
+  <a href="#-method-spec-driven-development"><img alt="SDD" src="https://img.shields.io/badge/SDD-Spec--Driven%20Development-6E56CF?style=flat-square"></a>
+  <a href="https://github.com/github/spec-kit"><img alt="Spec Kit" src="https://img.shields.io/badge/Spec%20Kit-github%2Fspec--kit-24292F?style=flat-square&logo=github&logoColor=white"></a>
+</p>
+
+<p align="center">
+  <a href=".ruby-version"><img alt="Ruby" src="https://img.shields.io/badge/Ruby-3.4.6-CC342D?style=flat-square&logo=ruby&logoColor=white"></a>
+  <a href="Gemfile"><img alt="Rails" src="https://img.shields.io/badge/Rails-8.1.3-D30001?style=flat-square&logo=rubyonrails&logoColor=white"></a>
+  <a href="config/initializers/devise.rb"><img alt="Devise" src="https://img.shields.io/badge/Auth-Devise-525252?style=flat-square"></a>
+  <a href="app/assets/tailwind/application.css"><img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind%20CSS-4.3-38BDF8?style=flat-square&logo=tailwindcss&logoColor=white"></a>
+  <a href="config/database.yml"><img alt="SQLite" src="https://img.shields.io/badge/SQLite-3-003B57?style=flat-square&logo=sqlite&logoColor=white"></a>
+  <a href="config/deploy.yml"><img alt="Kamal" src="https://img.shields.io/badge/Deploy-Kamal-0A66C2?style=flat-square&logo=docker&logoColor=white"></a>
+</p>
 
 **LockSwap** is an application that lets the employees of a company **swap lockers with each other, easily**.
 
@@ -70,6 +96,9 @@ underneath it. And the homepage no longer keeps quiet about what someone is look
 which floor they are after, or asks them, in the words that fit what they already hold. The logo has
 stopped standing still, too: on the way in, and in the corner of every page after it, the mark
 breathes — slowly, by itself, and not at all for anyone who has asked their system for less movement.
+And it now fits the screen it is actually being read on: the menu folds behind a single control on a
+phone and stays a bar on a desktop, the swap lists stop being tables too wide to read and become one
+labelled card per person, and nothing anywhere asks to be scrolled sideways.
 
 | Feature | Status |
 | --- | --- |
@@ -84,6 +113,7 @@ breathes — slowly, by itself, and not at all for anyone who has asked their sy
 | **009 — First-entry choice and pencil edit** | ✅ Shipped |
 | **010 — Homepage locker wish block** | ✅ Shipped |
 | **011 — Looping logo fade** | ✅ Shipped |
+| **012 — Responsive layout and menu** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -342,6 +372,49 @@ What feature 011 changes — see
   still and fully opaque, on the first frame — a loop that relied on being interrupted to reach its
   resting state is a loop that can leave a logo stranded half-faded.
 
+What feature 012 changes — see
+[`specs/012-responsive-layout-menu/spec.md`](specs/012-responsive-layout-menu/spec.md):
+
+* **the site now fits the screen it is being read on**, from 320 px upward, with nothing anywhere
+  asking to be scrolled sideways. One breakpoint at **48 rem (768 px)** decides everything — the
+  menu, the lists, the size of a control — and the stylesheet is not allowed a second one: a unit
+  test reads the file and fails on any media query at another width. Two breakpoints is how a site
+  ends up in one treatment here and the other one there;
+* **the menu folds behind a single control below that line** and stays the bar it has always been
+  above it. Nothing is taken away: the two destinations, your address and the way out are all still
+  there, one tap further in. 768 px was chosen over the narrower, more usual 640 px because the swap
+  history has six columns — it needs the extra width to be a table at all;
+* it is built on the browser's own disclosure, the same one the locker editor and the wish panel
+  already use, so **opening it, closing it, moving through it by keyboard and announcing whether it
+  is open all happen without a line of JavaScript**. Script adds Escape and tapping outside to
+  dismiss it; if it never loads, the menu still opens and closes and no destination is lost;
+* the first attempt rendered **one** menu and took it apart with CSS on wide screens. It looked
+  right — the bar laid out correctly and the browser reported the links visible — and it was wrong
+  anyway: anything inside a *closed* disclosure counts as hidden to the platform whatever the
+  stylesheet says, and the tooling that automates browsers says so outright. A bar whose links are
+  visible only to someone reading pixels is not a bar. Each treatment now gets its own container and
+  exactly one is ever present, both filled from **one partial**, so there is still a single answer to
+  what the menu contains;
+* **the two swap lists stop being tables on a phone** and become one card per person, every value
+  labelled with the column it came from. The reason is the button: *Propose swap* is the last column
+  of the widest table in the app, which on a phone put the primary action of the whole product
+  off-screen behind a sideways swipe nobody discovers. The markup is unchanged — one table, rendered
+  once — so both forms show the same people in the same order, because there is only one order;
+* the header row is **hidden rather than removed** in that form, and each cell states its own role
+  outright. Changing how an element is laid out quietly strips the meaning a table carries, and a
+  screen reader has to still meet each record as a set of labelled fields rather than as loose text.
+  The audit is what proves it, not the intention;
+* **controls grow to a real thumb's worth of target below the breakpoint** — 44 px — and keep the
+  tighter sizing 008 and 009 chose above it, so nothing on a desktop moved. Links sitting inside a
+  sentence are left alone, because a 44 px-tall link in a paragraph wrecks the line it is in. This
+  turned up a genuine defect on the way: the **dismiss cross on a notification was a 20 px target**,
+  on a message that floats over the page — so a miss did not just fail, it pressed whatever was
+  underneath;
+* **the accessibility audit now runs at phone width too**, on every screen, including with the menu
+  open — a state that only exists below the breakpoint and would otherwise never have been looked at.
+  The keyboard is walked in both treatments, because restacking a layout is allowed and reordering it
+  underneath someone navigating by Tab is not.
+
 ## 🧭 Method: Spec-Driven Development
 
 The project is built with **SDD** using [Spec Kit](https://github.com/github/spec-kit): the
@@ -372,6 +445,7 @@ A conventional Rails monolith, server-rendered, with no separate frontend.
 | Authentication | Devise (`database_authenticatable`, `registerable`, `rememberable`, `lockable`, `validatable`) |
 | Database | SQLite through Active Record |
 | Styling | Tailwind CSS 4.3 (the `tailwindcss-rails` gem, no Node dependency), with the design tokens declared in `@theme` |
+| Layout | Responsive from 320 px up, on a single breakpoint at 48 rem (768 px) — enforced by a test, not by convention |
 | Typeface | Nunito, self-hosted (SIL OFL) — one variable file, latin subset, no third-party font host |
 | Browser behaviour | Hotwire — Turbo, and Stimulus over importmap; no bundler, no `package.json` |
 | App server | Puma |
@@ -406,9 +480,10 @@ start at `/users/sign_up`.
 ## ✅ Tests and quality
 
 ```sh
-bin/rails test         # models, controllers, and views
+bin/rails test         # models, controllers, views, and the single-breakpoint rule
 bin/rails test:system  # end-to-end signup, login, lockout, redirect, locker-details, wish, swap, and notification flows,
-                       # plus an accessibility audit of every screen and the reduced-motion behaviour
+                       # plus an accessibility audit of every screen, the reduced-motion behaviour,
+                       # and a sweep of every screen at both a phone and a desktop viewport
 bin/rubocop            # lint (zero warnings tolerated)
 bin/brakeman           # static security analysis
 ```
@@ -420,6 +495,23 @@ The accessibility audit runs as an ordinary system test, screen by screen, so a 
 control that cannot be reached by keyboard breaks the build like any other regression. It carries one
 documented exemption — the colour contrast of the brand wordmark, which the WCAG standard exempts as
 a logotype — and that exemption is scoped to that one element and that one rule.
+
+Since 012 the same suite also drives the **viewport itself**, at a phone width and a desktop width,
+and asserts the things that have to be true of every screen at both: that the page does not scroll
+sideways, that the menu is in the treatment that width calls for, that the lists are in theirs, and
+that every standalone control is a large enough target. It measures rather than assumes — the
+assertion fails if it finds nothing to measure, because a check that quietly measures nothing passes
+for ever.
+
+One practical note: the system tests serve the **compiled** stylesheet. `bin/rails test:system`
+rebuilds it for you, but running a single test file directly does not, so a stylesheet change that
+has not been built will read as a failing assertion about the layout rather than as a missing step:
+
+```sh
+bin/rails tailwindcss:build && bin/rails test test/system/responsive_test.rb
+```
+
+`bin/dev` runs the watcher, so this does not come up while the app is running.
 
 ## 🔍 Validate a feature by hand
 
@@ -466,7 +558,12 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
 * [`specs/011-logo-fade-loop/quickstart.md`](specs/011-logo-fade-loop/quickstart.md) —
   the sign-in and sign-up logo doing its one-off entrance and then breathing on past it, the header
   mark breathing from first paint and still going after a navigation, the mark still clicking through
-  to the homepage mid-fade, and the reduced-motion switch leaving both of them perfectly still.
+  to the homepage mid-fade, and the reduced-motion switch leaving both of them perfectly still;
+* [`specs/012-responsive-layout-menu/quickstart.md`](specs/012-responsive-layout-menu/quickstart.md) —
+  narrowing the window through 768 px and watching the bar become a toggle and the lists become
+  cards, the menu still opening and closing with JavaScript switched off, *Propose swap* on screen
+  without a sideways swipe, and the two checks a headless browser cannot make: a form still usable
+  with the on-screen keyboard up, and the page at 200% zoom.
 
 ## 🚢 Deploy
 

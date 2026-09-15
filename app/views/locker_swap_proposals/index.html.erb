@@ -8,21 +8,27 @@
     <h1 class="page-title">Your swap proposals</h1>
 
     <% if @proposals.any? %>
-      <%# The table is the one thing here allowed to scroll sideways on a narrow
-          screen; the page itself must not. %>
+      <%# 012 FR-005: six columns is more than a phone can hold, so below the
+          breakpoint each proposal becomes a stacked card with every field
+          labelled from its data-label. Above it, the table it has always been —
+          .table-scroll stays because at that width a long row is still allowed
+          its own scroll container, and the page still is not.
+
+          The explicit roles keep the accessibility tree correct once display
+          changes, which would otherwise drop the implicit table roles (FR-005d). %>
       <div class="table-scroll">
-        <table class="data-table">
+        <table class="data-table" role="table">
           <thead>
-            <tr>
-              <th scope="col">Direction</th>
-              <th scope="col">Person</th>
-              <th scope="col">Sent</th>
-              <th scope="col">Status</th>
-              <th scope="col">Comment</th>
+            <tr role="row">
+              <th scope="col" role="columnheader">Direction</th>
+              <th scope="col" role="columnheader">Person</th>
+              <th scope="col" role="columnheader">Sent</th>
+              <th scope="col" role="columnheader">Status</th>
+              <th scope="col" role="columnheader">Comment</th>
               <%# 005 FR-005: its own column, not folded into the one above — one
                   says why a person answered as they did, the other what was on
                   the table, and a row can have both (FR-008). %>
-              <th scope="col">Locker details</th>
+              <th scope="col" role="columnheader">Locker details</th>
             </tr>
           </thead>
 
@@ -30,29 +36,29 @@
             <% @proposals.each do |proposal| %>
               <% sent = proposal.requester_id == current_user.id %>
               <% row_id = "swap-proposal-history-row-#{proposal.id}" %>
-              <tr id="<%= row_id %>">
-                <td class="strong"><%= sent ? "Sent" : "Received" %></td>
-                <td><%= sent ? proposal.recipient.email : proposal.requester.email %></td>
-                <td class="meta"><%= l proposal.created_at, format: :long %></td>
+              <tr id="<%= row_id %>" role="row">
+                <td class="strong" role="cell" data-label="Direction"><%= sent ? "Sent" : "Received" %></td>
+                <td role="cell" data-label="Person"><%= sent ? proposal.recipient.email : proposal.requester.email %></td>
+                <td class="meta" role="cell" data-label="Sent"><%= l proposal.created_at, format: :long %></td>
 
                 <%# "accepted" is the spec's "exchange in progress"; the column
                     says what a reader would call it, not what the column stores. %>
                 <%# 008 FR-025: the badge tint is decoration on top of the label —
                     the status word itself is what carries the meaning. %>
-                <td id="<%= row_id %>-status">
+                <td id="<%= row_id %>-status" role="cell" data-label="Status">
                   <span class="badge <%= history_status_badge_class(proposal) %>">
                     <%= proposal.accepted? ? "Exchange in progress" : proposal.status.capitalize %>
                   </span>
                 </td>
 
-                <td id="<%= row_id %>-comment"
+                <td id="<%= row_id %>-comment" role="cell" data-label="Comment"
                     class="<%= "detail-value-empty" if proposal.decline_comment.blank? %>">
                   <%= proposal.decline_comment.presence || "—" %>
                 </td>
 
                 <%# FR-005: filled in for every row, whatever became of it, so
                     the history never depends on anyone having written it down. %>
-                <td id="<%= row_id %>-locker-details" class="meta">
+                <td id="<%= row_id %>-locker-details" class="meta" role="cell" data-label="Locker details">
                   <%= proposal.floor_and_locker_summary %>
                 </td>
               </tr>

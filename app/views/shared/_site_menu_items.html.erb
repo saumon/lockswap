@@ -1,0 +1,25 @@
+<%#
+  012 — the contents of the signed-in menu: every destination, the identity and
+  the way out, in the order they are read in.
+
+  This partial is the single source of truth for what the menu offers. It is
+  rendered into both of the containers in shared/_site_menu — the narrow
+  disclosure and the wide bar — exactly one of which is ever displayed, so FR-011
+  ("the same capabilities at every width") holds because both containers are
+  filled from here rather than because two lists were kept in agreement.
+%>
+
+<%# 003 FR-005: the "I'm looking for a locker" button lives on that page,
+    so it has to be reachable from wherever the user happens to be. %>
+<%= link_to "Locker wishes", locker_wishes_path, class: "site-nav-link" %>
+
+<%# 004 FR-015: the history is a separate screen, so it needs a way in
+    from anywhere too. %>
+<%= link_to "Proposal history", locker_swap_proposals_path, class: "site-nav-link" %>
+
+<%# 008: the email is what truncates on a narrow screen — never the
+    brand, never the controls. %>
+<span class="site-nav-identity"><%= current_user.email %></span>
+
+<%= button_to "Log out", destroy_user_session_path, method: :delete,
+      class: "btn btn-secondary" %>

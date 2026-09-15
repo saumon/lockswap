@@ -119,6 +119,33 @@
 }
 
 /* ===========================================================================
+   012 — The breakpoint.
+
+   One value, 48rem (768px), governs the whole site. Below it is the *narrow*
+   treatment: the menu is a disclosure behind a toggle, the two data lists are
+   stacked cards, and standalone controls are at least 44px. At and above it is
+   the *wide* treatment: the menu is a full bar, the lists are column tables,
+   and controls keep the density established in 008/009.
+
+   Authoring rules (contracts/breakpoint.md):
+
+     narrow-only   @media (max-width: 47.999rem) { ... }
+     wide-only     @media (min-width: 48rem)     { ... }
+
+   Mobile-first is preferred — write the narrow case as the base rule and add a
+   min-width block — so a rule that is forgotten degrades to the narrow
+   treatment rather than to a broken wide one.
+
+   NO OTHER WIDTH MAY APPEAR IN A MEDIA QUERY. That is the testable form of
+   FR-018, and test/stylesheet_breakpoint_test.rb enforces it. 48rem was chosen
+   over the 40rem this file used to carry because the six-column proposal
+   history needs the extra width to be a table at all; below it, it is cards.
+
+   48rem is also Tailwind v4's default `md`, so the hand-written queries here
+   and any `md:` utility agree on where the line is.
+   =========================================================================== */
+
+/* ===========================================================================
    Brand typeface, served from our own origin (FR-005a).
 
    The url() is a bare filename on purpose: Propshaft resolves it against the
@@ -702,6 +729,10 @@
   }
 
   .site-nav {
+    /* 012: the menu panel is positioned against this row, so that it hangs from
+       the bar rather than from whatever happens to be the nearest positioned
+       ancestor. */
+    position: relative;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -765,6 +796,122 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  /* --- 012: the signed-in menu -------------------------------------------
+     One <details>, two treatments. Authored narrow-first: what follows is the
+     disclosure, and the wide block at the end takes it apart again.
+
+     The panel is absolutely positioned rather than pushed into the flow so
+     that opening the menu does not shove the page down — the bar keeps its
+     height, and the panel is drawn over the content beneath it. */
+  .site-menu-panel {
+    position: absolute;
+    top: 100%;
+    right: var(--spacing-5);
+    left: var(--spacing-5);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-2);
+    padding: var(--spacing-4);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* FR-007: 2.75rem, not a step on the spacing scale — 44px is the touch target
+     the platform guidance asks for, and there is no token for it. Squared off so
+     the drawn shape is the whole target rather than a smaller mark inside it. */
+  .site-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-inline-start: auto;
+    border-radius: var(--radius-sm);
+    color: var(--color-ink);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .site-menu-toggle::-webkit-details-marker {
+    display: none;
+  }
+
+  /* The three bars, drawn from one element: the middle is the box, the outer
+     two are its pseudo-elements. currentColor so it inherits the summary's
+     colour rather than restating a token. */
+  .site-menu-toggle-bars,
+  .site-menu-toggle-bars::before,
+  .site-menu-toggle-bars::after {
+    display: block;
+    width: 1.25rem;
+    height: 2px;
+    border-radius: 1px;
+    background-color: currentColor;
+  }
+
+  .site-menu-toggle-bars {
+    position: relative;
+  }
+
+  .site-menu-toggle-bars::before,
+  .site-menu-toggle-bars::after {
+    content: "";
+    position: absolute;
+    left: 0;
+  }
+
+  .site-menu-toggle-bars::before { top: -0.375rem; }
+  .site-menu-toggle-bars::after { top: 0.375rem; }
+
+  /* FR-007: inside the panel a destination is a full-width row, so the target is
+     the row and not just the few pixels the words occupy. */
+  .site-menu-panel .site-nav-link {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding-inline: var(--spacing-3);
+    border-radius: var(--radius-sm);
+  }
+
+  .site-menu-panel .site-nav-identity {
+    max-width: 100%;
+    padding-inline: var(--spacing-3);
+  }
+
+  /* The wide treatment's container: the row this header has always had. Hidden
+     below the breakpoint, where the disclosure above takes over. */
+  .site-bar {
+    display: none;
+    align-items: center;
+    gap: var(--spacing-3);
+  }
+
+  /* --- 012: swapping the two treatments -----------------------------------
+     Exactly one container is displayed at any width, and the other is
+     `display: none` — gone from layout and gone from the accessibility tree.
+
+     This is deliberately a swap and not a re-style of one shared element. An
+     earlier attempt rendered a single <details> and dissolved it here with
+     `display: contents` plus `::details-content { content-visibility: visible }`.
+     It laid out correctly and Chrome reported the content visible, but content
+     inside a closed <details> is treated as hidden by the platform regardless:
+     the WebDriver displayedness algorithm says a non-summary descendant of a
+     closed <details> is not displayed, and tooling and assistive technology
+     follow that rather than the computed style. A bar whose links are "visible"
+     only to someone reading pixels does not satisfy FR-011, so the content is
+     swapped rather than revealed. See shared/_site_menu.html.erb.
+
+     Both containers are filled from shared/_site_menu_items, so there is still
+     one source of truth for what the menu offers. */
+  @media (min-width: 48rem) {
+    .site-menu { display: none; }
+    .site-bar { display: flex; }
+  }
 }
 
 /* --- Auth screens, detail lists and tables --------------------------------- */
@@ -806,7 +953,9 @@
     gap: var(--spacing-4);
   }
 
-  @media (min-width: 40rem) {
+  /* 012 FR-018a: this was the site's only width-based media query, at 40rem.
+     It moves to the one breakpoint so that a single value governs everywhere. */
+  @media (min-width: 48rem) {
     .detail-grid { grid-template-columns: 1fr 1fr; }
   }
 
@@ -889,6 +1038,59 @@
     padding: var(--spacing-2) var(--spacing-4);
   }
 
+  /* --- 012 FR-007 / FR-007b: touch targets below the breakpoint ------------
+     A thumb is not a mouse pointer. Below the breakpoint every standalone
+     control has to be at least 44px in both directions — buttons, submit
+     controls, navigation destinations, the menu toggle and 009's pencil.
+
+     2.75rem is 44px. It is written literally because it is not a step on the
+     spacing scale: the scale describes gaps between things, and this is the
+     minimum size of a thing. The same reasoning 009 used when it wrote 2.25rem
+     in place rather than reaching for a token.
+
+     Confined to the narrow treatment on purpose. At and above the breakpoint
+     these controls keep the sizing 008 and 009 chose, so desktop density is
+     unchanged (FR-007b, FR-020) — which is the whole reason this is a media
+     query and not an edit to the rules above.
+
+     Links sitting inline in a sentence are exempt (FR-007a) and are absent from
+     this block: a 44px-tall link inside a paragraph would wreck the line
+     spacing, which is why the recognised target-size guidance carves them out.
+     test/application_system_test_case.rb#assert_touch_targets_at_least skips
+     them for the same reason. */
+  @media (max-width: 47.999rem) {
+    .btn-sm {
+      min-height: 2.75rem;
+    }
+
+    .locker-profile-editor-summary {
+      width: 2.75rem;
+      height: 2.75rem;
+    }
+
+    /* The disclosure summaries are rows already; this makes the row itself the
+       target rather than the text baseline inside it. */
+    .disclosure-summary,
+    .tile-disclosure-summary {
+      min-height: 2.75rem;
+    }
+
+    /* 007's dismiss control is a 20px glyph, which is a fine mouse target and a
+       poor thumb one — and it sits on a message that appears over the content,
+       so a miss lands on whatever is underneath. The × keeps its drawn size;
+       what grows is the box around it, which is the allowance FR-007c makes for
+       exactly this case. */
+    .toast-dismiss {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.75rem;
+      height: 2.75rem;
+      padding: 0;
+      margin-inline-end: calc(var(--spacing-2) * -1);
+    }
+  }
+
   /* The table is the one thing allowed to scroll sideways on a narrow screen;
      the page body must not (FR-014). */
   .table-scroll {
@@ -920,6 +1122,93 @@
   }
 
   .data-table tr:last-child td { border-bottom: 0; }
+
+  /* --- 012 FR-005: the narrow treatment of a data list --------------------
+     Below the breakpoint the two data lists stop being tables and become one
+     stacked card per record. The alternative — keeping the table and letting
+     .table-scroll carry it sideways — puts the wish list's "Propose swap"
+     button off-screen behind a swipe most people never find, and that button
+     is the primary action of the whole product.
+
+     The markup does not change: one <table>, rendered once, so the record order
+     and the field order within a record are the same in both forms because
+     there is only one order (FR-005c). What changes is display, plus the label
+     lifted out of each cell's data-label.
+
+     The header row is clipped rather than `display: none`d. It is redundant
+     once every cell carries its own label, but the <th> cells still have to be
+     there for anything walking the table — removing them would take the column
+     names out of the accessibility tree entirely. */
+  @media (max-width: 47.999rem) {
+    /* Nothing to scroll sideways in this form, and leaving the padding would
+       inset every card for no reason. */
+    .table-scroll {
+      overflow-x: visible;
+      margin-inline: 0;
+      padding-inline: 0;
+    }
+
+    .data-table,
+    .data-table tbody,
+    .data-table tr,
+    .data-table td {
+      display: block;
+    }
+
+    .data-table thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .data-table tr {
+      padding: var(--spacing-4);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background-color: var(--color-surface);
+    }
+
+    .data-table tr + tr {
+      margin-top: var(--spacing-3);
+    }
+
+    /* Label then value, on one line while they fit. The label column sizes to
+       its content so the values line up down the card. */
+    .data-table td {
+      display: grid;
+      grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+      align-items: baseline;
+      gap: var(--spacing-3);
+      padding: var(--spacing-2) 0;
+      border-bottom: 0;
+    }
+
+    /* FR-005a: the column name, as visible text, taken from the attribute so
+       there is exactly one place the two forms get it from. */
+    .data-table td::before {
+      content: attr(data-label);
+      color: var(--color-ink-muted);
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+
+    /* A cell holding a control rather than a value: the control gets the full
+       width of the card so it is a proper target, and the label sits above it
+       instead of squeezing it into a column (FR-005b). */
+    .data-table td:has(form),
+    .data-table td:has(.btn) {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--spacing-2);
+    }
+
+    .data-table td:has(form) .btn,
+    .data-table td:has(.btn) .btn {
+      width: 100%;
+    }
+  }
 
   /* --- Form-level error summary ------------------------------------------- */
   .form-errors {
