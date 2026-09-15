@@ -1,18 +1,28 @@
 <%# 002 FR-005/FR-006: the floor and the locker number are always offered as two
     separate fields. The caller decides how this is surfaced — openly for someone
-    who has nothing saved, behind the edit control for someone who has. %>
+    who has nothing saved, behind the edit control for someone who has.
+
+    009 FR-001/FR-010: show_no_locker_choice arms the first-entry choice — the
+    "I don't have a locker" control and the machinery that hides the locker
+    number field with it. Only the first-entry screen asks for it; the pencil
+    editor leaves it off and gets the plain two-field form, because there the
+    same thing is said by clearing the field. %>
+<% show_no_locker_choice = local_assigns.fetch(:show_no_locker_choice, false) %>
+
 <%= render "devise/shared/error_messages", resource: current_user %>
 
 <%# novalidate: the server decides what is valid, so every failure is reported
     the same way rather than some by the browser and some by the app. %>
 <%= form_with model: current_user, url: locker_profile_path, method: :patch,
-              html: { class: "stack-tight", novalidate: true } do |f| %>
+              html: { class: "stack-tight", novalidate: true,
+                      data: (show_no_locker_choice ? { controller: "locker-entry-choice" } : {}) } do |f| %>
   <div class="field">
     <%= f.label :floor, class: "field-label" %>
     <%= f.text_field :floor, autocomplete: "off", class: "field-input" %>
   </div>
 
-  <div class="field">
+  <%= tag.div class: "field",
+        data: (show_no_locker_choice ? { locker_entry_choice_target: "lockerNumberField" } : {}) do %>
     <%= f.label :locker_number, class: "field-label" %>
     <%= f.text_field :locker_number, autocomplete: "off",
           aria: { describedby: "locker_number_hint" }, class: "field-input" %>
@@ -20,7 +30,21 @@
     <p id="locker_number_hint" class="field-hint">
       Leave empty if you have no locker assigned.
     </p>
-  </div>
+  <% end %>
+
+  <% if show_no_locker_choice %>
+    <%# 009 FR-004: having no locker is said deliberately, rather than read from
+        the absence of an answer. FR-005: each control hands over to the other,
+        so the choice can be taken back before it is ever submitted. Both sit
+        outside the field above — that is what lets one of them survive the
+        field being hidden. %>
+    <%= tag.button "I don't have a locker 😔", type: "button", class: "field-link-action",
+          data: { locker_entry_choice_target: "declareNoLockerTrigger",
+                  action: "locker-entry-choice#declareNoLocker" } %>
+    <%= tag.button "Actually, I have a locker", type: "button", class: "field-link-action", hidden: true,
+          data: { locker_entry_choice_target: "declareHasLockerTrigger",
+                  action: "locker-entry-choice#declareHasLocker" } %>
+  <% end %>
 
   <%# 008 FR-018: deliberately NO data-turbo-submits-with here.
       Turbo swaps this control's value attribute while the form is in flight, and

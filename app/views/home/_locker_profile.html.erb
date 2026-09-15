@@ -1,22 +1,56 @@
 <%# 002 FR-003/FR-004: the saved floor and locker number, shown once a floor exists.
     Reads the saved values rather than the attributes, so a rejected edit shows
-    the error next to what is still on file instead of next to itself. %>
-<div id="locker-profile" class="card stack-tight">
-  <h2 class="card-title">Your locker</h2>
+    the error next to what is still on file instead of next to itself.
 
-  <dl class="detail-grid">
-    <div>
-      <dt class="detail-term">Floor</dt>
-      <dd id="locker-profile-floor" class="detail-value"><%= current_user.saved_floor %></dd>
-    </div>
+    009 FR-007: the way in to editing is the pencil in the card's corner. The
+    caller passes editable: false while a swap proposal holds these values, where
+    005's explanation takes the control's place. %>
+<div id="locker-profile" class="card locker-profile">
+  <div class="stack-tight">
+    <h2 class="card-title">Your locker</h2>
 
-    <div>
-      <dt class="detail-term">Locker number</dt>
-      <%# FR-004: having no locker is an ordinary state, so it is styled as plain
-          content rather than as a warning or an error. %>
-      <dd id="locker-profile-locker-number" class="detail-value <%= "detail-value-empty" if current_user.saved_locker_number.blank? %>">
-        <%= current_user.saved_locker_number.presence || "No locker assigned" %>
-      </dd>
-    </div>
-  </dl>
+    <dl class="detail-grid">
+      <div>
+        <dt class="detail-term">Floor</dt>
+        <dd id="locker-profile-floor" class="detail-value"><%= current_user.saved_floor %></dd>
+      </div>
+
+      <div>
+        <dt class="detail-term">Locker number</dt>
+        <%# FR-004: having no locker is an ordinary state, so it is styled as plain
+            content rather than as a warning or an error. %>
+        <dd id="locker-profile-locker-number" class="detail-value <%= "detail-value-empty" if current_user.saved_locker_number.blank? %>">
+          <%= current_user.saved_locker_number.presence || "No locker assigned" %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <% if local_assigns.fetch(:editable, true) %>
+    <%# 002 FR-009: editing is deliberate, so the form sits behind this control. A
+        rejected submission reopens it, otherwise the error would have nowhere to
+        show. <details> gives the disclosure keyboard and screen reader support
+        without any JavaScript of its own, which is why 009 changes what the
+        control looks like and not what it is.
+
+        009 FR-009: the label the summary used to carry as text is now on
+        aria-label, so the icon still says what it does to a screen reader. The
+        drawing itself is hidden from the accessibility tree — it would otherwise
+        be read out a second time, under whatever name the reader invents for
+        it. %>
+    <details class="locker-profile-editor" <%= "open" if current_user.errors.any? %>>
+      <summary class="locker-profile-editor-summary" aria-label="Edit locker details">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true" focusable="false">
+          <path d="M4 20h4L19.5 8.5a2.83 2.83 0 0 0-4-4L4 16v4Z"/>
+          <path d="m14.5 5.5 4 4"/>
+        </svg>
+      </summary>
+
+      <div class="locker-profile-editor-body">
+        <%= render "home/locker_profile_form" %>
+      </div>
+    </details>
+  <% end %>
 </div>

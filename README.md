@@ -63,7 +63,10 @@ still while that plays out, and the history says what each proposal was about wi
 had to write it down. Locker numbers are counted per floor, the way they are on the doors. What the
 application says back — saved, sent, refused — shows itself for a few seconds and then gets out of
 the way. And it now looks like a product rather than a scaffold: a logo, a typeface, a white canvas
-and a small amount of movement, applied the same way on every screen.
+and a small amount of movement, applied the same way on every screen. The first thing a new account
+is asked is a question with two answers rather than a form with an optional field in it, and the way
+back into those details is a pencil in the corner of the card instead of a bar announcing itself
+underneath it.
 
 | Feature | Status |
 | --- | --- |
@@ -75,6 +78,7 @@ and a small amount of movement, applied the same way on every screen.
 | **006 — Per-floor locker numbers** | ✅ Shipped |
 | **007 — Self-dismissing notifications** | ✅ Shipped |
 | **008 — Visual identity and white theme** | ✅ Shipped |
+| **009 — First-entry choice and pencil edit** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -96,8 +100,9 @@ What feature 002 adds — see
 * a locker number belongs to one account at a time — a clash is refused without ever revealing who
   holds it, and the database enforces that even when two people submit at the same moment (scoped to
   a single floor since 006, below);
-* the details can be changed later, behind an **Edit locker details** control so the homepage reports
-  a settled state instead of standing permanently open for editing.
+* the details can be changed later, behind a control that keeps the form out of the way so the
+  homepage reports a settled state instead of standing permanently open for editing — a labelled bar
+  at the time, a **pencil** in the corner of the card since 009, below.
 
 What feature 003 adds — see
 [`specs/003-locker-search-wish/spec.md`](specs/003-locker-search-wish/spec.md):
@@ -147,8 +152,9 @@ What feature 005 adds — see
   proposal is sent or received until it is declined, withdrawn, or completed — because a proposal is
   an offer made on those exact values, and neither side should be able to move them out from under
   the other halfway through;
-* the **Edit locker details** control gives way to a plain explanation of why it is not available,
-  rather than vanishing without a word or waiting to refuse the change after it has been typed;
+* the edit control — the **pencil** since 009, below — gives way to a plain explanation of why it is
+  not available, rather than vanishing without a word or waiting to refuse the change after it has
+  been typed;
 * only a value **already on file** is held: someone who has never recorded a floor or a locker number
   is still asked for one, since offering a swap requires neither — holding people to a value they
   never set would strand them behind their own proposal;
@@ -252,6 +258,28 @@ What feature 008 brings — see
   to confirm it still moves through them in the order the eye does;
 * the refresh **cost nothing in speed**: the page paints at the same moment it did before, measured
   before and after, and the whole visual identity adds about 40 kB.
+
+What feature 009 changes — see
+[`specs/009-locker-entry-pencil-edit/spec.md`](specs/009-locker-entry-pencil-edit/spec.md):
+
+* the first screen a new account sees stops asking everyone for a locker number they may not have. It
+  asks a question instead — fill in your floor and your locker, or say **I don't have a locker 😔** —
+  and saying so takes the locker number field off the screen rather than leaving it standing there
+  empty with a note explaining that it is optional;
+* the answer can be taken back before anything is saved, and a floor typed before taking it back
+  survives the switch in either direction: the floor is required whichever way the question is
+  answered, and 009 removes the locker number from it, not the floor;
+* a locker number typed and then disowned is **cleared, not merely hidden** — what gets saved says
+  what the person said, instead of quietly recording a locker the account has just declared it does
+  not have;
+* the **Edit locker details** bar that used to sit under the locker card is now a **pencil in the
+  card's corner**: the same control, the same form behind it, the same keyboard and screen-reader
+  behaviour. It is the label that is gone, because the page was saying the word "edit" on every visit
+  whether or not anyone was editing;
+* the pencil still **says what it is** to a screen reader despite showing no text, and that name is
+  asserted on every test run rather than assumed;
+* the pencil opens the plain two-field form and never the first-entry question: an account with a
+  floor on file has already answered it, and clearing the locker number there says the same thing.
 
 ## 🧭 Method: Spec-Driven Development
 
@@ -364,7 +392,12 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   walking all twelve screens, the reduced-motion switch removing every animation while leaving the
   interface whole, no content waiting on a scroll to appear, the keyboard showing where it is
   throughout, nothing scrolling sideways at 360 px, the typeface loading without a flash of invisible
-  text, and no request leaving for a third party.
+  text, and no request leaving for a third party;
+* [`specs/009-locker-entry-pencil-edit/quickstart.md`](specs/009-locker-entry-pencil-edit/quickstart.md) —
+  entering a locker on first sight of the app, saying you have none and being asked for nothing but a
+  floor, taking that back with the floor intact, the blank floor still refused on that path, the
+  pencil opening the plain form pre-filled, and the explanation still taking the pencil's place while
+  a swap is outstanding.
 
 ## 🚢 Deploy
 

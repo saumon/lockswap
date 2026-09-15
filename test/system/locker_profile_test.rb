@@ -10,6 +10,10 @@ class LockerProfileTest < ApplicationSystemTestCase
     LockerSwapProposal.declined.update_all(requester_acknowledged_at: Time.current)
   end
 
+  # 009 FR-007/FR-009: the edit control carries no text of its own any more, so
+  # it is found by the name it exposes instead of by what it says.
+  EDIT_LOCKER_CONTROL = "summary[aria-label='Edit locker details']".freeze
+
   # Someone who already has details saved reaches the form through the edit
   # control; someone who has nothing saved is shown it outright. Waiting on the
   # field keeps the caller from typing into a disclosure that has not opened yet.
@@ -21,7 +25,7 @@ class LockerProfileTest < ApplicationSystemTestCase
     # loaded machine (see fill_in_reliably).
     wait_for_turbo
 
-    find("summary", text: "Edit locker details").click
+    find(EDIT_LOCKER_CONTROL).click
     # Opening the disclosure reflows the page. Waiting for the submit button —
     # the last thing to settle — keeps a later click from being aimed at where
     # the button used to be and silently going nowhere.
@@ -187,7 +191,7 @@ class LockerProfileTest < ApplicationSystemTestCase
   test "the edit control is replaced by an explanation while a proposal is active" do
     log_in_as users(:bob)
 
-    assert_no_selector "summary", text: "Edit locker details"
+    assert_no_selector EDIT_LOCKER_CONTROL
     assert_selector "#locker-profile-locked", text: "active swap proposal"
     assert_selector "#locker-profile-floor", text: "3"
     assert_selector "#locker-profile-locker-number", text: "B12"
@@ -217,5 +221,104 @@ class LockerProfileTest < ApplicationSystemTestCase
 
     assert_selector "#locker-profile-floor", text: "5"
     assert_equal [ "5", "C01" ], [ users(:alice).reload.floor, users(:alice).locker_number ]
+  end
+
+  # 009 User Story 1: the first answer is a choice between two things, rather
+  # than one form with a field most people have nothing to put in.
+  #
+  # alice throughout: she is the account with nothing on file, which is the only
+  # state where this choice is offered at all.
+
+  # Acceptance Scenario 2 / SC-001: someone who says they have no locker is
+  # never asked for a locker number.
+  test "a first-time user can say they have no locker and save just a floor" do
+    log_in_as users(:alice)
+    wait_for_turbo
+
+    click_on "I don't have a locker 😔"
+
+    assert_no_selector "input[name='user[locker_number]']"
+
+    save_locker_details "Floor" => "5"
+
+    assert_selector "#locker-profile-floor", text: "5"
+    assert_selector "#locker-profile-locker-number", text: "No locker assigned"
+    assert_nil users(:alice).reload.locker_number
+  end
+
+  # The floor is still required on this path: 009 removes the locker number from
+  # the question, not the floor (002 FR-007, carried by 009 FR-003).
+  test "saying you have no locker does not excuse the floor" do
+    log_in_as users(:alice)
+    wait_for_turbo
+
+    click_on "I don't have a locker 😔"
+    click_on "Save locker details"
+
+    assert_text "Floor can't be blank"
+    assert_nil users(:alice).reload.floor
+  end
+
+  # Acceptance Scenario 3 / FR-005: the choice can be taken back, and the floor
+  # typed before taking it survives the switch in either direction.
+  test "switching back to entering a locker keeps the floor already typed" do
+    log_in_as users(:alice)
+    wait_for_turbo
+
+    fill_in_reliably "Floor", with: "5"
+    fill_in_reliably "Locker number", with: "C09"
+
+    click_on "I don't have a locker 😔"
+    click_on "Actually, I have a locker"
+
+    assert_field "Floor", with: "5"
+    assert_field "Locker number", with: ""
+  end
+
+  # FR-004: the field is cleared and not merely hidden. A number typed and then
+  # disowned that still reached the database would contradict the answer given,
+  # and would show up on the homepage a moment later as a locker she said she
+  # did not have.
+  test "a locker number typed before saying you have none is not saved" do
+    log_in_as users(:alice)
+    wait_for_turbo
+
+    fill_in_reliably "Locker number", with: "C09"
+    click_on "I don't have a locker 😔"
+
+    save_locker_details "Floor" => "5"
+
+    assert_selector "#locker-profile-locker-number", text: "No locker assigned"
+    assert_nil users(:alice).reload.locker_number
+  end
+
+  # 009 User Story 2: the labelled row that used to open the form is now a
+  # pencil in the corner of the card it edits.
+
+  # Acceptance Scenario 1 / SC-002: nothing on the page spells the label out any
+  # more. SC-003: and what replaced it opens the form in a single click.
+  test "the edit control is an icon with no visible label" do
+    log_in_as users(:dave)
+    wait_for_turbo
+
+    assert_no_selector "summary", text: "Edit locker details"
+    assert_selector EDIT_LOCKER_CONTROL
+
+    find(EDIT_LOCKER_CONTROL).click
+
+    assert_selector "input[name='user[floor]']"
+    assert_selector "input[name='user[locker_number]']"
+  end
+
+  # FR-010: the pencil opens the plain two-field form. carol has a floor and no
+  # locker, which is the case where re-asking the first-entry question would be
+  # most tempting — and where asking it would put an answer she has already
+  # given back up for debate.
+  test "the pencil opens the plain form, not the first-entry choice" do
+    log_in_as users(:carol)
+    open_locker_editor
+
+    assert_field "Locker number", with: ""
+    assert_no_button "I don't have a locker 😔"
   end
 end

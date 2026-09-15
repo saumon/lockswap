@@ -59,6 +59,13 @@ class AccessibilityTest < ApplicationSystemTestCase
   test "home without locker details is accessible" do
     log_in_as users(:alice)
     assert_axe_clean
+
+    # 009: taking the first-entry choice leaves a different set of controls on
+    # screen — a field gone, one trigger swapped for another — so the screen it
+    # turns into is audited in its own right.
+    wait_for_turbo
+    click_on "I don't have a locker 😔"
+    assert_axe_clean
   end
 
   # carol has a floor on file, so the saved profile and its disclosure render.
@@ -71,7 +78,9 @@ class AccessibilityTest < ApplicationSystemTestCase
   # disclosure is offered rather than locked.
   test "home with the edit disclosure open is accessible" do
     log_in_as users(:dave)
-    find("summary", text: "Edit locker details").click
+    # 009: the control is a pencil now, so it is found by its accessible name —
+    # which this audit is also, in passing, checking it still has.
+    find("summary[aria-label='Edit locker details']").click
     assert_axe_clean
   end
 
