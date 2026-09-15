@@ -14,7 +14,11 @@
   French original from the source artwork stays in the brand files and must not
   appear on any page.
 
-  FR-022: the logo fades up out of a blur once, and never loops.
+  008 FR-022: the logo fades up out of a blur once.
+
+  011 FR-001: and then keeps breathing — a slow opacity pulse that starts where
+  that entrance ends and runs for as long as the screen is up, so the brand is
+  what catches the eye on the screen a visitor meets first.
 %>
 <div class="brand-stacked">
   <%# Deliberately large here: sign-in and sign-up are the full-brand screens,
@@ -34,7 +38,7 @@
         height: 600,
         fetchpriority: "high",
         data: { brand_mark: true },
-        class: "brand-mark brand-mark-flourish" %>
+        class: "brand-mark brand-mark-flourish brand-mark-loop" %>
 
   <p class="brand-wordmark brand-wordmark-display"><span class="brand-wordmark-lock">Lock</span><span class="brand-wordmark-swap">Swap</span></p>
 

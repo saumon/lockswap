@@ -108,6 +108,10 @@
   --motion-entrance: 320ms;
   --motion-brand: 1100ms;
   --motion-flourish: 900ms;
+  /* The brand mark's perpetual pulse. The one duration here that is not an
+     entrance: it repeats for as long as the mark is on screen, so it is paced
+     to read as breathing rather than as something waiting to finish. */
+  --motion-brand-loop: 3000ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   /* Gentle and near-even across its length, so a fade reads as a fade. */
@@ -292,6 +296,29 @@
 @media (prefers-reduced-motion: no-preference) {
   .brand-mark-flourish {
     animation: brand-fade-in var(--motion-brand) var(--ease-brand) 1 both;
+  }
+
+  /* 011 FR-003: the perpetual pulse on its own, which is what the header mark
+     carries. No delay: there is no entrance in front of it there. */
+  .brand-mark-loop {
+    animation: brand-fade-pulse var(--motion-brand-loop) ease-in-out infinite;
+  }
+
+  /* 011 FR-006: and where a mark does both, the two are declared together.
+
+     They have to be: the `animation` shorthand replaces the whole list rather
+     than merging across rules, so a second rule naming only the pulse would
+     drop the entrance on the floor. The compound selector is what makes this
+     win over .brand-mark-loop above — two classes to its one.
+
+     The pulse is held back by exactly the entrance's own duration, so its first
+     frame lands on the frame the entrance's fill is already holding. Both are at
+     opacity 1 there, which is why the hand-off cannot be seen. */
+  .brand-mark-flourish.brand-mark-loop {
+    animation:
+      brand-fade-in var(--motion-brand) var(--ease-brand) 1 both,
+      brand-fade-pulse var(--motion-brand-loop) ease-in-out infinite;
+    animation-delay: 0s, var(--motion-brand);
   }
 }
 
@@ -1051,6 +1078,26 @@ form[aria-busy="true"] .btn {
     opacity: 1;
     filter: blur(0);
     transform: scale(1);
+  }
+}
+
+/* 011 FR-004: the perpetual pulse, which is what draws the eye to the mark once
+   the entrance above has had its one say.
+
+   Opacity and nothing else — no blur, no scale. The entrance can afford a blur
+   because it plays once on a static screen; this one runs forever, on every
+   page, including while the reader scrolls, so it stays on the compositor.
+
+   The floor is 0.6 rather than something deeper: the mark has to stay plainly
+   legible at the bottom of every cycle, and the header lock-up sits next to a
+   wordmark that does not pulse, so a deep dip would read as the two halves of
+   the logo coming apart rather than as one mark breathing. */
+@keyframes brand-fade-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
   }
 }
 
