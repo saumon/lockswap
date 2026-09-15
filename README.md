@@ -66,7 +66,8 @@ the way. And it now looks like a product rather than a scaffold: a logo, a typef
 and a small amount of movement, applied the same way on every screen. The first thing a new account
 is asked is a question with two answers rather than a form with an optional field in it, and the way
 back into those details is a pencil in the corner of the card instead of a bar announcing itself
-underneath it.
+underneath it. And the homepage no longer keeps quiet about what someone is looking for: it says
+which floor they are after, or asks them, in the words that fit what they already hold.
 
 | Feature | Status |
 | --- | --- |
@@ -79,6 +80,7 @@ underneath it.
 | **007 — Self-dismissing notifications** | ✅ Shipped |
 | **008 — Visual identity and white theme** | ✅ Shipped |
 | **009 — First-entry choice and pencil edit** | ✅ Shipped |
+| **010 — Homepage locker wish block** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -281,6 +283,31 @@ What feature 009 changes — see
 * the pencil opens the plain two-field form and never the first-entry question: an account with a
   floor on file has already answered it, and clearing the locker number there says the same thing.
 
+What feature 010 adds — see
+[`specs/010-homepage-locker-wish-block/spec.md`](specs/010-homepage-locker-wish-block/spec.md):
+
+* the homepage now says where your locker search stands, instead of leaving a declared wish to be
+  remembered or looked up. It shows **the floor you are looking on**, and the way back to the page
+  that can change or cancel it — **Review locker wishes! 🥷**;
+* someone who has declared nothing is **asked, in the words that fit what they hold**: a locker
+  holder is offered a swap — **I want to switch my locker! 👀** — and someone with no locker is
+  asking for one — **I want a locker! 🙏**. Both are buttons, not remarks: the person with the least
+  to trade is the last one who should be left without a way forward;
+* exactly **one of the three** is ever on screen — never two, never none — and a declared wish
+  outranks both invitations, so nobody who has already said what they want is asked again;
+* the block **reports, it does not act**: declaring, moving and cancelling stay on the wishes page,
+  which every state links to in a single click or keypress;
+* it says **only the floor you are looking for**. What you hold today is on the card immediately
+  below, and one fact in two places is one fact free to disagree with itself;
+* it sits **after the proposals waiting on you** — those cannot move without an answer — and **above
+  your locker details**, which are there to be read rather than acted on;
+* a **new account never sees it**: the first screen asks one question, and a second card competing
+  with it is exactly what 009 had just finished taking off that screen. It appears once the details
+  are on file, whichever way they were answered;
+* an **outstanding swap proposal changes nothing here**. It freezes the locker card below, because
+  those values are what the other side agreed to — but a wish says what someone wants, which no
+  proposal has a claim on.
+
 ## 🧭 Method: Spec-Driven Development
 
 The project is built with **SDD** using [Spec Kit](https://github.com/github/spec-kit): the
@@ -397,7 +424,11 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   entering a locker on first sight of the app, saying you have none and being asked for nothing but a
   floor, taking that back with the floor intact, the blank floor still refused on that path, the
   pencil opening the plain form pre-filled, and the explanation still taking the pencil's place while
-  a swap is outstanding.
+  a swap is outstanding;
+* [`specs/010-homepage-locker-wish-block/quickstart.md`](specs/010-homepage-locker-wish-block/quickstart.md) —
+  each of the three states on the account that produces it, the block absent entirely for an account
+  that has filled in nothing, the wish appearing and disappearing on the homepage as it is declared
+  and cancelled elsewhere, and the invitation still standing while a swap is outstanding.
 
 ## 🚢 Deploy
 

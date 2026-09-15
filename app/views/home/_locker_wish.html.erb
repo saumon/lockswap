@@ -1,0 +1,71 @@
+<%# 010 FR-001: where the user's locker wish stands, on the page they land on.
+    Three mutually exclusive states — the wish they declared, or one of two
+    invitations to declare one — so the block never offers two ways in and
+    never offers none (SC-002). The wish wins over both invitations: someone
+    who has already said what they are looking for is not asked again.
+
+    Read through current_user rather than an instance variable. The homepage has
+    two renderers — HomeController, and LockerProfilesController re-rendering a
+    rejected locker edit — and a variable only one of them sets would drop this
+    block exactly when a user has just made a mistake (research.md §1).
+
+    Every state links to the wish page rather than acting here: declaring,
+    changing and cancelling all live there, and this block only reports and
+    points (FR-009). %>
+<div id="home-locker-wish" class="card stack-tight">
+  <% if current_user.locker_wish&.persisted? %>
+    <%# The heading the wish page's own panel carries, deliberately: the same card
+        title for the same thing on both screens is continuity, not repetition. %>
+    <h2 class="card-title">Your locker search</h2>
+
+    <dl>
+      <dt class="detail-term">Looking for a locker on floor</dt>
+      <%# FR-002: the floor sought, and nothing else. What this user already has
+          is on the card immediately below — saying it twice would be two copies
+          of one fact, free to disagree. The value on file rather than the
+          attribute, for the same reason the card below reads past it. %>
+      <dd id="home-locker-wish-floor" class="detail-value"><%= current_user.locker_wish.saved_floor %></dd>
+    </dl>
+
+    <div class="row">
+      <%# A link, not a button_to: this navigates and changes nothing, so it is
+          announced as a link and the back button behaves (research.md §2). %>
+      <%= link_to "Review locker wishes! 🥷", locker_wishes_path, class: "btn btn-primary" %>
+    </div>
+  <% elsif current_user.saved_locker_number.present? %>
+    <%# FR-004: a locker on file and nothing said about it. The heading asks the
+        question the button answers, rather than calling this "your locker
+        search" when no search exists yet.
+
+        FR-013: nothing here consults the swap proposals. An accepted one freezes
+        the card below — those values are what the other side agreed to — but a
+        wish says what someone wants, which no proposal has any claim on. %>
+    <h2 class="card-title">Looking for a different locker?</h2>
+
+    <p class="card-lead">
+      You haven't said where you'd rather be. Tell people which floor you're
+      after and find someone to swap with.
+    </p>
+
+    <div class="row">
+      <%= link_to "I want to switch my locker! 👀", locker_wishes_path, class: "btn btn-primary" %>
+    </div>
+  <% else %>
+    <%# FR-005, FR-011: no locker, and nothing declared. Having nothing to trade
+        is the reason to be here, not a reason to be left out.
+
+        This state is a button like the other two, deliberately. Stated as a bare
+        line of text it would leave the person with the least to lose by swapping
+        with no way off this page — so the invitation is the control. %>
+    <h2 class="card-title">Looking for a locker?</h2>
+
+    <p class="card-lead">
+      You don't have a locker yet. Say which floor you're looking on so people
+      know you're waiting for one.
+    </p>
+
+    <div class="row">
+      <%= link_to "I want a locker! 🙏", locker_wishes_path, class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>
