@@ -8,6 +8,10 @@ fi
 # Default to port 3000 if not specified
 export PORT="${PORT:-3000}"
 
+# Listen on all interfaces so the app is reachable from other devices on the
+# LAN (phones, tablets). Rails binds to localhost only in development.
+export BINDING="${BINDING:-0.0.0.0}"
+
 # Let the debug gem allow remote connections,
 # but avoid loading until `debugger` is called
 export RUBY_DEBUG_OPEN="true"
