@@ -78,4 +78,5 @@ Rails.application.configure do
 
   # Enable DNS rebinding protection and other `Host` header attacks.
   config.hosts << "lockswap-dev.saumon.cc"
+  config.hosts << "devbox.saumon.cc"
 end
