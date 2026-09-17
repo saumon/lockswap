@@ -98,7 +98,9 @@ stopped standing still, too: on the way in, and in the corner of every page afte
 breathes — slowly, by itself, and not at all for anyone who has asked their system for less movement.
 And it now fits the screen it is actually being read on: the menu folds behind a single control on a
 phone and stays a bar on a desktop, the swap lists stop being tables too wide to read and become one
-labelled card per person, and nothing anywhere asks to be scrolled sideways.
+labelled card per person, and nothing anywhere asks to be scrolled sideways. The site has also
+acquired somebody in charge: whoever registered first, decided once and never handed on, with a menu
+of their own holding the list of everyone who has signed up.
 
 | Feature | Status |
 | --- | --- |
@@ -114,6 +116,7 @@ labelled card per person, and nothing anywhere asks to be scrolled sideways.
 | **010 — Homepage locker wish block** | ✅ Shipped |
 | **011 — Looping logo fade** | ✅ Shipped |
 | **012 — Responsive layout and menu** | ✅ Shipped |
+| **013 — Admin role and user directory** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -415,6 +418,45 @@ What feature 012 changes — see
   The keyboard is walked in both treatments, because restacking a layout is allowed and reordering it
   underneath someone navigating by Tab is not.
 
+What feature 013 adds — see
+[`specs/013-admin-user-directory/spec.md`](specs/013-admin-user-directory/spec.md):
+
+* **the first account ever registered is the site's administrator**, decided at the moment it signs
+  up and with nothing to configure. There is no setup step, no seed, no environment variable: the
+  person who opens the application first is the person it belongs to;
+* that answer is **written down rather than worked out**. The difference only shows when the
+  administrator deletes their own account: an application that asked "who is oldest?" would quietly
+  hand the role to whoever is now oldest, and this one hands it to nobody. The site is left without
+  an administrator until somebody says otherwise, which is the honest outcome — the role was given to
+  an account, not to a position in a queue;
+* **one administrator, and the database is what promises it.** The check reads the table before
+  writing to it, so two people signing up in the same instant can both find it empty and both claim
+  the role; a unique index refuses the second, and the application catches that refusal and lets the
+  signup through without the role rather than failing it. Losing a race is not a reason to be told
+  your account could not be created;
+* the administrator gets an **Admin menu that nobody else has**, with **Users** inside it. It is the
+  browser's own disclosure, the fourth place in the application to use it, so it opens, closes, takes
+  the keyboard and announces whether it is open with no JavaScript at all — and it folds into the
+  phone menu and the desktop bar alike, because both are still filled from the one partial 012 left;
+* **the menu being absent is not the security.** It is never drawn for anyone else, but what actually
+  refuses a non-administrator is the request handler, which turns away an address that was typed,
+  bookmarked, or guessed and says plainly why rather than pretending the page does not exist. A link
+  left out of a page has never stopped anyone typing a URL;
+* **Users** lists **every account that has ever registered**, the administrator's own included,
+  oldest first — which puts the administrator at the top without the ordering having to mention the
+  role, since the account holding it is by definition the first one there was. Each row is an email
+  address, the date it joined, and, on exactly one of them, a badge reading **Admin**: the label is
+  said outright rather than left to be inferred from a position in a list;
+* it **reports, and offers nothing to press**. No promote, no demote, no edit, no delete — not
+  because those were left for later, but because there is no such capability behind them: the role is
+  claimed once at signup and by nothing else. A control that looked like one would be a promise the
+  application cannot keep;
+* it is **a table on a desktop and one labelled card per account on a phone**, from the same markup
+  rendered once, on the single breakpoint 012 established — a new screen joins those rules rather
+  than arriving with its own. It is audited for accessibility like every other screen, at both
+  widths, and so is the Admin menu with its submenu open: a state that exists on one account's pages
+  and would otherwise never have been looked at.
+
 ## 🧭 Method: Spec-Driven Development
 
 The project is built with **SDD** using [Spec Kit](https://github.com/github/spec-kit): the
@@ -481,7 +523,7 @@ start at `/users/sign_up`.
 
 ```sh
 bin/rails test         # models, controllers, views, and the single-breakpoint rule
-bin/rails test:system  # end-to-end signup, login, lockout, redirect, locker-details, wish, swap, and notification flows,
+bin/rails test:system  # end-to-end signup, login, lockout, redirect, locker-details, wish, swap, notification, and admin flows,
                        # plus an accessibility audit of every screen, the reduced-motion behaviour,
                        # and a sweep of every screen at both a phone and a desktop viewport
 bin/rubocop            # lint (zero warnings tolerated)
@@ -563,7 +605,12 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   narrowing the window through 768 px and watching the bar become a toggle and the lists become
   cards, the menu still opening and closing with JavaScript switched off, *Propose swap* on screen
   without a sideways swipe, and the two checks a headless browser cannot make: a form still usable
-  with the on-screen keyboard up, and the page at 200% zoom.
+  with the on-screen keyboard up, and the page at 200% zoom;
+* [`specs/013-admin-user-directory/quickstart.md`](specs/013-admin-user-directory/quickstart.md) —
+  signing up first on an empty instance and finding the Admin menu there, signing up second and
+  finding nothing, the address refused when the second account types it anyway, the directory listing
+  both accounts oldest first with the badge on one of them, and the administrator deleting their own
+  account to watch the role pass to nobody.
 
 ## 🚢 Deploy
 

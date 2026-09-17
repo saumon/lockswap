@@ -17,6 +17,30 @@
     from anywhere too. %>
 <%= link_to "Proposal history", locker_swap_proposals_path, class: "site-nav-link" %>
 
+<%# 013 FR-003/FR-004/FR-005: the administrator's menu, and nobody else's. The
+    condition is what enforces FR-004 in the markup — a non-administrator's page
+    is not sent this and then told to hide it, it is never sent it at all.
+
+    That is presentation only. The refusal that matters is in the controller
+    (ApplicationController#require_admin!), because a link left out of a page is
+    no obstacle to an address typed into a bar.
+
+    A nested <details> for the same reasons the menu around it is one (012): the
+    open/closed state, the keyboard, and the announcement of both are native, so
+    the submenu works with no JavaScript at all. Its contents are deliberately
+    inside a closed disclosure — unlike the bar in 012, "not displayed until
+    opened" is the behaviour being asked for here, not an accident to design
+    around. %>
+<% if current_user.admin? %>
+  <details class="site-submenu">
+    <summary class="site-submenu-toggle">Admin</summary>
+
+    <div class="site-submenu-panel">
+      <%= link_to "Users", admin_users_path, class: "site-nav-link" %>
+    </div>
+  </details>
+<% end %>
+
 <%# 008: the email is what truncates on a narrow screen — never the
     brand, never the controls. %>
 <span class="site-nav-identity"><%= current_user.email %></span>

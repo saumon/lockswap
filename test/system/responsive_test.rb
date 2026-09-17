@@ -151,6 +151,40 @@ class ResponsiveTest < ApplicationSystemTestCase
     end
   end
 
+  # 013: the administrator's users screen is a table too, so it owes FR-005 the
+  # same debt as the two above — one labelled card per account below the
+  # breakpoint, the table above it. frank because he is the only account that can
+  # open the screen at all.
+  test "the users screen is stacked cards on a phone and a table on a desktop" do
+    log_in_as users(:frank)
+    visit admin_users_path
+    assert_selector ".data-table tbody tr", minimum: 1
+
+    with_viewport(:phone) do
+      assert_equal "block", computed_display(".data-table tbody tr")
+      assert_no_horizontal_overflow "the users screen"
+    end
+
+    with_viewport(:desktop) do
+      assert_equal "table-row", computed_display(".data-table tbody tr")
+    end
+  end
+
+  # FR-007 for the one control 013 adds. The sweep below runs as carol, who has
+  # no Admin menu to measure, so the administrator's own row of the navigation
+  # would otherwise never be held to the touch target rule.
+  test "the Admin menu is a real touch target at phone width" do
+    log_in_as users(:frank)
+
+    with_viewport(:phone) do
+      visit admin_users_path
+      find(".site-menu-toggle").click
+      assert_selector ".site-menu-panel summary", text: "Admin", visible: true
+
+      assert_touch_targets_at_least 44
+    end
+  end
+
   # --- No horizontal overflow, anywhere (FR-001, FR-022a) -------------------
 
   test "no signed-in screen scrolls sideways at the narrow widths" do

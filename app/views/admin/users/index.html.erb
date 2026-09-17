@@ -1,0 +1,52 @@
+<% content_for :title, "Users" %>
+
+<%# 013 User Story 2: who is registered on this site, and who was first.
+    Read-only by design (FR-009) — there is no control here, because there is no
+    capability behind one: administrator status is claimed once at signup and
+    never granted or revoked by hand. %>
+<div class="stack">
+  <div id="admin-user-directory" class="card stack-tight">
+    <h1 class="page-title">Registered users</h1>
+
+    <%# 012 FR-005: a table above the breakpoint, one labelled card per account
+        below it, from the same markup rendered once — so both forms show the
+        same accounts in the same order, because there is only one order.
+
+        The explicit roles are what keep that safe: changing an element's display
+        drops the implicit table roles, and a screen reader has to meet each
+        account as a set of labelled fields either way (012 FR-005d). %>
+    <div class="table-scroll">
+      <table class="data-table" role="table">
+        <thead>
+          <tr role="row">
+            <th scope="col" role="columnheader">Email</th>
+            <th scope="col" role="columnheader">Joined</th>
+            <%# FR-012: its own column rather than a mark tacked onto the email,
+                so the one row that differs says how it differs. %>
+            <th scope="col" role="columnheader">Role</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @users.each do |user| %>
+            <tr id="admin-user-row-<%= user.id %>" role="row">
+              <td class="strong" role="cell" data-label="Email"><%= user.email %></td>
+              <td class="meta" role="cell" data-label="Joined"><%= l user.created_at, format: :long %></td>
+
+              <%# 008 FR-025: the tint decorates the word, it does not replace it —
+                  "Admin" is what carries the meaning, for a reader who cannot
+                  tell the badge's colour from any other. %>
+              <td role="cell" data-label="Role" class="<%= "detail-value-empty" unless user.admin? %>">
+                <% if user.admin? %>
+                  <span class="badge badge-info">Admin</span>
+                <% else %>
+                  —
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
