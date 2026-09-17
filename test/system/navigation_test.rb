@@ -59,6 +59,65 @@ class NavigationTest < ApplicationSystemTestCase
     end
   end
 
+  # --- 013: the administrator's entry ---------------------------------------
+
+  # FR-003/FR-005: the administrator gets one more thing in the navigation than
+  # anyone else — an "Admin" menu, with "Users" inside it. Asserted at both
+  # treatments, because the menu is rendered into two containers (012) and an
+  # entry that only reached one of them would be missing on half the site.
+  test "the administrator's navigation carries an Admin menu holding Users" do
+    log_in_as users(:frank)
+
+    with_viewport(:desktop) do
+      within ".site-bar" do
+        assert_selector "summary", text: "Admin"
+        # Inside a closed disclosure the link is present but not yet displayed,
+        # which is the whole point of a submenu — so this asks for it either way
+        # and then opens the menu to see it properly.
+        assert_link "Users", visible: :all
+        find("summary", text: "Admin").click
+        assert_link "Users", visible: true
+      end
+    end
+
+    with_viewport(:phone) do
+      find(".site-menu-toggle").click
+
+      within ".site-menu-panel" do
+        find("summary", text: "Admin").click
+        assert_link "Users", visible: true
+      end
+    end
+  end
+
+  # FR-004: and everybody else gets exactly what they got before. Not hidden,
+  # not disabled — absent, at either width, with the menu opened so a narrow
+  # panel is actually looked inside rather than assumed empty.
+  test "a non-administrator's navigation has no Admin entry at either width" do
+    log_in_as users(:carol)
+
+    with_viewport(:desktop) do
+      assert_no_selector "header summary", text: "Admin", visible: :all
+      assert_no_link "Users", visible: :all
+    end
+
+    with_viewport(:phone) do
+      find(".site-menu-toggle").click
+      assert_no_selector ".site-menu-panel summary", text: "Admin", visible: :all
+      assert_no_link "Users", visible: :all
+    end
+  end
+
+  # FR-005: the entry is a way somewhere, not a label. Following it has to arrive.
+  test "the Admin menu leads the administrator to the users screen" do
+    log_in_as users(:frank)
+
+    find("summary", text: "Admin").click
+    click_on "Users"
+
+    assert_current_path admin_users_path
+  end
+
   test "the wordmark takes a logged-in visitor back to the homepage" do
     log_in_as users(:carol)
     visit locker_wishes_path

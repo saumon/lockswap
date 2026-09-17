@@ -155,6 +155,42 @@ class AccessibilityTest < ApplicationSystemTestCase
     assert_axe_clean
   end
 
+  # 013: the administrator's screen is audited like every other one. frank rather
+  # than carol throughout this section — he is the only account that can reach it.
+  test "the administrator's users screen is accessible" do
+    log_in_as users(:frank)
+    visit admin_users_path
+    assert_selector "#admin-user-directory"
+    assert_axe_clean
+  end
+
+  # 013 FR-003: the Admin menu open, which is a state that exists on one account's
+  # pages and nobody else's — so it would never be looked at unless asked for by
+  # name. Audited at both treatments for the same reason 012 audits the panel:
+  # the menu is rendered into two containers and only one of them is ever on.
+  test "the open Admin submenu is accessible in the bar" do
+    log_in_as users(:frank)
+
+    with_viewport(:desktop) do
+      visit root_path
+      find(".site-bar summary", text: "Admin").click
+      assert_link "Users", visible: true
+      assert_axe_clean
+    end
+  end
+
+  test "the open Admin submenu is accessible in the panel" do
+    log_in_as users(:frank)
+
+    with_viewport(:phone) do
+      visit root_path
+      find(".site-menu-toggle").click
+      find(".site-menu-panel summary", text: "Admin").click
+      assert_link "Users", visible: true
+      assert_axe_clean
+    end
+  end
+
   # --- Tab order (FR-015b) --------------------------------------------------
   #
   # Restructuring a layout is allowed; walking it out of order is not. These are
@@ -223,6 +259,17 @@ class AccessibilityTest < ApplicationSystemTestCase
   test "the proposal history is accessible as stacked cards" do
     log_in_as users(:bob)
     visit locker_swap_proposals_path
+
+    with_viewport(:phone) do
+      assert_selector ".data-table tbody tr", minimum: 1
+
+      assert_axe_clean
+    end
+  end
+
+  test "the users screen is accessible as stacked cards" do
+    log_in_as users(:frank)
+    visit admin_users_path
 
     with_viewport(:phone) do
       assert_selector ".data-table tbody tr", minimum: 1

@@ -883,12 +883,109 @@
     padding-inline: var(--spacing-3);
   }
 
+  /* --- 013: the administrator's submenu -----------------------------------
+     A second disclosure, nested inside the menu, holding the destinations that
+     are the administrator's alone (FR-005). Native <details> again, so it opens,
+     closes, takes the keyboard and announces its state without any script —
+     the same reasoning as the menu around it.
+
+     Unlike 012's bar, a closed submenu genuinely should hide its contents: that
+     is what a submenu is. The trap 012 documents does not apply, because nothing
+     here is meant to be readable while collapsed. */
+  .site-submenu {
+    position: relative;
+  }
+
+  /* Matched to .site-nav-link rather than styled apart from it: in the bar this
+     sits among the destinations and should read as one of them. */
+  .site-submenu-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    color: var(--color-ink-muted);
+    font-size: var(--text-label);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .site-submenu-toggle::-webkit-details-marker {
+    display: none;
+  }
+
+  .site-submenu-toggle:hover {
+    color: var(--color-ink);
+  }
+
+  /* The same caret .disclosure-summary draws, at the smaller size this row wants:
+     one shape for "there is more behind this", used everywhere it is true. */
+  .site-submenu-toggle::after {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+    flex: none;
+  }
+
+  .site-submenu[open] > .site-submenu-toggle::after {
+    transform: rotate(-135deg);
+  }
+
+  /* In the narrow panel the submenu opens in place, pushing the rows below it
+     down — there is nowhere for a dropdown to go on a phone, and the panel is
+     already an overlay. The indent is what says the link belongs to the menu
+     above it rather than to the list it sits in.
+
+     FR-007: the row is the target, matching .site-menu-panel .site-nav-link
+     immediately above. Its own min-height would otherwise be the text's. */
+  .site-menu-panel .site-submenu-toggle {
+    min-height: 2.75rem;
+    padding-inline: var(--spacing-3);
+    border-radius: var(--radius-sm);
+  }
+
+  .site-menu-panel .site-submenu-panel {
+    padding-inline-start: var(--spacing-3);
+  }
+
   /* The wide treatment's container: the row this header has always had. Hidden
      below the breakpoint, where the disclosure above takes over. */
   .site-bar {
     display: none;
     align-items: center;
     gap: var(--spacing-3);
+  }
+
+  /* 013: in the bar the submenu drops out of the flow when it opens, so the bar
+     keeps its height and the header does not grow — the same reason 012's own
+     panel is positioned rather than pushed in. */
+  @media (min-width: 48rem) {
+    .site-bar .site-submenu-panel {
+      position: absolute;
+      top: calc(100% + var(--spacing-2));
+      left: 0;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-2);
+      min-width: 9rem;
+      padding: var(--spacing-3);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .site-bar .site-submenu-panel .site-nav-link {
+      display: flex;
+      align-items: center;
+      min-height: 2.25rem;
+      padding-inline: var(--spacing-2);
+      border-radius: var(--radius-sm);
+      white-space: nowrap;
+    }
   }
 
   /* --- 012: swapping the two treatments -----------------------------------

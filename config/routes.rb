@@ -31,6 +31,15 @@ Rails.application.routes.draw do
     end
   end
 
+  # 013 FR-005: the administrator's own corner of the site. Namespaced from the
+  # start, though it holds one destination today: "Admin" is a menu in the
+  # navigation, and what sits under it belongs under it in the routes too.
+  # Index only — the screen reports who is registered and offers nothing to press
+  # (FR-009), so there is no other action to route.
+  namespace :admin do
+    resources :users, only: :index
+  end
+
   # Defines the root path route ("/") — the homepage a successful login lands on (FR-005).
   root "home#index"
 end

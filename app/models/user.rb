@@ -22,6 +22,43 @@ class User < ApplicationRecord
   # NULLs as distinct, but two empty strings would collide (002 FR-002, FR-011).
   normalizes :locker_number, with: ->(value) { value.blank? ? nil : value }
 
+  # 013 FR-001: the first account ever registered is the site's administrator.
+  # Assigned here rather than derived on read, because a derived answer would move
+  # to the next-oldest account the moment this one was deleted — which FR-011
+  # forbids: deleting the administrator leaves the site with none, not a successor.
+  #
+  # The assignment is unconditional rather than `= true if ...`, so this is the
+  # only thing that can ever set the flag: an explicit `admin: true` passed to
+  # create is overwritten here, and there is no path through Active Record that
+  # mints a second administrator (FR-002).
+  #
+  # before_create, so an update never revisits it. exists? rather than a count —
+  # the question is whether anybody is already here, not how many.
+  before_create :claim_administrator_if_first
+
+  # 013 FR-002, research.md R2: the index is what actually guarantees one
+  # administrator, so this is where losing to it is handled.
+  #
+  # Two signups on an empty site can both come out of claim_administrator_if_first
+  # holding the flag; one INSERT then wins and the other is rejected. The loser
+  # still signed up — losing a race is not a signup failure — so the save is
+  # retried, and the callback, re-reading a table that now has the winner in it,
+  # hands the retry admin: false on its own.
+  #
+  # Only this conflict is caught: an email or locker-number collision is a real
+  # refusal with a message for the user, and must keep raising. The retry is not
+  # itself rescued, so a second failure propagates rather than looping.
+  #
+  # save and not save!, because signup reaches this through Devise's
+  # `resource.save`; nothing in the application creates an account with save!.
+  def save(**options, &block)
+    super
+  rescue ActiveRecord::RecordNotUnique => error
+    raise unless lost_the_administrator_race?(error)
+
+    super
+  end
+
   # Both rules are scoped to :locker_profile_update so they only apply on the
   # locker-profile save path. A blanket validation would block every other save
   # for a user who has not set a floor yet — including Devise's own account
@@ -56,6 +93,25 @@ class User < ApplicationRecord
   validate :locker_details_held_by_active_swap, on: :locker_profile_update
 
   private
+
+    # 013 FR-002: this runs before the row is inserted, so two signups landing
+    # together can both find the site empty and both try to claim the flag. The
+    # partial unique index is what actually settles that race; see #save.
+    def claim_administrator_if_first
+      self.admin = !User.exists?
+    end
+
+    # Was the rejected write this record's attempt to claim the administrator
+    # flag, rather than a genuine collision on email or on a locker?
+    #
+    # Matched on the index as well as the column: SQLite names the column in the
+    # message ("users.admin") and other adapters name the index, and this should
+    # not quietly stop working if the database under it ever changes.
+    ADMINISTRATOR_INDEX_CONFLICT = /users\.admin\b|index_users_on_admin/
+
+    def lost_the_administrator_race?(error)
+      admin? && error.message.match?(ADMINISTRATOR_INDEX_CONFLICT)
+    end
 
     # Only a value already on file is held: someone who has never recorded a
     # floor or a locker number is still asked for it, since an offer cannot have

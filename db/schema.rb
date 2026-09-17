@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_13_165921) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_17_181212) do
   create_table "locker_swap_proposals", force: :cascade do |t|
     t.datetime "completed_at"
     t.datetime "created_at", null: false
@@ -41,6 +41,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_165921) do
   end
 
   create_table "users", force: :cascade do |t|
+    t.boolean "admin", default: false, null: false
     t.datetime "created_at", null: false
     t.string "email", default: "", null: false, collation: "NOCASE"
     t.string "encrypted_password", default: "", null: false
@@ -50,6 +51,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_165921) do
     t.string "locker_number"
     t.datetime "remember_created_at"
     t.datetime "updated_at", null: false
+    t.index ["admin"], name: "index_users_on_admin", unique: true, where: "admin = 1"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["floor", "locker_number"], name: "index_users_on_floor_and_locker_number", unique: true
   end

@@ -247,4 +247,134 @@ class UserTest < ActiveSupport::TestCase
 
     assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
   end
+
+  # --- 013: the administrator -----------------------------------------------
+
+  # FR-001: on an instance nobody has registered on yet, the first account to be
+  # created is the administrator, with no setup step by anyone.
+  #
+  # destroy_all rather than delete_all: the fixtures hang wishes and proposals off
+  # these rows, and the foreign keys would refuse a bare delete. The empty site is
+  # the precondition the requirement is written about, so it has to be built here
+  # rather than assumed — every test in this file starts with six accounts loaded.
+  test "the first account ever created is the administrator" do
+    User.destroy_all
+
+    first = User.create!(email: "first@example.com", password: VALID_PASSWORD)
+
+    assert_predicate first, :admin?
+  end
+
+  # FR-002: the flag is claimed once, by the first account, and no later signup
+  # is a candidate for it however many accounts come and go afterwards.
+  test "an account created after the first is not an administrator" do
+    User.destroy_all
+    User.create!(email: "first@example.com", password: VALID_PASSWORD)
+
+    second = User.create!(email: "second@example.com", password: VALID_PASSWORD)
+
+    assert_not_predicate second, :admin?
+  end
+
+  # The ordinary case on a site that is already running: signing up today makes
+  # nobody an administrator, whatever the fixtures happen to contain.
+  test "signing up on a site that already has accounts grants nothing" do
+    user = User.create!(email: "newcomer@example.com", password: VALID_PASSWORD)
+
+    assert_not_predicate user, :admin?
+    assert_equal users(:frank), User.find_by(admin: true)
+  end
+
+  # FR-002/SC-002: the callback reads the table before the insert, so it cannot be
+  # what guarantees a single administrator under concurrency — the index is. This
+  # asserts the index on its own, going around the callback with insert_all! the
+  # way the locker-number test goes around its validation.
+  test "the database refuses a second administrator" do
+    assert_raises ActiveRecord::RecordNotUnique do
+      User.insert_all!([ {
+        email: "rival@example.com",
+        encrypted_password: Devise::Encryptor.digest(User, VALID_PASSWORD),
+        admin: true, created_at: Time.current, updated_at: Time.current
+      } ])
+    end
+  end
+
+  # FR-002, research.md R2: two signups on an empty site can both read it as
+  # empty and both come to the insert claiming the flag. The one that gets there
+  # second must still end up with an account — losing a race is not a signup
+  # failure — just without the flag. Never both, and never neither.
+  test "a signup that loses the race to claim the flag is still saved, without it" do
+    User.destroy_all
+
+    loser = User.new(email: "loser@example.com", password: VALID_PASSWORD)
+    with_a_rival_claiming_the_flag_mid_save(email: "winner@example.com") do
+      assert loser.save, loser.errors.full_messages.to_sentence
+    end
+
+    assert_not_predicate loser.reload, :admin?
+    assert_equal 1, User.where(admin: true).count
+    assert_equal "winner@example.com", User.find_by(admin: true).email
+  end
+
+  # FR-011: the flag does not move. Deleting the account that holds it leaves the
+  # site with no administrator at all — there is no next-in-line, by design.
+  test "deleting the administrator leaves the site with no administrator" do
+    users(:frank).destroy
+
+    assert_nil User.find_by(admin: true)
+    assert_predicate User.count, :positive?
+  end
+
+  # The same rule seen from the other side: an empty administrator slot is not an
+  # opening that the next person to sign up walks into.
+  test "signing up after the administrator is deleted does not fill the vacancy" do
+    users(:frank).destroy
+
+    newcomer = User.create!(email: "newcomer@example.com", password: VALID_PASSWORD)
+
+    assert_not_predicate newcomer, :admin?
+    assert_nil User.find_by(admin: true)
+  end
+
+  private
+
+    # Stages the state the rescue exists for: another signup has already taken the
+    # flag and committed, while this record is still carrying its own claim to it.
+    #
+    # The winner is written first, and outside the save. Inserting it from inside
+    # the loser's save — which is where it lands in wall-clock terms — does not
+    # survive: the rejected INSERT rolls that transaction back and takes the
+    # winner with it, so the retry finds an empty table and claims the flag after
+    # all. In a real race the winner is committed on its own connection and no
+    # rollback of the loser's touches it, which is what writing it here reproduces.
+    #
+    # The lambda then puts the claim back once, standing in for the loser having
+    # read the site as empty a moment before the winner committed. Once only: on
+    # the retry the callback's own answer is what must stand, and that is the
+    # behaviour under test.
+    #
+    # insert_all! so the winner skips callbacks — through create! it would read
+    # the site as empty too and stage a different situation. No mocking gem is
+    # bundled (see Gemfile), so this is hand-rolled, as the comparable stub in
+    # locker_wishes_controller_test is.
+    def with_a_rival_claiming_the_flag_mid_save(email:)
+      User.insert_all!([ {
+        email: email,
+        encrypted_password: Devise::Encryptor.digest(User, VALID_PASSWORD),
+        admin: true, created_at: Time.current, updated_at: Time.current
+      } ])
+
+      claimed = false
+      still_claiming = lambda do
+        next if claimed
+
+        claimed = true
+        self.admin = true
+      end
+
+      User.set_callback(:create, :before, still_claiming)
+      yield
+    ensure
+      User.skip_callback(:create, :before, still_claiming, raise: false)
+    end
 end
