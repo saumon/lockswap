@@ -33,14 +33,12 @@ SERVICE_NAME="puma-lockswap"
 # WORKER_SERVICE_NAME="solid-queue-lockswap"
 
 # RVM : ce script est lancé depuis le hook post-receive via SSH, dans un
-# shell non interactif / non login. /etc/profile.d/rvm.sh n'est jamais
-# sourcé automatiquement dans ce contexte, donc bundle/bin/rails ne sont
-# pas dans le PATH sans ce chargement explicite.
-# (set +u/-u autour : les scripts RVM ne supportent pas `nounset`.)
-set +u
-source "/etc/profile.d/rvm.sh"
-rvm use "ruby-3.4.6" --silent
-set -u
+# shell non interactif / non login. On passe par le binaire RVM autonome
+# (comme le fait déjà le unit systemd de Puma) plutôt que par
+# `source .../rvm.sh` + `rvm use`, qui déclenche un bug connu de RVM
+# ("gemset_name: unbound variable") en contexte non interactif.
+RVM_BIN="/usr/local/rvm/bin/rvm"
+RVM_RUBY="ruby-3.4.6"
 
 # Inherited git env vars would override the repo detected below.
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_CEILING_DIRECTORIES
@@ -103,13 +101,13 @@ DEPLOYED_SHA="$(git --git-dir="${BARE_DIR}" rev-parse --short "refs/heads/${BRAN
 echo "Deployed commit: ${DEPLOYED_SHA}"
 
 echo "[3/6] Installing Ruby dependencies (if needed)..."
-bundle install
+"${RVM_BIN}" "${RVM_RUBY}" do bundle install
 
 echo "[4/6] Precompiling JavaScript/CSS assets in ${RAILS_ENVIRONMENT}..."
-RAILS_ENV="${RAILS_ENVIRONMENT}" bundle exec rails assets:precompile
+RAILS_ENV="${RAILS_ENVIRONMENT}" "${RVM_BIN}" "${RVM_RUBY}" do bundle exec rails assets:precompile
 
 echo "[5/6] Running migrations in ${RAILS_ENVIRONMENT}..."
-RAILS_ENV="${RAILS_ENVIRONMENT}" bin/rails db:migrate
+RAILS_ENV="${RAILS_ENVIRONMENT}" "${RVM_BIN}" "${RVM_RUBY}" do bin/rails db:migrate
 
 echo "[6/6] Starting service ${SERVICE_NAME}..."
 systemctl --user start "${SERVICE_NAME}"
