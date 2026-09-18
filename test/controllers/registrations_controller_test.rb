@@ -139,4 +139,89 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
 
     assert_nil flash[:alert]
   end
+
+  # --- 016: the allowed email domains gate ------------------------------------
+  #
+  # The model test proves the validation refuses the record. These prove the
+  # refusal is reached by the real signup and that the required sentence is on the
+  # page the person is actually looking at — which is the requirement (FR-006),
+  # and is not the same claim.
+  #
+  # No fixture configures a domain (research.md R5), so the tests above this line
+  # sign accounts up unrestricted, exactly as they did before this feature.
+
+  # FR-005, FR-006, SC-002.
+  test "a signup on a domain outside the allow-list is refused with the required message" do
+    AllowedEmailDomain.create!(domain: "allowed.example")
+
+    assert_no_difference -> { User.count } do
+      post user_registration_path, params: {
+        user: { email: "person@other.example", password: VALID_PASSWORD,
+                password_confirmation: VALID_PASSWORD }
+      }
+    end
+
+    assert_response :unprocessable_entity
+    assert_select "#error_explanation li", text: User::EMAIL_DOMAIN_NOT_ALLOWED_MESSAGE
+  end
+
+  # FR-005 acceptance scenario 3, SC-003: a permitted domain registers exactly as
+  # it always did — signed in, landed on the homepage, nothing about the flow
+  # changed by the restriction existing.
+  test "a signup on an allowed domain proceeds as it always did" do
+    AllowedEmailDomain.create!(domain: "allowed.example")
+
+    assert_difference -> { User.count }, 1 do
+      post user_registration_path, params: {
+        user: { email: "person@allowed.example", password: VALID_PASSWORD,
+                password_confirmation: VALID_PASSWORD }
+      }
+    end
+
+    assert_redirected_to root_path
+  end
+
+  # FR-007 through the real form: the address is folded before it is compared, so
+  # the casing a person happens to type decides nothing.
+  test "a signup matching an allowed domain in another casing is accepted" do
+    AllowedEmailDomain.create!(domain: "allowed.example")
+
+    assert_difference -> { User.count }, 1 do
+      post user_registration_path, params: {
+        user: { email: "Person@Allowed.Example", password: VALID_PASSWORD,
+                password_confirmation: VALID_PASSWORD }
+      }
+    end
+  end
+
+  # FR-004, SC-003: with nothing configured the gate is not merely open, it is
+  # absent. Stated explicitly rather than left to be inferred from the other tests
+  # in this file passing, because it is the requirement that keeps this feature
+  # from changing the site for anyone who never uses it.
+  test "with no domain configured a signup on any domain is accepted" do
+    assert_equal 0, AllowedEmailDomain.count
+
+    assert_difference -> { User.count }, 1 do
+      post user_registration_path, params: {
+        user: { email: "anyone@wherever.example", password: VALID_PASSWORD,
+                password_confirmation: VALID_PASSWORD }
+      }
+    end
+
+    assert_redirected_to root_path
+  end
+
+  # FR-010: the restriction gates registration, not the people already through it.
+  # An account whose domain is not on a newly configured list must still be able
+  # to sign in — the failure mode that would lock an entire company out of its own
+  # site the moment an administrator mistyped a domain.
+  test "an existing account on a disallowed domain can still sign in" do
+    AllowedEmailDomain.create!(domain: "allowed.example")
+
+    post user_session_path, params: {
+      user: { email: users(:carol).email, password: VALID_PASSWORD }
+    }
+
+    assert_redirected_to root_path
+  end
 end

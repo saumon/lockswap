@@ -106,7 +106,10 @@ who would rather read back what they typed than find out at the login form. Bein
 stopped being something one account holds alone, too: an administrator can hand the role to somebody
 else from the list they already had, behind a confirmation that names the account and says the grant
 cannot be taken back — and each row now says where its rights came from, so a site with several
-administrators can still answer how each of them got there.
+administrators can still answer how each of them got there. And who may join at all has become
+something the site can decide: an administrator can list the email domains allowed to register, and a
+signup from anywhere else is refused. With that list left empty, which is where every instance starts,
+registration stays open to everyone exactly as it was.
 
 | Feature | Status |
 | --- | --- |
@@ -125,6 +128,7 @@ administrators can still answer how each of them got there.
 | **013 — Admin role and user directory** | ✅ Shipped |
 | **014 — Password confirmation and visibility toggle** | ✅ Shipped |
 | **015 — Granting administrator rights** | ✅ Shipped |
+| **016 — Danger Zone: allowed email domains** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -565,6 +569,46 @@ What feature 015 adds — see
   phone, on the single breakpoint 012 established, and goes through the same accessibility audit as
   every other screen at both widths.
 
+What feature 016 adds — see
+[`specs/016-danger-zone-email-domains/spec.md`](specs/016-danger-zone-email-domains/spec.md):
+
+* **the site can decide who is allowed to sign up at all**, by email domain. A **Danger Zone** screen,
+  in the Admin menu beside *Users*, holds the list of domains that may create an account: with
+  `company.com` on it, `someone@company.com` registers exactly as before and everybody else is turned
+  away with *Your email address domain is not allowed*. It is named for the class of setting rather
+  than for this one — what belongs on that screen is anything whose blast radius is the whole site;
+* **an empty list is the absence of a restriction, not a restriction of nothing.** Every existing
+  instance starts there and nothing changes until somebody adds a domain, which means this feature is
+  inert until it is deliberately switched on. There is no separate on/off switch to get out of step
+  with the list: the presence of a domain *is* the restriction, and taking the last one off lifts it
+  again. That escape hatch is the reason removal is a first-class capability rather than something to
+  add later — a restriction with no way back is a way to lock yourself out of your own application;
+* **subdomains are not included.** `company.com` admits `company.com` and nothing else;
+  `mail.company.com` has to be listed in its own right. The comparison is exact rather than a test on
+  how an address ends, which is what stops `evilcompany.com` being admitted by a domain it merely
+  finishes the same way as;
+* **the accounts already registered are never re-judged.** The check runs at the moment an account is
+  created and at no other, so configuring a domain cannot strand the people already on the site: they
+  sign in, reset their passwords and edit their details exactly as before. A rule applied backwards
+  would leave a whole company one mistyped domain away from being locked out of its own application;
+* **the entries are checked before they are stored.** A value that is not a domain is refused with an
+  example of one rather than a restatement of the rule, a domain already on the list is refused as a
+  duplicate, and casing and stray whitespace are normalised instead of being treated as differences —
+  *Company.COM* and *company.com* are the same domain, and the site keeps one of them. A refused
+  entry comes back on the screen it was typed on, with the existing list still underneath it;
+* **removing a domain is guarded the way granting the role is**, by a confirmation naming it — and
+  when it is the last one, saying what taking it off opens up. Reopening the site to every domain is a
+  larger thing than deleting a row, and it should not have to be inferred from a table going empty;
+* **the menu entry is not the security**, as it was not for 013. The link is never drawn for anyone
+  else, but what actually refuses a non-administrator is the request handler — on the screen and on
+  both of the addresses that change the list, typed, bookmarked or guessed. The refusal shows none of
+  the configuration it is refusing access to;
+* it is **a table on a desktop and one labelled card per domain on a phone**, on the single breakpoint
+  012 established, and it is audited for accessibility in three states rather than one: empty,
+  populated, and showing a refused entry. Each *Remove* control carries its domain in its accessible
+  name, because a column of buttons all reading *Remove* leaves somebody who cannot see the row
+  counting their way down it.
+
 ## 🧭 Method: Spec-Driven Development
 
 The project is built with **SDD** using [Spec Kit](https://github.com/github/spec-kit): the
@@ -732,7 +776,13 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   signing up with the two passwords agreeing and then with them differing, the message staying away
   until the confirmation field is first left and clearing itself as the mistake is corrected, each eye
   revealing its own field and leaving the other alone, both fields masked again after a reload, and
-  the toggle reached and worked from the keyboard.
+  the toggle reached and worked from the keyboard;
+* [`specs/016-danger-zone-email-domains/quickstart.md`](specs/016-danger-zone-email-domains/quickstart.md) —
+  listing a domain and watching a signup from anywhere else refused with the exact message while one
+  from that domain goes through, lifting the restriction again by removing the last domain, the
+  malformed and duplicate entries refused on the screen, a subdomain of a listed domain still refused
+  until it is listed itself, an account whose domain is no longer allowed still signing in, and the
+  screen and both of its write addresses refused to an account that is not an administrator.
 
 ## 🚢 Deploy
 

@@ -517,6 +517,116 @@ class UserTest < ActiveSupport::TestCase
     assert_predicate User.create!(email: "next@example.com", password: VALID_PASSWORD), :admin?
   end
 
+  # --- 016: the allowed email domains gate -----------------------------------
+  #
+  # No fixture configures a domain (research.md R5), so the table is empty in
+  # every test that does not say otherwise — which is the site's own default and
+  # the reason every other signup test in the suite is unaffected by this feature.
+
+  # FR-004: nothing configured, nothing restricted. This is the state the site
+  # ships in and the state it returns to when the last domain is removed.
+  test "with no domain configured, any email domain may register" do
+    [ "anyone@wherever.example", "someone@another.test" ].each do |email|
+      assert_predicate User.new(email: email, password: VALID_PASSWORD), :valid?
+    end
+  end
+
+  # FR-005: the whole point of the feature.
+  test "with a domain configured, an email on another domain is refused" do
+    AllowedEmailDomain.create!(domain: "allowed.example")
+
+    user = User.new(email: "person@other.example", password: VALID_PASSWORD)
+
+    assert_not_predicate user, :valid?
+  end
+
+  # FR-006: the exact sentence, on :base rather than on :email — full_messages
+  # prefixes an attribute-scoped message with the attribute name, and the spec
+  # requires this text and no other (research.md R2). A test that matched loosely
+  # would let "Email Your email address domain is not allowed" through.
+  test "the refusal is the exact message the spec requires" do
+    AllowedEmailDomain.create!(domain: "allowed.example")
+
+    user = User.new(email: "person@other.example", password: VALID_PASSWORD)
+    user.validate
+
+    assert_equal [ "Your email address domain is not allowed" ], user.errors[:base]
+    assert_includes user.errors.full_messages, "Your email address domain is not allowed"
+  end
+
+  test "with a domain configured, an email on that domain may register" do
+    AllowedEmailDomain.create!(domain: "allowed.example")
+
+    assert_predicate User.new(email: "person@allowed.example", password: VALID_PASSWORD), :valid?
+  end
+
+  # FR-005: any one of them, not the first one.
+  test "an email matching any configured domain may register" do
+    %w[first.example second.example third.example].each { |d| AllowedEmailDomain.create!(domain: d) }
+
+    assert_predicate User.new(email: "person@second.example", password: VALID_PASSWORD), :valid?
+    assert_not_predicate User.new(email: "person@fourth.example", password: VALID_PASSWORD), :valid?
+  end
+
+  # FR-007: case-insensitive, from either side — the configured domain is
+  # normalized on the way in, and the submitted address is folded on the way
+  # through, so neither spelling decides the answer.
+  test "the match ignores casing on both sides" do
+    AllowedEmailDomain.create!(domain: "Allowed.Example")
+
+    [ "person@allowed.example", "person@Allowed.Example", "person@ALLOWED.EXAMPLE" ].each do |email|
+      assert_predicate User.new(email: email, password: VALID_PASSWORD), :valid?, email
+    end
+  end
+
+  # FR-007, Clarifications 2026-09-18: exact match only. "company.com" admits
+  # company.com and nothing else — a look-alike like evilallowed.example is the
+  # reason this is a comparison and not a suffix test.
+  test "a subdomain of an allowed domain is refused unless listed itself" do
+    AllowedEmailDomain.create!(domain: "allowed.example")
+
+    assert_not_predicate User.new(email: "person@mail.allowed.example", password: VALID_PASSWORD), :valid?
+    assert_not_predicate User.new(email: "person@evilallowed.example", password: VALID_PASSWORD), :valid?
+
+    AllowedEmailDomain.create!(domain: "mail.allowed.example")
+
+    assert_predicate User.new(email: "person@mail.allowed.example", password: VALID_PASSWORD), :valid?
+  end
+
+  # FR-010: the restriction gates registration and nothing else. Scoped on:
+  # :create, so an account that already exists is never re-judged — which is what
+  # keeps a newly configured allow-list from locking out the people already here,
+  # through Devise's own account update, a password reset, or anything else that
+  # saves an existing row.
+  test "an existing account on a now-disallowed domain still saves" do
+    existing = users(:carol)
+    AllowedEmailDomain.create!(domain: "allowed.example")
+
+    assert_not_equal "allowed.example", existing.email.split("@").last
+
+    existing.floor = "9"
+
+    assert existing.save, existing.errors.full_messages.to_sentence
+  end
+
+  test "an existing account on a now-disallowed domain can still change its password" do
+    AllowedEmailDomain.create!(domain: "allowed.example")
+
+    assert users(:carol).update(password: "newpassword123", password_confirmation: "newpassword123")
+  end
+
+  # An address with no "@" is Devise's refusal to make, not this validation's —
+  # but it must not blow up on the way past, and it must not be let through on a
+  # site that has an allow-list.
+  test "a malformed address is refused rather than raising" do
+    AllowedEmailDomain.create!(domain: "allowed.example")
+
+    user = User.new(email: "no-at-sign", password: VALID_PASSWORD)
+
+    assert_nothing_raised { user.validate }
+    assert_not_predicate user, :valid?
+  end
+
   private
 
     # Stages the state the rescue exists for: another signup has already taken the

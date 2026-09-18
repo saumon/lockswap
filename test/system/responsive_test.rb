@@ -242,6 +242,41 @@ class ResponsiveTest < ApplicationSystemTestCase
     JS
   end
 
+  # 016: the Danger Zone is a table too, so it owes 012 FR-005 the same debt as
+  # the screens above — one labelled card per domain below the breakpoint, the
+  # table above it. It also carries a form and a control per row, which is the
+  # combination most likely to push a phone sideways.
+  test "the Danger Zone is stacked cards on a phone and a table on a desktop" do
+    %w[alpha.example beta.example].each { |d| AllowedEmailDomain.create!(domain: d) }
+    log_in_as users(:frank)
+    visit admin_danger_zone_path
+    assert_selector ".data-table tbody tr", minimum: 1
+
+    with_viewport(:phone) do
+      assert_equal "block", computed_display(".data-table tbody tr")
+      assert_no_horizontal_overflow "the Danger Zone"
+      assert_touch_targets_at_least 44
+    end
+
+    with_viewport(:desktop) do
+      assert_equal "table-row", computed_display(".data-table tbody tr")
+    end
+  end
+
+  # The empty state is a different layout — a statement and a form, no table at
+  # all — so it is swept in its own right rather than assumed to follow.
+  test "the empty Danger Zone holds up at the narrow widths" do
+    log_in_as users(:frank)
+
+    [ :minimum, :phone ].each do |size|
+      with_viewport(size) do
+        visit admin_danger_zone_path
+        assert_selector "#danger-zone-allowed-domains-empty"
+        assert_no_horizontal_overflow "the empty Danger Zone at #{size}"
+      end
+    end
+  end
+
   # --- No horizontal overflow, anywhere (FR-001, FR-022a) -------------------
 
   test "no signed-in screen scrolls sideways at the narrow widths" do

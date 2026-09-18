@@ -37,6 +37,11 @@
 
     <div class="site-submenu-panel">
       <%= link_to "Users", admin_users_path, class: "site-nav-link" %>
+      <%# 016 FR-001/FR-002: the second administrator destination. It sits inside
+          the same condition as the first, so a non-administrator is never sent
+          the link at all — and, as above, that is presentation only: the refusal
+          that matters is require_admin! on the controllers behind it. %>
+      <%= link_to "Danger Zone", admin_danger_zone_path, class: "site-nav-link" %>
     </div>
   </details>
 <% end %>

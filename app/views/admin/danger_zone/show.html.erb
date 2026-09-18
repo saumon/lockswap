@@ -1,0 +1,109 @@
+<% content_for :title, "Danger Zone" %>
+
+<%# 016 User Story 1: the settings whose reach is the whole site rather than one
+    account. Today that is one setting — which email domains may register — and
+    the screen is named for the class of setting rather than for this one, because
+    what belongs here is anything with the same blast radius. %>
+<div class="stack">
+  <div id="danger-zone-allowed-domains" class="card stack-tight">
+    <h1 class="page-title">Danger Zone</h1>
+
+    <%# FR-004 said in words. "No domains configured" and "anybody may register"
+        are the same fact, and an administrator should not have to know that to
+        read the screen — so the consequence is stated, not the row count. %>
+    <p class="meta">
+      Only email addresses on the domains listed here may create an account.
+      With no domain listed, registration is open to any email domain.
+    </p>
+
+    <%# The rejected entry's reason, in the site's existing form-error component.
+        Reused rather than restyled: it is the same kind of message as every other
+        refused form on the site, and Constitution III asks for the established
+        pattern where one already solves the problem. %>
+    <%= render "devise/shared/error_messages", resource: @allowed_email_domain %>
+
+    <% if @allowed_email_domains.any? %>
+      <%# 012 FR-005: a table above the breakpoint, one labelled card per domain
+          below it, from the same markup rendered once. The explicit roles are
+          what keep that safe — changing an element's display drops the implicit
+          table roles, and a screen reader has to meet each row as a set of
+          labelled fields either way. %>
+      <div class="table-scroll">
+        <table class="data-table" role="table">
+          <thead>
+            <tr role="row">
+              <th scope="col" role="columnheader">Domain</th>
+              <th scope="col" role="columnheader">Added</th>
+              <th scope="col" role="columnheader">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% @allowed_email_domains.each do |allowed_email_domain| %>
+              <tr id="allowed-email-domain-row-<%= allowed_email_domain.id %>" role="row">
+                <td class="strong" role="cell" data-label="Domain"><%= allowed_email_domain.domain %></td>
+                <td class="meta" role="cell" data-label="Added">
+                  <%= l allowed_email_domain.created_at, format: :long %>
+                </td>
+                <td role="cell" data-label="Actions">
+                  <%# 016 User Story 2: the way back. Guarded by the same
+                      confirmation construction as "Grant admin rights" — both
+                      `confirm` and `turbo_confirm`, the first being the fallback
+                      where Turbo has not loaded — because removing a domain is
+                      the same class of act: one click, immediate effect on who
+                      may join the site.
+
+                      The message names the domain and, when this is the last one,
+                      says what removing it opens up. The accessible name names it
+                      too: a column of buttons all reading "Remove" tells a screen
+                      reader which row it is on only by position. %>
+                  <% message = if @allowed_email_domains.one?
+                       "Remove #{allowed_email_domain.domain}? " \
+                       "Registration will be open to any email domain again."
+                     else
+                       "Remove #{allowed_email_domain.domain}? " \
+                       "Nobody on that domain will be able to register."
+                     end %>
+                  <%= button_to "Remove",
+                        admin_allowed_email_domain_path(allowed_email_domain),
+                        method: :delete,
+                        class: "btn btn-secondary btn-sm",
+                        aria: { label: "Remove #{allowed_email_domain.domain}" },
+                        data: { confirm: message, turbo_confirm: message } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <%# The empty state is a statement, not a blank table: FR-004 is in force
+          right now, and this is the screen that has to say so. %>
+      <p id="danger-zone-allowed-domains-empty" class="detail-value-empty">
+        No domains are listed, so registration is currently open to any email domain.
+      </p>
+    <% end %>
+
+    <%# FR-003: one domain per submission, saved as it is entered rather than
+        collected into a pending list and saved later (spec Assumptions). There is
+        no draft state to lose, and no "unsaved changes" for an administrator to
+        walk away from.
+
+        novalidate: the server decides what is valid, so every refusal is reported
+        the same way — as the locker profile form does, and for the same reason. %>
+    <%= form_with model: @allowed_email_domain, url: admin_allowed_email_domains_path,
+                  html: { class: "stack-tight", novalidate: true } do |f| %>
+      <div class="field">
+        <%= f.label :domain, class: "field-label" %>
+        <%= f.text_field :domain, autocomplete: "off", inputmode: "url",
+              aria: { describedby: "allowed_email_domain_hint" }, class: "field-input" %>
+        <p id="allowed_email_domain_hint" class="field-hint">
+          The domain only, without the @ — for example, company.com. Subdomains are
+          not included: add mail.company.com separately if it should be allowed.
+        </p>
+      </div>
+
+      <%= f.submit "Add domain", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>

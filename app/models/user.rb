@@ -151,7 +151,44 @@ class User < ApplicationRecord
   # neither side can move them out from under the other while one is outstanding.
   validate :locker_details_held_by_active_swap, on: :locker_profile_update
 
+  # 016 FR-006: the spec fixes this sentence exactly, so it is added to :base and
+  # not to :email — full_messages prefixes an attribute-scoped message with the
+  # humanized attribute name, which would render it as "Email Your email address
+  # domain is not allowed" (research.md R2). LAST_ADMINISTRATOR_MESSAGE is on
+  # :base for the same reason.
+  EMAIL_DOMAIN_NOT_ALLOWED_MESSAGE = "Your email address domain is not allowed".freeze
+
+  # 016 FR-005: registration is gated on the administrator's allow-list.
+  #
+  # on: :create is what makes FR-010 true by construction rather than by a second
+  # guard somebody has to remember: the rule can only fire while a row is being
+  # created, so an account that already exists is never re-judged — not by a
+  # password reset, not by Devise's account update, not by a locker edit. A
+  # blanket validation would lock out everyone already registered the moment an
+  # allow-list was configured.
+  validate :email_domain_allowed, on: :create
+
   private
+
+    # FR-004: an empty list is not a list of zero permitted domains, it is no
+    # restriction at all — so the query's emptiness is the whole of that
+    # requirement, with no "restriction enabled" flag that could disagree with it.
+    #
+    # FR-007: an exact comparison against the normalized column, not a suffix or
+    # pattern match. A suffix test would admit evilcompany.com for company.com
+    # unless carefully anchored, and the Clarifications session settled that a
+    # subdomain is only allowed when listed in its own right.
+    #
+    # One pluck rather than an exists? per candidate: the row count here is set by
+    # an administrator, not by how many people have registered, so this stays
+    # bounded as the site grows (Principle IV).
+    def email_domain_allowed
+      allowed_domains = AllowedEmailDomain.pluck(:domain)
+      return if allowed_domains.empty?
+      return if allowed_domains.include?(email.to_s.split("@").last.to_s.downcase)
+
+      errors.add(:base, EMAIL_DOMAIN_NOT_ALLOWED_MESSAGE)
+    end
 
     # FR-016. Two conditions, and the second is the one that is easy to leave out:
     #

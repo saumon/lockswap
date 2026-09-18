@@ -46,6 +46,21 @@ Rails.application.routes.draw do
         patch :grant_admin
       end
     end
+
+    # 016 FR-001: the Danger Zone screen. Singular and read-only — it is a screen
+    # that shows one thing, not a resource anybody edits. What it manages has its
+    # own identity and its own validations, so it is routed separately below
+    # rather than as writes hung off this one (research.md R3).
+    #
+    # controller: names it explicitly because a singular `resource` otherwise
+    # routes to a pluralized controller ("DangerZonesController"), and there is
+    # only ever one danger zone.
+    resource :danger_zone, only: :show, controller: "danger_zone"
+
+    # 016 FR-003: the domains themselves. No :update — changing a domain is
+    # remove-then-add, which leaves the resource with exactly the two operations
+    # the spec describes and no partially-edited state to validate.
+    resources :allowed_email_domains, only: [ :create, :destroy ]
   end
 
   # Defines the root path route ("/") — the homepage a successful login lands on (FR-005).

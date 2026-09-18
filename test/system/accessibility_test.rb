@@ -184,6 +184,65 @@ class AccessibilityTest < ApplicationSystemTestCase
     names.each { |name| assert_match(/\A Grant\ administrator\ rights\ to\ \S+@\S+ \z/x, name) }
   end
 
+  # 016: the Danger Zone is audited like every other screen, in both of its
+  # states. The empty one is not a trivial case here — it is a different page
+  # (a statement where the table would be), and it is the state the screen is in
+  # on any site that has never configured a domain.
+  test "the empty Danger Zone is accessible" do
+    log_in_as users(:frank)
+    visit admin_danger_zone_path
+
+    assert_selector "#danger-zone-allowed-domains-empty"
+    assert_axe_clean
+  end
+
+  test "the Danger Zone with configured domains is accessible" do
+    AllowedEmailDomain.create!(domain: "allowed.example")
+    log_in_as users(:frank)
+    visit admin_danger_zone_path
+
+    # Both the list and the control on it, rendered before the audit runs —
+    # otherwise the audit would quietly cover the empty state twice.
+    assert_selector ".data-table tbody tr", minimum: 1
+    assert_selector "button", text: "Remove"
+    assert_axe_clean
+  end
+
+  # FR-008: the refused-entry state, which carries the form-error component and
+  # the field described by it. A validation message that is on screen but not
+  # associated with anything is the failure mode worth auditing for.
+  test "the Danger Zone showing a refused entry is accessible" do
+    log_in_as users(:frank)
+    visit admin_danger_zone_path
+
+    fill_in_reliably "Domain", with: "not a domain"
+    click_on "Add domain"
+
+    assert_text AllowedEmailDomain::INVALID_DOMAIN_MESSAGE
+    assert_axe_clean
+  end
+
+  # 016, the same reasoning as the grant controls above: axe checks a button has
+  # an accessible name, not that the name says which row it is on. A column of
+  # controls reading "Remove" passes an audit and still leaves a screen reader
+  # user counting rows.
+  test "each remove control is distinguishable by name alone" do
+    %w[alpha.example beta.example].each { |d| AllowedEmailDomain.create!(domain: d) }
+    log_in_as users(:frank)
+    visit admin_danger_zone_path
+
+    # assert_selector first, and with a count: `all` does not wait, so on a page
+    # still settling it returns whatever happens to be in the DOM at that instant
+    # — which is how this read one control where the markup has two.
+    assert_selector "#danger-zone-allowed-domains button[aria-label]", count: 2
+
+    names = all("#danger-zone-allowed-domains button[aria-label]").map { |button| button[:"aria-label"] }
+
+    assert_equal 2, names.length
+    assert_equal names.uniq, names, "two remove controls share an accessible name"
+    names.each { |name| assert_match(/\ARemove \S+\.\S+\z/, name) }
+  end
+
   # 013 FR-003: the Admin menu open, which is a state that exists on one account's
   # pages and nobody else's — so it would never be looked at unless asked for by
   # name. Audited at both treatments for the same reason 012 audits the panel:
