@@ -52,18 +52,18 @@ cleanup() {
 		echo "Error detected (code ${exit_code})."
 		if [[ "${service_stopped}" == "true" ]]; then
 			echo "Attempting to restart ${SERVICE_NAME}..."
-			sudo systemctl start "${SERVICE_NAME}" || true
+			systemctl --user start "${SERVICE_NAME}" || true
 			#echo "Attempting to restart ${WORKER_SERVICE_NAME}..."
-			#sudo systemctl start "${WORKER_SERVICE_NAME}" || true
+			#systemctl --user start "${WORKER_SERVICE_NAME}" || true
 		fi
 	fi
 }
 trap cleanup EXIT
 
 echo "[1/6] Stopping service ${SERVICE_NAME}..."
-sudo systemctl stop "${SERVICE_NAME}"
+systemctl --user stop "${SERVICE_NAME}"
 #echo "[1/6] Stopping service ${WORKER_SERVICE_NAME}..."
-#sudo systemctl stop "${WORKER_SERVICE_NAME}"
+#systemctl --user stop "${WORKER_SERVICE_NAME}"
 service_stopped=true
 
 echo "[2/6] Updating ${BRANCH} branch (fast-forward only)..."
@@ -81,13 +81,13 @@ echo "[5/6] Running migrations in ${RAILS_ENVIRONMENT}..."
 RAILS_ENV="${RAILS_ENVIRONMENT}" bin/rails db:migrate
 
 echo "[6/6] Starting service ${SERVICE_NAME}..."
-sudo systemctl start "${SERVICE_NAME}"
+systemctl --user start "${SERVICE_NAME}"
 #echo "[7/7] Starting service ${WORKER_SERVICE_NAME}..."
-#sudo systemctl start "${WORKER_SERVICE_NAME}"
+#systemctl --user start "${WORKER_SERVICE_NAME}"
 service_stopped=false
 
 echo "Checking service status..."
-sudo systemctl is-active --quiet "${SERVICE_NAME}"
-#sudo systemctl is-active --quiet "${WORKER_SERVICE_NAME}"
+systemctl --user is-active --quiet "${SERVICE_NAME}"
+#systemctl --user is-active --quiet "${WORKER_SERVICE_NAME}"
 
 echo "Update completed ✅"
