@@ -16,7 +16,8 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
     User.destroy_all
 
     post user_registration_path, params: {
-      user: { email: "founder@example.com", password: VALID_PASSWORD }
+      user: { email: "founder@example.com", password: VALID_PASSWORD,
+              password_confirmation: VALID_PASSWORD }
     }
 
     assert_redirected_to root_path
@@ -28,7 +29,8 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
     User.destroy_all
 
     post user_registration_path, params: {
-      user: { email: "founder@example.com", password: VALID_PASSWORD }
+      user: { email: "founder@example.com", password: VALID_PASSWORD,
+              password_confirmation: VALID_PASSWORD }
     }
     follow_redirect!
 
@@ -41,7 +43,8 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
   # navigation they have always had.
   test "a later signup is an ordinary account with no Admin menu" do
     post user_registration_path, params: {
-      user: { email: "newcomer@example.com", password: VALID_PASSWORD }
+      user: { email: "newcomer@example.com", password: VALID_PASSWORD,
+              password_confirmation: VALID_PASSWORD }
     }
     follow_redirect!
 
@@ -56,10 +59,27 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
   # already has an administrator.
   test "a signup cannot award itself the flag by asking for it" do
     post user_registration_path, params: {
-      user: { email: "ambitious@example.com", password: VALID_PASSWORD, admin: true }
+      user: { email: "ambitious@example.com", password: VALID_PASSWORD,
+              password_confirmation: VALID_PASSWORD, admin: true }
     }
 
     assert_not_predicate User.find_by(email: "ambitious@example.com"), :admin?
     assert_equal users(:frank), User.find_by(admin: true)
+  end
+
+  # 014 FR-002, FR-009: the two password fields have to agree, and that is
+  # settled at the server. The form's live hint is an enhancement on top of this
+  # check, never the check itself (research.md R1) — so a request that never went
+  # near a browser is refused here just the same.
+  test "a signup whose confirmation does not match the password is refused" do
+    assert_no_difference -> { User.count } do
+      post user_registration_path, params: {
+        user: { email: "mistyped@example.com", password: VALID_PASSWORD,
+                password_confirmation: "#{VALID_PASSWORD}x" }
+      }
+    end
+
+    assert_response :unprocessable_entity
+    assert_select "#error_explanation li", text: /doesn't match the password above/
   end
 end

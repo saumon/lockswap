@@ -11,11 +11,17 @@
     <%= render "devise/shared/error_messages", resource: resource %>
 
     <%# FR-001: an email address and a password are all that is required to sign up. %>
-    <%# novalidate: the server validates every field, so all four failure modes
-        (blank, bad format, duplicate email, short password) are reported the same
-        way instead of some by the browser and some by the app. %>
+    <%# novalidate: the server validates every field, so all five failure modes
+        (blank, bad format, duplicate email, short password, and since 014 a
+        confirmation that does not match) are reported the same way instead of
+        some by the browser and some by the app. %>
+    <%# 014: the controller is on the form rather than on a wrapper of its own,
+        because what it watches is a pair of fields — and a div added only to
+        give a controller somewhere to sit is a layout element that exists for
+        the benefit of the script rather than the page. %>
     <%= form_for(resource, as: resource_name, url: registration_path(resource_name),
-                 html: { class: "stack-tight", novalidate: true }) do |f| %>
+                 html: { class: "stack-tight", novalidate: true,
+                         data: { controller: "password-confirmation" } }) do |f| %>
       <div class="field">
         <%= f.label :email, class: "field-label" %>
         <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "field-input" %>
@@ -23,11 +29,36 @@
 
       <div class="field">
         <%= f.label :password, class: "field-label" %>
-        <%= f.password_field :password, autocomplete: "new-password",
-              aria: { describedby: "password_hint" }, class: "field-input" %>
+        <%= render "devise/shared/password_field", f: f, attribute: :password,
+              subject: "password",
+              aria: { describedby: "password_hint" },
+              data: { password_confirmation_target: "password",
+                      action: "input->password-confirmation#recheck" } %>
         <%# FR-002: state the 8-character minimum up front rather than only on failure. %>
         <p id="password_hint" class="field-hint">
           <%= @minimum_password_length %> characters minimum
+        </p>
+      </div>
+
+      <%# 014 FR-001: typed a second time, because a password you cannot see is a
+          password you cannot proofread — and a typo here costs the account. %>
+      <div class="field">
+        <%= f.label :password_confirmation, class: "field-label" %>
+        <%= render "devise/shared/password_field", f: f, attribute: :password_confirmation,
+              subject: "confirm password",
+              aria: { describedby: "password_confirmation_hint" },
+              data: { password_confirmation_target: "confirmation",
+                      action: "blur->password-confirmation#confirm " \
+                              "input->password-confirmation#recheck" } %>
+        <%# FR-003/FR-004: the answer the server would give, given early. It is
+            composed from the validation's own message rather than written out
+            again here, so the hint cannot drift from the error it stands in for.
+            Hidden until the field has been left once — see the controller. %>
+        <p id="password_confirmation_hint" class="field-error" hidden
+           data-password-confirmation-target="hint">
+          <%= resource.errors.full_message(
+                :password_confirmation,
+                t("activerecord.errors.models.user.attributes.password_confirmation.confirmation")) %>
         </p>
       </div>
 

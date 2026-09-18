@@ -70,6 +70,14 @@ en:
   # Signup validation messages (FR-002, FR-003): each one names the problem and
   # what to do about it — User Story 1, Acceptance Scenarios 2 and 3.
   activerecord:
+    attributes:
+      user:
+        # 014 FR-001: the form labels this field "Confirm password", and Rails
+        # builds its error messages by prefixing the attribute's name. Naming it
+        # here is what keeps the label and the error talking about the same
+        # field — "Password confirmation doesn't match" would be the form
+        # answering in words the form never used.
+        password_confirmation: "Confirm password"
     errors:
       models:
         user:
@@ -79,3 +87,8 @@ en:
               invalid: "must look like an email address, for example name@example.com."
             password:
               too_short: "must be at least %{count} characters long."
+            # 014 FR-003: says which of the two password problems this is. The
+            # default ("doesn't match Password") reads as a note about the other
+            # field; this points at the one the visitor has to go back and fix.
+            password_confirmation:
+              confirmation: "doesn't match the password above."

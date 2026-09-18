@@ -476,6 +476,58 @@
     font-size: var(--text-sm);
   }
 
+  /* 014 FR-005: the eye sits inside the field it reveals. Beside it, the
+     control would read as a thing of its own with no stated subject — which of
+     the two passwords does it mean? — and on a phone it would cost the field
+     the width instead. */
+  .field-input-wrapper {
+    position: relative;
+    display: flex;
+  }
+
+  /* Room for the control, so a long password runs under the label rather than
+     under the eye. */
+  .field-input-wrapper .field-input {
+    padding-inline-end: var(--spacing-7);
+  }
+
+  /* Stretched to the field's full height and 3rem wide: this is a standalone
+     control, so it is held to the 44px touch target the rest of them are
+     (012 FR-007), and the field is taller than that already. */
+  .field-visibility-toggle {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--spacing-7);
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--color-ink-muted);
+    cursor: pointer;
+  }
+
+  .field-visibility-toggle:hover {
+    color: var(--color-ink);
+  }
+
+  /* Which eye is drawn is read off the field's own type rather than tracked
+     separately, so the icon cannot end up describing a state the field is not
+     in. The input precedes the button, so a sibling selector reaches it.
+     Each icon is named for the action it offers: the open eye while the field
+     is masked, the struck-through one while it is readable. */
+  .field-visibility-toggle .field-visibility-icon-hide,
+  .field-input[type="text"] ~ .field-visibility-toggle .field-visibility-icon-show {
+    display: none;
+  }
+
+  .field-input[type="text"] ~ .field-visibility-toggle .field-visibility-icon-hide {
+    display: block;
+  }
+
   /* FR-025: the glyph means the error is never carried by colour alone. */
   .field-error {
     color: var(--color-status-error);
