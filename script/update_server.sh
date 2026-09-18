@@ -32,9 +32,25 @@ esac
 SERVICE_NAME="puma-lockswap"
 # WORKER_SERVICE_NAME="solid-queue-lockswap"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# Inherited git env vars would override the repo detected below.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_CEILING_DIRECTORIES
+
+# Follow symlinks so the script works when called through a link outside the repo.
+SCRIPT_SOURCE="${BASH_SOURCE[0]}"
+while [[ -L "${SCRIPT_SOURCE}" ]]; do
+	SCRIPT_LINK_DIR="$(cd -P "$(dirname "${SCRIPT_SOURCE}")" && pwd)"
+	SCRIPT_SOURCE="$(readlink "${SCRIPT_SOURCE}")"
+	[[ "${SCRIPT_SOURCE}" != /* ]] && SCRIPT_SOURCE="${SCRIPT_LINK_DIR}/${SCRIPT_SOURCE}"
+done
+
+SCRIPT_DIR="$(cd -P "$(dirname "${SCRIPT_SOURCE}")" && pwd)"
+ROOT_DIR="$(cd -P "${SCRIPT_DIR}/.." && pwd)"
 LOCK_FILE="/tmp/update_lockswap_${BRANCH}.lock"
+
+if ! git -C "${ROOT_DIR}" rev-parse --git-dir >/dev/null 2>&1; then
+	echo "'${ROOT_DIR}' is not a git repository." >&2
+	exit 1
+fi
 
 exec 200>"${LOCK_FILE}"
 if ! flock -n 200; then
@@ -67,9 +83,9 @@ systemctl --user stop "${SERVICE_NAME}"
 service_stopped=true
 
 echo "[2/6] Updating ${BRANCH} branch (fast-forward only)..."
-git fetch --all --prune
-git checkout "${BRANCH}"
-git pull --ff-only
+git -C "${ROOT_DIR}" fetch --all --prune
+git -C "${ROOT_DIR}" checkout "${BRANCH}"
+git -C "${ROOT_DIR}" pull --ff-only
 
 echo "[3/6] Installing Ruby dependencies (if needed)..."
 bundle install
