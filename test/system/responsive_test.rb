@@ -170,6 +170,45 @@ class ResponsiveTest < ApplicationSystemTestCase
     end
   end
 
+  # 015: the screen gained a fourth column and the Role cell gained a second line
+  # of text beneath the badge. Both are the kind of change that fits a desktop
+  # table and then pushes a phone sideways, which is exactly what FR-001 forbids —
+  # and the row carrying the longest provenance line is the one to measure.
+  # 015: the card form lays each cell out as label-then-value, and takes every
+  # child of the cell as its own item — so the provenance line, added beneath the
+  # badge, wrapped onto the next row and landed in the *label* column, reading as
+  # a heading for the field below it. Asserted as geometry rather than by eye:
+  # the line has to start where the badge starts, not where the label starts.
+  test "an administrator row's provenance line sits in the value column" do
+    log_in_as users(:frank)
+    visit admin_users_path
+
+    with_viewport(:phone) do
+      [ users(:frank), users(:grace) ].each do |administrator|
+        measured = role_cell_geometry(administrator)
+
+        assert_equal measured["badgeLeft"], measured["lineLeft"],
+                     "the provenance line should start where the badge does, not at the label"
+        assert_operator measured["badgeLeft"], :>, measured["cellLeft"],
+                        "the value column should sit to the right of the label column"
+        assert_operator measured["badgeWidth"], :<, measured["cellWidth"] / 2,
+                        "the badge should keep its own width rather than stretch across the cell"
+      end
+    end
+  end
+
+  test "the users screen still fits a phone with a grant control and provenance" do
+    log_in_as users(:frank)
+    visit admin_users_path
+
+    with_viewport(:phone) do
+      assert_selector "button", text: "Grant admin rights"
+      assert_text "Granted by"
+      assert_no_horizontal_overflow "the users screen with grant controls"
+      assert_touch_targets_at_least 44
+    end
+  end
+
   # FR-007 for the one control 013 adds. The sweep below runs as carol, who has
   # no Admin menu to measure, so the administrator's own row of the navigation
   # would otherwise never be held to the touch target rule.
@@ -183,6 +222,24 @@ class ResponsiveTest < ApplicationSystemTestCase
 
       assert_touch_targets_at_least 44
     end
+  end
+
+  # The three boxes the assertion above compares, measured in one pass so the
+  # page cannot move between them. Rounded: sub-pixel differences are not what
+  # any of this is about.
+  def role_cell_geometry(administrator)
+    page.evaluate_script(<<~JS)
+      (() => {
+        const cell = document.querySelector('#admin-user-row-#{administrator.id} td[data-label="Role"]');
+        const box = (el) => el.getBoundingClientRect();
+        const c = box(cell), b = box(cell.querySelector('.badge')), l = box(cell.querySelector('p'));
+        return {
+          cellLeft: Math.round(c.left), cellWidth: Math.round(c.width),
+          badgeLeft: Math.round(b.left), badgeWidth: Math.round(b.width),
+          lineLeft: Math.round(l.left)
+        };
+      })()
+    JS
   end
 
   # --- No horizontal overflow, anywhere (FR-001, FR-022a) -------------------

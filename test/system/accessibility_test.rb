@@ -161,7 +161,27 @@ class AccessibilityTest < ApplicationSystemTestCase
     log_in_as users(:frank)
     visit admin_users_path
     assert_selector "#admin-user-directory"
+    # 015: the grant control and the provenance line are on this screen now, so
+    # the audit that was already here covers them — provided they are actually
+    # rendered when it runs, which is what these two wait for.
+    assert_selector "button", text: "Grant admin rights"
+    assert_text "First registration"
     assert_axe_clean
+  end
+
+  # 015 FR-015: axe checks the button has an accessible name; it cannot check the
+  # name says which account. A column of controls reading "Grant admin rights"
+  # passes an audit and still leaves a screen reader user counting rows, which the
+  # requirement forbids — so the distinctness is asserted here directly.
+  test "each grant control is distinguishable by name alone" do
+    log_in_as users(:frank)
+    visit admin_users_path
+
+    names = all("button[aria-label]").map { |button| button[:"aria-label"] }
+
+    assert_operator names.length, :>=, 2
+    assert_equal names.uniq, names, "two grant controls share an accessible name"
+    names.each { |name| assert_match(/\A Grant\ administrator\ rights\ to\ \S+@\S+ \z/x, name) }
   end
 
   # 013 FR-003: the Admin menu open, which is a state that exists on one account's

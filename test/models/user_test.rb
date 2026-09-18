@@ -278,11 +278,17 @@ class UserTest < ActiveSupport::TestCase
 
   # The ordinary case on a site that is already running: signing up today makes
   # nobody an administrator, whatever the fixtures happen to contain.
+  #
+  # 015 FR-013: the second assertion used to read find_by(admin: true) and expect
+  # frank. With more than one administrator possible that question no longer has a
+  # single answer, so it asks what it actually meant — the set did not change.
   test "signing up on a site that already has accounts grants nothing" do
+    administrators_before = User.where(admin: true).order(:id).to_a
+
     user = User.create!(email: "newcomer@example.com", password: VALID_PASSWORD)
 
     assert_not_predicate user, :admin?
-    assert_equal users(:frank), User.find_by(admin: true)
+    assert_equal administrators_before, User.where(admin: true).order(:id).to_a
   end
 
   # FR-002/SC-002: the callback reads the table before the insert, so it cannot be
@@ -316,24 +322,199 @@ class UserTest < ActiveSupport::TestCase
     assert_equal "winner@example.com", User.find_by(admin: true).email
   end
 
-  # FR-011: the flag does not move. Deleting the account that holds it leaves the
-  # site with no administrator at all — there is no next-in-line, by design.
-  test "deleting the administrator leaves the site with no administrator" do
+  # 013 FR-011 said deleting the administrator left the site with none, and these
+  # two tests asserted exactly that. 015 FR-016 supersedes it: that outcome is no
+  # longer reachable while other accounts are registered, because the deletion is
+  # refused (see the guard tests below). What survives from 013 is the half that
+  # still holds — the flag does not move to a successor.
+  test "deleting an administrator does not promote anyone in their place" do
+    # frank may go because grace holds the rights too; nobody is promoted to fill
+    # the slot he vacates.
+    administrators_before = User.where(admin: true).order(:id).to_a
+
     users(:frank).destroy
 
-    assert_nil User.find_by(admin: true)
-    assert_predicate User.count, :positive?
+    assert_equal administrators_before - [ users(:frank) ], User.where(admin: true).order(:id).to_a
   end
 
-  # The same rule seen from the other side: an empty administrator slot is not an
-  # opening that the next person to sign up walks into.
-  test "signing up after the administrator is deleted does not fill the vacancy" do
+  # The same rule seen from the other side: an administrator slot is not an opening
+  # that the next person to sign up walks into. 013 tested this by deleting the only
+  # administrator first, which FR-016 now refuses, so the vacancy is staged by
+  # deleting one of two instead.
+  test "signing up while the site has an administrator grants nothing" do
     users(:frank).destroy
 
     newcomer = User.create!(email: "newcomer@example.com", password: VALID_PASSWORD)
 
     assert_not_predicate newcomer, :admin?
-    assert_nil User.find_by(admin: true)
+    assert_equal [ users(:grace) ], User.where(admin: true).to_a
+  end
+
+  # 015, research.md R1: the retry in User#save identifies the bootstrap-race
+  # conflict by matching the error message, and that message names either the
+  # column or the index depending on the adapter. SQLite names the column
+  # ("UNIQUE constraint failed: users.admin"), so the race test above keeps
+  # passing here whether or not the index branch of the pattern was updated —
+  # which is exactly why the index branch needs a test of its own. Without this,
+  # renaming the index leaves a dead branch nothing would notice until the
+  # adapter changed.
+  test "the bootstrap-race pattern recognises the renamed index by name" do
+    assert_match User::ADMINISTRATOR_INDEX_CONFLICT,
+                 "PG::UniqueViolation: duplicate key value violates unique constraint " \
+                 "\"index_users_on_bootstrap_admin\""
+    assert_no_match User::ADMINISTRATOR_INDEX_CONFLICT,
+                    "PG::UniqueViolation: duplicate key value violates unique constraint " \
+                    "\"index_users_on_email\""
+  end
+
+  # 015 FR-013: the cap is gone. Two administrators may hold the rights at once,
+  # provided only one of them claimed them at first registration.
+  test "a granted administrator may exist alongside the bootstrap administrator" do
+    assert_predicate users(:frank), :admin?
+    assert_predicate users(:grace), :admin?
+    assert_nil users(:frank).admin_granted_at
+    assert_not_nil users(:grace).admin_granted_at
+  end
+
+  # FR-013: and there is no limit — a third, a fourth, as many as are granted.
+  test "any number of granted administrators may exist at once" do
+    User.insert_all!([ :heidi, :ivan ].map do |name|
+      {
+        email: "#{name}@example.com",
+        encrypted_password: Devise::Encryptor.digest(User, VALID_PASSWORD),
+        admin: true, admin_granted_at: Time.current, admin_granted_by_id: users(:frank).id,
+        created_at: Time.current, updated_at: Time.current
+      }
+    end)
+
+    assert_equal 4, User.where(admin: true).count
+  end
+
+  # 013 FR-002 kept: the bootstrap slot is still unique. This is the same assertion
+  # the index has always made, now scoped to rows that claimed the rights rather
+  # than being given them — the reason a granted administrator is not a collision.
+  test "the database still refuses a second bootstrap administrator" do
+    assert_raises ActiveRecord::RecordNotUnique do
+      User.insert_all!([ {
+        email: "rival@example.com",
+        encrypted_password: Devise::Encryptor.digest(User, VALID_PASSWORD),
+        admin: true, created_at: Time.current, updated_at: Time.current
+      } ])
+    end
+  end
+
+  # 015 FR-006, FR-017: the grant writes all three facts at once — the flag, when
+  # it happened, and who did it. A row carrying the flag without the provenance
+  # would be indistinguishable from the bootstrap administrator, and would land in
+  # the bootstrap index besides.
+  test "granting rights records the flag, the moment and the grantor together" do
+    granted_at = nil
+
+    assert_changes -> { users(:carol).reload.admin? }, from: false, to: true do
+      granted_at = Time.current
+      users(:carol).grant_admin_rights!(by: users(:frank))
+    end
+
+    carol = users(:carol).reload
+    assert_equal users(:frank), carol.admin_granted_by
+    assert_in_delta granted_at, carol.admin_granted_at, 5
+  end
+
+  # FR-012: granting to an account that already has the rights is not a failure and
+  # not a second grant. The recorded origin stays the first one, so a stale list
+  # cannot rewrite history by being clicked twice.
+  test "granting rights again leaves the original origin untouched" do
+    original_at = users(:grace).admin_granted_at
+
+    users(:grace).grant_admin_rights!(by: users(:carol))
+
+    grace = users(:grace).reload
+    assert_predicate grace, :admin?
+    assert_equal original_at, grace.admin_granted_at
+    assert_equal users(:frank), grace.admin_granted_by
+  end
+
+  # FR-013: the grantor keeps what they gave away.
+  test "granting rights leaves the granting administrator an administrator" do
+    users(:carol).grant_admin_rights!(by: users(:frank))
+
+    assert_predicate users(:frank).reload, :admin?
+  end
+
+  # FR-019: the grant outlives the account that made it. dependent: :nullify is
+  # what holds this — with :destroy, deleting an administrator would delete
+  # everyone they had ever promoted.
+  test "deleting the grantor keeps the grant and clears only the grantor" do
+    users(:carol).grant_admin_rights!(by: users(:frank))
+    granted_at = users(:carol).reload.admin_granted_at
+
+    users(:frank).destroy
+
+    carol = users(:carol).reload
+    assert_predicate carol, :admin?
+    assert_equal granted_at, carol.admin_granted_at
+    assert_nil carol.admin_granted_by
+  end
+
+  # --- 015 FR-016: the last administrator cannot walk out ----------------------
+  #
+  # Granting is the only way in and nothing takes the rights away, so cancelling
+  # an account became the only way out. These say the exit cannot be taken when it
+  # would leave registered accounts with nobody able to administer them.
+
+  test "the last administrator cannot be deleted while other accounts remain" do
+    users(:grace).destroy
+
+    assert_no_difference -> { User.count } do
+      assert_not users(:frank).destroy
+    end
+
+    assert_predicate users(:frank).reload, :admin?
+  end
+
+  test "an administrator can be deleted while another administrator remains" do
+    assert_difference -> { User.count }, -1 do
+      assert users(:frank).destroy
+    end
+  end
+
+  test "a non-administrator can always be deleted" do
+    assert_difference -> { User.count }, -1 do
+      assert users(:carol).destroy
+    end
+  end
+
+  # The refusal has to say what to do about it, not merely refuse.
+  test "the refused administrator is told to grant rights to someone else first" do
+    users(:grace).destroy
+
+    users(:frank).destroy
+
+    assert_includes users(:frank).errors[:base], User::LAST_ADMINISTRATOR_MESSAGE
+  end
+
+  # The case FR-016 deliberately lets through (research.md R4): the sole account
+  # on the site — administrator by definition — can still cancel. With nothing
+  # left to administer there is nobody to lock out, and the next person to
+  # register claims the rights exactly as the first one did (013 FR-001).
+  #
+  # Read literally the requirement refused this too, which would trap the only
+  # person on a new site in an account they could never close.
+  test "the sole account on the site can be deleted even though it is the administrator" do
+    # Staged through the real destroy path rather than delete_all: the wishes and
+    # swap proposals hanging off these accounts have foreign keys back to them,
+    # and Rails declares SQLite's as deferrable, so delete_all leaves orphans that
+    # only surface as a violation later — inside the very destroy under test.
+    users(:grace).destroy                  # allowed: frank is still an administrator
+    User.where(admin: false).destroy_all   # never guarded
+
+    assert_equal [ users(:frank) ], User.all.to_a
+
+    assert_difference -> { User.count }, -1 do
+      assert users(:frank).destroy
+    end
+
+    assert_predicate User.create!(email: "next@example.com", password: VALID_PASSWORD), :admin?
   end
 
   private

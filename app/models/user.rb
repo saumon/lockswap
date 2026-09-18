@@ -18,6 +18,18 @@ class User < ApplicationRecord
   has_many :received_swap_proposals, class_name: "LockerSwapProposal",
            foreign_key: :recipient_id, dependent: :destroy, inverse_of: :recipient
 
+  # 015 FR-017: who granted this account its administrator rights, when they were
+  # granted. Self-referential, so both sides have to name the foreign key.
+  #
+  # :nullify and not :destroy — FR-019 asks that a grant outlive the account that
+  # made it. Cascading here would delete every account an outgoing administrator
+  # had ever promoted, which is the opposite of what the requirement wants, and a
+  # quiet way to empty a site.
+  belongs_to :admin_granted_by, class_name: "User", optional: true,
+             inverse_of: :admin_grants_made
+  has_many :admin_grants_made, class_name: "User", foreign_key: :admin_granted_by_id,
+           dependent: :nullify, inverse_of: :admin_granted_by
+
   # "No locker" must reach the database as NULL, never "": a unique index treats
   # NULLs as distinct, but two empty strings would collide (002 FR-002, FR-011).
   normalizes :locker_number, with: ->(value) { value.blank? ? nil : value }
@@ -37,7 +49,9 @@ class User < ApplicationRecord
   before_create :claim_administrator_if_first
 
   # 013 FR-002, research.md R2: the index is what actually guarantees one
-  # administrator, so this is where losing to it is handled.
+  # *bootstrap* administrator, so this is where losing to it is handled. 015
+  # narrowed that index rather than dropping it: granted administrators are
+  # unlimited, but only one account may still claim the flag at signup.
   #
   # Two signups on an empty site can both come out of claim_administrator_if_first
   # holding the flag; one INSERT then wins and the other is rejected. The loser
@@ -70,6 +84,29 @@ class User < ApplicationRecord
   def saved_floor = floor_in_database
   def saved_locker_number = locker_number_in_database
 
+  # 015 FR-006, FR-017: the whole of granting. One write, so an account never
+  # exists carrying the flag without the provenance that goes with it — a row in
+  # that state would be indistinguishable from the bootstrap administrator, and
+  # would land in the bootstrap index besides.
+  #
+  # The guard clause is FR-012: granting to an account that already has the rights
+  # is not a failure and not a second grant. A list left open while someone else
+  # promoted the same person must not rewrite when the rights were obtained, nor
+  # report an error for arriving second at the same destination.
+  #
+  # update! and not save — the bootstrap-race rescue below is deliberately only on
+  # save, and this path has no race to lose: a granted row is outside the index.
+  def grant_admin_rights!(by:)
+    return self if admin?
+
+    update!(admin: true, admin_granted_at: Time.current, admin_granted_by: by)
+    self
+  end
+
+  # FR-018: which of the two ways this account came by its rights, asked once here
+  # rather than re-derived by every caller that needs to say it.
+  def admin_rights_granted? = admin? && admin_granted_at.present?
+
   # Says the locker is spoken for without identifying who holds it (002 FR-011).
   # Names the floor, because that is the whole scope of the refusal: the same
   # number is free to take one floor up (006 FR-003).
@@ -88,11 +125,51 @@ class User < ApplicationRecord
   # state the account is in rather than as something wrong with the input.
   LOCKED_BY_SWAP_MESSAGE = "cannot be changed while you have an active swap proposal".freeze
 
+  # 015 FR-016: names the way out, because a refusal that only refuses leaves the
+  # administrator stuck with no idea what to do next. The remedy is a capability
+  # they already have on the screen they were just on.
+  LAST_ADMINISTRATOR_MESSAGE =
+    "You are the only administrator. Grant administrator rights to another " \
+    "account before cancelling this one.".freeze
+
+  # 015 FR-016: granting is the only way rights are obtained and nothing removes
+  # them, so cancelling an account is the only way to stop being an administrator.
+  # This closes the one exit that would leave registered accounts with nobody able
+  # to administer them — the single irreversible state this feature can reach,
+  # since 013 FR-001 only ever fires on an empty site.
+  #
+  # before_destroy, so the check runs inside the destroy transaction. That is what
+  # makes the concurrent case safe: Active Record opens SQLite transactions with
+  # default_transaction_mode: :immediate, taking the write lock at BEGIN, and
+  # SQLite permits one writer at a time — so two administrators cancelling at the
+  # same moment are serialized and the second one's count sees the first's
+  # deletion (research.md R4). No advisory lock is needed; moving this check out
+  # of the transaction would remove that guarantee.
+  before_destroy :keep_an_administrator_for_the_remaining_accounts
+
   # 005 FR-001, FR-002: a proposal is an offer made on these exact values, so
   # neither side can move them out from under the other while one is outstanding.
   validate :locker_details_held_by_active_swap, on: :locker_profile_update
 
   private
+
+    # FR-016. Two conditions, and the second is the one that is easy to leave out:
+    #
+    # "would leave the site with no administrator" read literally also refuses the
+    # sole account on a new site, which is a trap rather than a guard — with no
+    # accounts left there is nothing to administer, and the next registration
+    # claims the rights again. So the question is whether accounts would be left
+    # behind, not merely whether an administrator would be.
+    def keep_an_administrator_for_the_remaining_accounts
+      return unless admin?
+
+      others = User.where.not(id: id)
+      return unless others.exists?
+      return if others.exists?(admin: true)
+
+      errors.add(:base, LAST_ADMINISTRATOR_MESSAGE)
+      throw :abort
+    end
 
     # 013 FR-002: this runs before the row is inserted, so two signups landing
     # together can both find the site empty and both try to claim the flag. The
@@ -107,7 +184,11 @@ class User < ApplicationRecord
     # Matched on the index as well as the column: SQLite names the column in the
     # message ("users.admin") and other adapters name the index, and this should
     # not quietly stop working if the database under it ever changes.
-    ADMINISTRATOR_INDEX_CONFLICT = /users\.admin\b|index_users_on_admin/
+    #
+    # 015 renamed the index to index_users_on_bootstrap_admin. On SQLite that
+    # rename is invisible here, because the column branch matches first — which is
+    # why user_test covers the index branch directly rather than through a race.
+    ADMINISTRATOR_INDEX_CONFLICT = /users\.admin\b|index_users_on_bootstrap_admin/
 
     def lost_the_administrator_race?(error)
       admin? && error.message.match?(ADMINISTRATOR_INDEX_CONFLICT)

@@ -90,6 +90,37 @@ class NavigationTest < ApplicationSystemTestCase
     end
   end
 
+  # 015 FR-007: the same entry, at both widths, for an administrator who was
+  # granted the rights rather than claiming them at signup. The navigation reads
+  # current_user.admin? and nothing finer — this is the assertion that says so,
+  # and would fail if any of it had been keyed on being the first account.
+  test "a granted administrator's navigation carries the same Admin menu" do
+    log_in_as users(:grace)
+
+    # Deliberately the same shape as the test above, scoped to one container at a
+    # time: 012 renders this menu twice, so an unscoped find takes whichever copy
+    # comes first in the DOM — which at this width is the collapsed one, clipped
+    # to a 0x0 rectangle that Capybara still counts as visible. The click then
+    # lands on the header behind it and the disclosure never opens.
+    with_viewport(:desktop) do
+      within ".site-bar" do
+        assert_selector "summary", text: "Admin"
+        assert_link "Users", visible: :all
+        find("summary", text: "Admin").click
+        assert_link "Users", visible: true
+      end
+    end
+
+    with_viewport(:phone) do
+      find(".site-menu-toggle").click
+
+      within ".site-menu-panel" do
+        find("summary", text: "Admin").click
+        assert_link "Users", visible: true
+      end
+    end
+  end
+
   # FR-004: and everybody else gets exactly what they got before. Not hidden,
   # not disabled — absent, at either width, with the menu opened so a narrow
   # panel is actually looked inside rather than assumed empty.

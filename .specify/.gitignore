@@ -7,3 +7,7 @@ feature.json
 
 # Per-machine extension config overrides.
 extensions/*/local-config.yml
+
+# Downloaded extension-catalog cache. Refetched on demand by `specify
+# extension search`; machine-local, so it is not shared.
+extensions/.cache/

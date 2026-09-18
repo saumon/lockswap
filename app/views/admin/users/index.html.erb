@@ -1,9 +1,9 @@
 <% content_for :title, "Users" %>
 
 <%# 013 User Story 2: who is registered on this site, and who was first.
-    Read-only by design (FR-009) — there is no control here, because there is no
-    capability behind one: administrator status is claimed once at signup and
-    never granted or revoked by hand. %>
+    015: and one thing to do about it — grant administrator rights (FR-001).
+    That is the only capability here; nothing on this screen removes rights,
+    edits an account or deletes one (FR-014). %>
 <div class="stack">
   <div id="admin-user-directory" class="card stack-tight">
     <h1 class="page-title">Registered users</h1>
@@ -24,6 +24,7 @@
             <%# FR-012: its own column rather than a mark tacked onto the email,
                 so the one row that differs says how it differs. %>
             <th scope="col" role="columnheader">Role</th>
+            <th scope="col" role="columnheader">Actions</th>
           </tr>
         </thead>
 
@@ -38,9 +39,70 @@
                   tell the badge's colour from any other. %>
               <td role="cell" data-label="Role" class="<%= "detail-value-empty" unless user.admin? %>">
                 <% if user.admin? %>
-                  <span class="badge badge-info">Admin</span>
+                  <%# The badge and the line below it are one value, so they are
+                      wrapped as one: below the breakpoint each child of a cell
+                      becomes its own grid item, and a loose second child drops
+                      into the label column. %>
+                  <div class="cell-stack">
+                    <%# 015 FR-008: the badge is identical on every administrator
+                        row. Rights obtained by grant are not lesser rights, and
+                        nothing here may suggest they are. %>
+                    <span class="badge badge-info">Admin</span>
+
+                    <%# 015 FR-018: where the rights came from, beneath the badge
+                        rather than beside it — one fact about the account, not a
+                        second kind of administrator. %>
+                    <p class="meta">
+                      <% if user.admin_rights_granted? %>
+                        <% if user.admin_granted_by %>
+                          Granted by <%= user.admin_granted_by.email %>
+                          on <%= l user.admin_granted_at, format: :long %>
+                        <% else %>
+                          <%# FR-019: the grantor's account is gone, the grant is
+                              not. Saying so beats showing a blank where a name
+                              was. %>
+                          Granted on <%= l user.admin_granted_at, format: :long %>
+                          (account removed)
+                        <% end %>
+                      <% else %>
+                        First registration
+                      <% end %>
+                    </p>
+                  </div>
                 <% else %>
                   —
+                <% end %>
+              </td>
+
+              <%# The em dash matches the Role cell's own empty state: below the
+                  breakpoint every cell shows its label, so a cell left truly
+                  empty reads as a field the page forgot to fill in. %>
+              <td role="cell" data-label="Actions" class="<%= "detail-value-empty" if user.admin? %>">
+                <% if user.admin? %>
+                  —
+                <% else %>
+                  <%# 015 FR-001 to FR-005: the grant, and the confirmation that
+                      guards it. Both `confirm` and `turbo_confirm` are emitted,
+                      mirroring the "Cancel my account" button this is modelled on
+                      (devise/registrations/edit) — turbo_confirm is what Turbo
+                      reads, confirm is the fallback where it has not loaded.
+
+                      The message names the account and says the grant is
+                      permanent (FR-004), because since FR-020 asks for no
+                      password this dialog is the only thing between the pointer
+                      and an irreversible change.
+
+                      aria-label names the account too (FR-015): a column of
+                      buttons all reading "Grant admin rights" tells a screen
+                      reader which row it is on only by position, which is exactly
+                      what the requirement forbids relying on. %>
+                  <% message = "Grant administrator rights to #{user.email}? This cannot be undone." %>
+                  <%= button_to "Grant admin rights",
+                        grant_admin_admin_user_path(user),
+                        method: :patch,
+                        class: "btn btn-secondary btn-sm",
+                        aria: { label: "Grant administrator rights to #{user.email}" },
+                        data: { confirm: message, turbo_confirm: message } %>
                 <% end %>
               </td>
             </tr>
