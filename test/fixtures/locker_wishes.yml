@@ -2,10 +2,35 @@
 # wish list has to get right: bob has a floor and a locker on file, carol has a
 # floor but no locker. alice deliberately has no wish — she is the "has not
 # declared yet" case the declare flow is tested against.
+#
+# 017: every wish carries an explicit created_at, for the reason recorded at the
+# top of users.yml. The list is ordered oldest declaration first (003 FR-012), and
+# Rails otherwise stamps every fixture row at load time with the same value —
+# which would leave the order unspecified, and 017's "the order is unchanged by
+# filtering" assertions passing or failing on whatever SQLite happened to return.
 bob_wish:
   user: bob
   floor: "7"
+  created_at: 2026-03-01 09:00:00
 
 carol_wish:
   user: carol
   floor: "5"
+  created_at: 2026-03-02 09:00:00
+
+# 017: two more wishes, so the looked-for floors are 3, 5, 7 and 10.
+#
+# "10" against "3" and "5" is what makes FR-007 observable: sorted as text it lands
+# between 1 and 2, sorted as a number it lands last. With only bob's 7 and carol's 5
+# on file, no ordering rule could be told from any other.
+judy_wish:
+  user: judy
+  floor: "10"
+  created_at: 2026-03-03 09:00:00
+
+# karl has no saved floor of his own (see users.yml), which is what FR-012 is
+# asserted against — he is listed until the "Their floor" filter names a floor.
+karl_wish:
+  user: karl
+  floor: "3"
+  created_at: 2026-03-04 09:00:00

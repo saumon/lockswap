@@ -109,7 +109,11 @@ cannot be taken back — and each row now says where its rights came from, so a 
 administrators can still answer how each of them got there. And who may join at all has become
 something the site can decide: an administrator can list the email domains allowed to register, and a
 signup from anywhere else is refused. With that list left empty, which is where every instance starts,
-registration stays open to everyone exactly as it was.
+registration stays open to everyone exactly as it was. And the list of everyone looking for a locker
+has stopped being one long read: it narrows by the floor people are after, by the floor they hold
+today, or by both at once — which is the shortlist of people a straight two-way swap would suit. The
+address carries what is being filtered, so a narrowed view can be shared or come back to, and only the
+list moves when it changes.
 
 | Feature | Status |
 | --- | --- |
@@ -129,6 +133,7 @@ registration stays open to everyone exactly as it was.
 | **014 — Password confirmation and visibility toggle** | ✅ Shipped |
 | **015 — Granting administrator rights** | ✅ Shipped |
 | **016 — Danger Zone: allowed email domains** | ✅ Shipped |
+| **017 — Floor filters on the locker wishes list** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -609,6 +614,45 @@ What feature 016 adds — see
   name, because a column of buttons all reading *Remove* leaves somebody who cannot see the row
   counting their way down it.
 
+What feature 017 adds — see
+[`specs/017-locker-wishes-floor-filter/spec.md`](specs/017-locker-wishes-floor-filter/spec.md):
+
+* **the wish list narrows by floor, on either of the two floors a row carries.** *Looking for floor*
+  answers "who wants the floor I am on" — the people a swap with me could suit; *Their floor* answers
+  "who is sitting on the floor I want". They are separate controls because they answer separate
+  questions, and setting both leaves only the rows matching both: looking for the 3rd, currently on
+  the 1st, which is the shortlist for a straight two-way exchange. Every axis can be left on *All
+  floors*, which is where the screen opens;
+* **each filter always offers every floor, whatever the other one is set to.** Choices that appeared
+  and vanished as you filtered would make it impossible to learn where your floor sits in the list, so
+  they are drawn from all the active wishes rather than from what is left after the other filter has
+  run. The cost is that you can pick a combination nobody satisfies — which is an ordinary outcome,
+  and gets a message in its own words rather than the *Nobody is looking for a locker right now* that
+  means something else entirely;
+* **the floors are offered in the order people count them, not the order a computer sorts them.**
+  Floors are free text, as they have been since 002, so they sort as text unless something says
+  otherwise — which puts 10 between 1 and 2 and reads as a bug. Numbers come first in numeric order,
+  anything that is not a number follows alphabetically, and nothing is normalised on the way: `3` and
+  `03` remain two distinct floors, listed next to each other in a settled order;
+* **the choices are links, not a dropdown.** A `<select>` that filters as its value changes fires on
+  every arrow key, so somebody reading down the options with a keyboard would re-filter the list
+  repeatedly without having chosen anything — the WCAG *On Input* failure. A link is activated
+  deliberately and never by being focused, so picking a floor is one action and moving between them is
+  none;
+* **only the list moves.** Changing a filter leaves the panel where you declare your own wish, and
+  your place on the page, exactly where they were — so five floors can be tried one after another
+  without scrolling back down to the list each time;
+* **what you are filtering by is in the address.** A narrowed view can be bookmarked, shared or
+  reached with Back and Forward, and it survives your own edits: saving or cancelling your own wish
+  returns you to the list still narrowed the way you left it. If your row no longer matches, it simply
+  leaves — the filters are not quietly cleared to keep it in sight. A floor typed into the address
+  that matches nothing is an empty result you can see and undo, never an error and never a silent
+  return to the full list;
+* **nothing about the rows changed.** Same columns, same order — oldest declaration first — same
+  people eligible to appear, and *Propose swap* behaves exactly as it did. The filter takes rows away
+  and does nothing else. Each control is a named landmark of its own, carrying the same words the
+  column headings already use, and the choice in force is announced rather than merely coloured.
+
 ## 🧭 Method: Spec-Driven Development
 
 The project is built with **SDD** using [Spec Kit](https://github.com/github/spec-kit): the
@@ -782,7 +826,14 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   from that domain goes through, lifting the restriction again by removing the last domain, the
   malformed and duplicate entries refused on the screen, a subdomain of a listed domain still refused
   until it is listed itself, an account whose domain is no longer allowed still signing in, and the
-  screen and both of its write addresses refused to an account that is not an administrator.
+  screen and both of its write addresses refused to an account that is not an administrator;
+* [`specs/017-locker-wishes-floor-filter/quickstart.md`](specs/017-locker-wishes-floor-filter/quickstart.md) —
+  narrowing on each floor in turn and then on both at once, clearing either one independently, the
+  floors offered in numeric order with 10 last, somebody who has saved no floor of their own dropping
+  out of the *Their floor* filter and coming back when it is cleared, a combination nobody satisfies
+  saying so in its own words, a nonsense floor typed into the address, the filters surviving a save
+  and a cancel of your own wish, and the two checks a headless browser makes awkwardly: moving across
+  the choices with a keyboard without the list re-filtering, and the filter bar wrapping on a phone.
 
 ## 🚢 Deploy
 

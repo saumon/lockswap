@@ -1,0 +1,32 @@
+<%# 017 FR-001/FR-002: one axis of the floor filter. Rendered twice — once for the
+    floor people are looking for, once for the floor they are on — from the same
+    partial, because both behave identically.
+
+    A <nav> with its own aria-label, so the two axes are two distinguishable
+    landmarks rather than one undifferentiated pile of links (FR-021). The label
+    text is the list's own column heading, per FR-002.
+
+    Links, not a <select>: FR-008 requires that moving through the choices without
+    committing to one leaves the list alone, and a select submitting on `change`
+    fires as a keyboard user arrows through its options. A link is activated
+    deliberately and never merely by being focused, so both halves of FR-008 hold
+    by construction — with no JavaScript. %>
+<% filter = filters[axis] %>
+<nav id="locker-wish-filter-<%= axis.to_s.dasherize %>" class="filter-group" aria-label="<%= label %>">
+  <span class="filter-label" aria-hidden="true"><%= label %></span>
+
+  <%# FR-003: always offered, and the state the screen opens in. aria-current is
+      what marks the choice in force — the styling hangs off that same attribute,
+      so the state cannot be shown without also being announced (FR-015). %>
+  <%= link_to "All floors", locker_wish_filter_path(filters, axis, nil),
+        class: "filter-choice",
+        aria: { current: ("true" unless filter.filtering?) } %>
+
+  <%# FR-007 order, and FR-015/FR-020: #choices keeps a selection that no wish
+      carries any more, so the viewer can always see and undo what is in force. %>
+  <% filter.choices.each do |floor| %>
+    <%= link_to floor, locker_wish_filter_path(filters, axis, floor),
+          class: "filter-choice",
+          aria: { current: ("true" if filter.current?(floor)) } %>
+  <% end %>
+</nav>

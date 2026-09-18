@@ -1240,6 +1240,67 @@
     }
   }
 
+  /* --- Floor filters (017) ------------------------------------------------
+     Each axis is a row of links rather than a <select>. FR-008 requires that
+     moving through the choices without committing to one leaves the list alone,
+     and a select submitting on `change` fires as a keyboard user arrows through
+     its options — the WCAG 2.1 SC 3.2.2 (On Input) failure that rule describes.
+     Links also wrap at any width, so FR-023 needs no media query of its own. */
+  turbo-frame {
+    /* A custom element is display: inline until told otherwise, which would
+       collapse the card it wraps. */
+    display: block;
+  }
+
+  .filter-bar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+    padding-bottom: var(--spacing-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--spacing-2);
+  }
+
+  .filter-label {
+    font-size: var(--text-label);
+    font-weight: 600;
+    color: var(--color-ink-muted);
+  }
+
+  .filter-choice {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-1) var(--spacing-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: 9999px;
+    font-size: var(--text-label);
+    line-height: 1.4;
+    color: var(--color-ink);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .filter-choice:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  /* The choice in force. aria-current is the selector, so the state cannot be
+     styled without also being announced (FR-015, FR-021). White on
+     --color-accent is 5.40:1. */
+  .filter-choice[aria-current] {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-surface);
+    font-weight: 600;
+  }
+
   /* The table is the one thing allowed to scroll sideways on a narrow screen;
      the page body must not (FR-014). */
   .table-scroll {

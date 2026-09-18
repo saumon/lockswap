@@ -6,7 +6,10 @@
 <%# novalidate: the server decides what is valid, so every failure is reported the
     same way rather than some by the browser and some by the app. %>
 <%= form_with model: @locker_wish, url: locker_wish_path, method: :post,
-              html: { class: "stack-tight", novalidate: true } do |f| %>
+              html: { id: LockerWishesController::DECLARE_FORM_ID, class: "stack-tight", novalidate: true } do |f| %>
+  <%# 017 FR-019: the fields carrying the filters in force are not here — they are
+      inside the frame, and reach this form by its id. See the note on them in
+      locker_wishes/_locker_wish_list. %>
   <div class="field">
     <%= f.label :floor, class: "field-label" %>
     <%= f.text_field :floor, autocomplete: "off",

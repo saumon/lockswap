@@ -88,3 +88,27 @@ grace:
   admin_granted_at: 2026-02-10 09:00:00
   admin_granted_by: frank
   created_at: 2026-02-07 09:00:00
+
+# 017: the two accounts the floor filters are asserted against.
+#
+# judy's floor is "10" for one reason: against bob's "3" and carol's "2" it is the
+# pair that sorts one way as text and the other way as a number, which is the whole
+# of FR-007. No existing fixture could show that — every saved floor was a single
+# digit.
+judy:
+  email: judy@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  failed_attempts: 0
+  floor: "10"
+  locker_number: "J-10"
+  created_at: 2026-02-08 09:00:00
+
+# 017 FR-012: declares a wish but has never saved a floor of their own, so they are
+# listed whenever the "Their floor" filter is on "All floors" and excluded whenever
+# it names one. alice is the only other account with no floor, and she is
+# deliberately wishless — see the note in locker_wishes.yml.
+karl:
+  email: karl@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  failed_attempts: 0
+  created_at: 2026-02-09 09:00:00

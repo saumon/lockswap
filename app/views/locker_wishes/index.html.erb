@@ -1,5 +1,19 @@
 <% content_for :title, "Locker wishes" %>
 
+<%# 017 FR-018: Back and Forward must bring back the filter state they left, and
+    on this screen Turbo's snapshot cache cannot be trusted to do that. A filter
+    change advances the history from inside the frame, and the snapshot for the
+    address being left is taken *after* the frame has already been re-drawn — so
+    the cache holds, under the old address, markup showing the new filter. Going
+    back would replay it and contradict the address bar.
+
+    Opting out means a restoration visit asks the server, which renders whatever
+    the address says. It costs a round trip on Back, and buys an address and a
+    screen that never disagree. %>
+<% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
+<% end %>
+
 <div class="stack">
   <%= render "locker_wishes/locker_wish_panel" %>
   <%= render "locker_wishes/locker_wish_list" %>
