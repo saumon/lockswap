@@ -100,7 +100,9 @@ And it now fits the screen it is actually being read on: the menu folds behind a
 phone and stays a bar on a desktop, the swap lists stop being tables too wide to read and become one
 labelled card per person, and nothing anywhere asks to be scrolled sideways. The site has also
 acquired somebody in charge: whoever registered first, decided once and never handed on, with a menu
-of their own holding the list of everyone who has signed up.
+of their own holding the list of everyone who has signed up. And signing up no longer takes the
+password on trust: it is typed twice and the two have to agree, with an eye on each field for anyone
+who would rather read back what they typed than find out at the login form.
 
 | Feature | Status |
 | --- | --- |
@@ -117,6 +119,7 @@ of their own holding the list of everyone who has signed up.
 | **011 — Looping logo fade** | ✅ Shipped |
 | **012 — Responsive layout and menu** | ✅ Shipped |
 | **013 — Admin role and user directory** | ✅ Shipped |
+| **014 — Password confirmation and visibility toggle** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -457,6 +460,46 @@ What feature 013 adds — see
   widths, and so is the Admin menu with its submenu open: a state that exists on one account's pages
   and would otherwise never have been looked at.
 
+What feature 014 adds — see
+[`specs/014-confirmation-mot-de-passe/spec.md`](specs/014-confirmation-mot-de-passe/spec.md):
+
+* **the signup form asks for the password twice**, and will not create the account unless the two
+  agree exactly — a blank second field included, since leaving it empty is a mismatch and not a
+  question that simply went unanswered. A password typed into a field of dots is a password nobody
+  proofreads, and the first time a typo in one announces itself would otherwise be at the login form,
+  from the wrong side of it;
+* the refusal **says which of the two password problems it is**: *Confirm password doesn't match the
+  password above*, which is a different sentence from the one about eight characters. Rails builds an
+  error message out of the field's name, so the field is named once and the label and the error are
+  the same words — otherwise the form answers in language it never used. The account-settings page's
+  own confirmation field picks up that name too: one field, called one thing, wherever it appears;
+* **it says so before the form is submitted, but not while you are still typing.** Nothing is said
+  during the first pass through the confirmation field — a mismatch reported against a half-typed
+  value is a complaint about something the reader has not finished saying, and every password typed
+  one character at a time begins by not matching. The check runs when the field is first left, and
+  from then on keeps itself current on every keystroke in either field, so a correction clears the
+  message where it stands, with no second visit to the field and no round trip;
+* **that hint is not the rule.** The two values are compared again on the server, and that is what
+  actually refuses the signup; the form is `novalidate` precisely so that every refusal comes from one
+  place, and with the script missing the signup behaves exactly as it should, only more quietly. It is
+  also why no new validation was written: Devise has compared these two fields all along, and most of
+  014 is the work of putting the second one on the page;
+* **each field carries its own eye**, revealing what was typed into that field and nothing else.
+  Revealing the one you are checking should not put the other on screen for whoever else is in the
+  room. There is no state shared between the two controls to get that wrong with — each field gets its
+  own — so their independence is a fact of how they are built rather than something remembered;
+* the eye **stays open while you keep typing**, since the point is to watch the keys land and that is
+  no use if it re-masks after every one; and both fields **start masked again on the next visit**, so
+  the reveal lasts the visit and no longer;
+* the control **says what it does rather than showing it**. Its name changes between *Show password*
+  and *Hide password*, and it deliberately carries no pressed state alongside that: a button announced
+  as "Hide password, pressed" gives two answers at once and leaves the listener to work out which of
+  them describes now. Which eye is drawn — open, or struck through — is read off the field's own type
+  in CSS, so the icon cannot end up describing a state the field is not in;
+* it is **reachable and operable from the keyboard alone**, and a real target under a thumb: the 44 px
+  012 settled on, which it meets by standing as tall as the field it sits in. The screen goes through
+  the same accessibility audit as every other one, at both widths, on every test run.
+
 ## 🧭 Method: Spec-Driven Development
 
 The project is built with **SDD** using [Spec Kit](https://github.com/github/spec-kit): the
@@ -523,7 +566,8 @@ start at `/users/sign_up`.
 
 ```sh
 bin/rails test         # models, controllers, views, and the single-breakpoint rule
-bin/rails test:system  # end-to-end signup, login, lockout, redirect, locker-details, wish, swap, notification, and admin flows,
+bin/rails test:system  # end-to-end signup (password confirmation and reveal included), login, lockout, redirect,
+                       # locker-details, wish, swap, notification, and admin flows,
                        # plus an accessibility audit of every screen, the reduced-motion behaviour,
                        # and a sweep of every screen at both a phone and a desktop viewport
 bin/rubocop            # lint (zero warnings tolerated)
@@ -610,7 +654,12 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   signing up first on an empty instance and finding the Admin menu there, signing up second and
   finding nothing, the address refused when the second account types it anyway, the directory listing
   both accounts oldest first with the badge on one of them, and the administrator deleting their own
-  account to watch the role pass to nobody.
+  account to watch the role pass to nobody;
+* [`specs/014-confirmation-mot-de-passe/quickstart.md`](specs/014-confirmation-mot-de-passe/quickstart.md) —
+  signing up with the two passwords agreeing and then with them differing, the message staying away
+  until the confirmation field is first left and clearing itself as the mistake is corrected, each eye
+  revealing its own field and leaving the other alone, both fields masked again after a reload, and
+  the toggle reached and worked from the keyboard.
 
 ## 🚢 Deploy
 
