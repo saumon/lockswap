@@ -10,7 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_18_113055) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_18_161040) do
+  create_table "allowed_email_domains", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "domain", null: false
+    t.datetime "updated_at", null: false
+    t.index ["domain"], name: "index_allowed_email_domains_on_domain", unique: true
+  end
+
   create_table "locker_swap_proposals", force: :cascade do |t|
     t.datetime "completed_at"
     t.datetime "created_at", null: false
