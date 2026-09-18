@@ -32,6 +32,16 @@ esac
 SERVICE_NAME="puma-lockswap"
 # WORKER_SERVICE_NAME="solid-queue-lockswap"
 
+# RVM : ce script est lancé depuis le hook post-receive via SSH, dans un
+# shell non interactif / non login. /etc/profile.d/rvm.sh n'est jamais
+# sourcé automatiquement dans ce contexte, donc bundle/bin/rails ne sont
+# pas dans le PATH sans ce chargement explicite.
+# (set +u/-u autour : les scripts RVM ne supportent pas `nounset`.)
+set +u
+source "/etc/profile.d/rvm.sh"
+rvm use "ruby-3.4.6" --silent
+set -u
+
 # Inherited git env vars would override the repo detected below.
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_CEILING_DIRECTORIES
 
@@ -47,8 +57,14 @@ SCRIPT_DIR="$(cd -P "$(dirname "${SCRIPT_SOURCE}")" && pwd)"
 ROOT_DIR="$(cd -P "${SCRIPT_DIR}/.." && pwd)"
 LOCK_FILE="/tmp/update_lockswap_${BRANCH}.lock"
 
-if ! git -C "${ROOT_DIR}" rev-parse --git-dir >/dev/null 2>&1; then
-	echo "'${ROOT_DIR}' is not a git repository." >&2
+# ROOT_DIR (le répertoire de déploiement) n'a plus son propre .git : c'est
+# un simple work-tree, checkouté par le hook post-receive depuis le bare
+# repo ci-dessous. Garder un second .git indépendant ici (ex. un vieux
+# clone GitHub) ferait tirer ce script depuis la mauvaise source.
+BARE_DIR="${HOME}/$(basename "${ROOT_DIR}").git"
+
+if ! git --git-dir="${BARE_DIR}" rev-parse --git-dir >/dev/null 2>&1; then
+	echo "'${BARE_DIR}' is not a git repository." >&2
 	exit 1
 fi
 
@@ -82,10 +98,9 @@ systemctl --user stop "${SERVICE_NAME}"
 #systemctl --user stop "${WORKER_SERVICE_NAME}"
 service_stopped=true
 
-echo "[2/6] Updating ${BRANCH} branch (fast-forward only)..."
-git -C "${ROOT_DIR}" fetch --all --prune
-git -C "${ROOT_DIR}" checkout "${BRANCH}"
-git -C "${ROOT_DIR}" pull --ff-only
+echo "[2/6] Working tree already checked out by post-receive (branch ${BRANCH})"
+DEPLOYED_SHA="$(git --git-dir="${BARE_DIR}" rev-parse --short "refs/heads/${BRANCH}")"
+echo "Deployed commit: ${DEPLOYED_SHA}"
 
 echo "[3/6] Installing Ruby dependencies (if needed)..."
 bundle install
