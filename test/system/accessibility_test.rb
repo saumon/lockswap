@@ -140,6 +140,37 @@ class AccessibilityTest < ApplicationSystemTestCase
     assert_axe_clean
   end
 
+  # 017 FR-021 / SC-008: the two filter axes, and the states they can put the
+  # list into.
+
+  test "a filtered locker wish list is accessible" do
+    log_in_as @user
+    visit locker_wishes_path(looking_for: "7")
+    assert_selector "#locker-wish-row-#{users(:bob).id}"
+    assert_axe_clean
+  end
+
+  test "a locker wish list matching no filter is accessible" do
+    log_in_as @user
+    visit locker_wishes_path(looking_for: "7", current_floor: "10")
+    assert_selector "#locker-wish-list-no-match"
+    assert_axe_clean
+  end
+
+  # FR-002/FR-021: two axes means two distinguishable landmarks, named with the
+  # list's own column wording rather than an invented vocabulary — and the choice
+  # in force is announced, not merely coloured.
+  test "each floor filter is its own named landmark, with the choice in force announced" do
+    log_in_as @user
+    visit locker_wishes_path(looking_for: "7")
+
+    assert_selector "#locker-wish-filter-looking-for[aria-label='Looking for floor']"
+    assert_selector "#locker-wish-filter-current-floor[aria-label='Their floor']"
+
+    within("#locker-wish-filter-looking-for") { assert_selector "a[aria-current='true']", text: "7" }
+    within("#locker-wish-filter-current-floor") { assert_selector "a[aria-current='true']", text: "All floors" }
+  end
+
   test "the proposal history is accessible" do
     log_in_as @user
     visit locker_swap_proposals_path

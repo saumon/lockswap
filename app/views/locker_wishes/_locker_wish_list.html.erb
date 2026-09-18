@@ -1,77 +1,135 @@
 <%# 003 FR-011: every active wish, with enough of each wisher's own locker details
     for a reader to judge whether a swap is worth proposing. The viewer's own wish
     is listed like anyone else's. %>
-<div id="locker-wish-list" class="card stack-tight">
-  <h2 class="card-title">Everyone looking for a locker</h2>
+<%# 017 FR-009/FR-018: the filters drive this frame rather than the whole page, so
+    a filter change replaces the list and leaves the declare panel above it — and
+    the viewer's place on the page — exactly where they were. data-turbo-action
+    "advance" is what still puts the filtered address in the history, so the view
+    can be shared and reached with back and forward.
 
-  <% if @locker_wishes.any? %>
-    <%# 012 FR-005: below the breakpoint this stops being a table and becomes one
-        stacked card per record — every field labelled from its data-label, the
-        row's action right there, nothing behind a sideways swipe. Above it, the
-        table it has always been, which is why .table-scroll stays: at that width
-        a long row is still allowed its own scroll container, and the page still
-        is not.
+    The id lives on the frame rather than on the card inside it: an id cannot be in
+    two places, and accessibility_test.rb and motion_test.rb both match on it. %>
+<turbo-frame id="locker-wish-list" data-turbo-action="advance"
+             data-controller="frame-history">
+  <div class="card stack-tight">
+    <h2 class="card-title">Everyone looking for a locker</h2>
 
-        The explicit roles are what make the restack safe. Changing an element's
-        display drops its implicit table role, so restating the roles keeps the
-        accessibility tree correct in both forms (FR-005d). Above the breakpoint
-        they duplicate what the element already provides, harmlessly. %>
-    <div class="table-scroll">
-      <table class="data-table" role="table">
-        <thead>
-          <tr role="row">
-            <th scope="col" role="columnheader">Looking for floor</th>
-            <th scope="col" role="columnheader">Person</th>
-            <th scope="col" role="columnheader">Their floor</th>
-            <th scope="col" role="columnheader">Their locker</th>
-            <%# 004 FR-001: the swap starts here, on the row of the person being
-                asked. %>
-            <th scope="col" role="columnheader">Swap</th>
-          </tr>
-        </thead>
+    <%# 017 FR-001: the filters sit with the list they narrow, well clear of the
+        panel where the viewer declares their own wish, so the two cannot be
+        mistaken for one another.
 
-        <tbody>
-          <% @locker_wishes.each do |wish| %>
-            <% row_id = "locker-wish-row-#{wish.user_id}" %>
-            <tr id="<%= row_id %>" role="row">
-              <td id="<%= row_id %>-floor" class="strong" role="cell" data-label="Looking for floor"><%= wish.floor %></td>
-              <td id="<%= row_id %>-person" role="cell" data-label="Person"><%= wish.user.email %></td>
-
-              <%# Edge Case: never having saved a floor is distinct from having no
-                  locker, and neither is an error — both are plain status text. %>
-              <td id="<%= row_id %>-current-floor" role="cell" data-label="Their floor" class="<%= "detail-value-empty" if wish.user.saved_floor.blank? %>">
-                <%= wish.user.saved_floor.presence || "Not set" %>
-              </td>
-
-              <td id="<%= row_id %>-current-locker" role="cell" data-label="Their locker" class="<%= "detail-value-empty" if wish.user.saved_locker_number.blank? %>">
-                <%= wish.user.saved_locker_number.presence || "No locker assigned" %>
-              </td>
-
-              <%# 004: every reason a swap cannot be proposed is said plainly on
-                  the row itself, rather than offering a control that is only
-                  going to be refused (FR-002, FR-004, FR-018). %>
-              <td id="<%= row_id %>-swap" role="cell" data-label="Swap">
-                <% if wish.user_id == current_user.id %>
-                  <span class="meta">This is you</span>
-                <% elsif @viewer_in_progress %>
-                  <span class="meta">You already have an exchange in progress</span>
-                <% elsif @pending_recipient_ids.include?(wish.user_id) %>
-                  <span class="badge badge-info">Proposal pending</span>
-                <% else %>
-                  <%= button_to "Propose swap", locker_swap_proposals_path,
-                        params: { locker_swap_proposal: { recipient_id: wish.user_id } },
-                        class: "btn btn-primary btn-sm", form: { data: { turbo_submits_with: "Proposing…" } } %>
-                <% end %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+        FR-002: the labels are the list's own column headings below, so the two
+        axes are named on screen the way the rows already name them. The parameter
+        is called current_floor; the viewer only ever sees "Their floor". %>
+    <div id="locker-wish-filters" class="filter-bar">
+      <% { looking_for: "Looking for floor", current_floor: "Their floor" }.each do |axis, label| %>
+        <%= render "locker_wishes/floor_filter", filters: @floor_filters, axis: axis, label: label %>
+      <% end %>
     </div>
-  <% else %>
-    <%# Acceptance Scenario 2: nobody looking is an ordinary state to report. %>
-    <p id="locker-wish-list-empty" class="empty-state">
-      Nobody is looking for a locker right now.
-    </p>
-  <% end %>
-</div>
+
+    <%# 017 FR-019: saving or cancelling a wish is a round trip through #create or
+        #destroy, so the filters in force survive it only by travelling with the
+        form and coming back on the redirect.
+        Those two forms live in the declare panel, which is deliberately outside
+        this frame (FR-009) and therefore never re-rendered when a filter changes —
+        fields placed inside them would still hold whatever was in force when the
+        page first loaded. So the fields live here, where every filter change
+        refreshes them, and attach themselves to their forms by id. The HTML `form`
+        attribute is what makes that legal, and it costs no JavaScript.
+        Sent at the top level, never inside locker_wish: nothing here may reach the
+        wish record. %>
+    <% @floor_filters.each do |axis, filter| %>
+      <% next unless filter.filtering? %>
+      <% [ LockerWishesController::DECLARE_FORM_ID, LockerWishesController::CANCEL_FORM_ID ].each do |form_id| %>
+        <%= hidden_field_tag axis, filter.selection, id: nil, form: form_id %>
+      <% end %>
+    <% end %>
+
+    <% if @locker_wishes.any? %>
+      <%# 012 FR-005: below the breakpoint this stops being a table and becomes one
+          stacked card per record — every field labelled from its data-label, the
+          row's action right there, nothing behind a sideways swipe. Above it, the
+          table it has always been, which is why .table-scroll stays: at that width
+          a long row is still allowed its own scroll container, and the page still
+          is not.
+
+          The explicit roles are what make the restack safe. Changing an element's
+          display drops its implicit table role, so restating the roles keeps the
+          accessibility tree correct in both forms (FR-005d). Above the breakpoint
+          they duplicate what the element already provides, harmlessly. %>
+      <div class="table-scroll">
+        <table class="data-table" role="table">
+          <thead>
+            <tr role="row">
+              <th scope="col" role="columnheader">Looking for floor</th>
+              <th scope="col" role="columnheader">Person</th>
+              <th scope="col" role="columnheader">Their floor</th>
+              <th scope="col" role="columnheader">Their locker</th>
+              <%# 004 FR-001: the swap starts here, on the row of the person being
+                  asked. %>
+              <th scope="col" role="columnheader">Swap</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% @locker_wishes.each do |wish| %>
+              <% row_id = "locker-wish-row-#{wish.user_id}" %>
+              <tr id="<%= row_id %>" role="row">
+                <td id="<%= row_id %>-floor" class="strong" role="cell" data-label="Looking for floor"><%= wish.floor %></td>
+                <td id="<%= row_id %>-person" role="cell" data-label="Person"><%= wish.user.email %></td>
+
+                <%# Edge Case: never having saved a floor is distinct from having no
+                    locker, and neither is an error — both are plain status text. %>
+                <td id="<%= row_id %>-current-floor" role="cell" data-label="Their floor" class="<%= "detail-value-empty" if wish.user.saved_floor.blank? %>">
+                  <%= wish.user.saved_floor.presence || "Not set" %>
+                </td>
+
+                <td id="<%= row_id %>-current-locker" role="cell" data-label="Their locker" class="<%= "detail-value-empty" if wish.user.saved_locker_number.blank? %>">
+                  <%= wish.user.saved_locker_number.presence || "No locker assigned" %>
+                </td>
+
+                <%# 004: every reason a swap cannot be proposed is said plainly on
+                    the row itself, rather than offering a control that is only
+                    going to be refused (FR-002, FR-004, FR-018). %>
+                <td id="<%= row_id %>-swap" role="cell" data-label="Swap">
+                  <% if wish.user_id == current_user.id %>
+                    <span class="meta">This is you</span>
+                  <% elsif @viewer_in_progress %>
+                    <span class="meta">You already have an exchange in progress</span>
+                  <% elsif @pending_recipient_ids.include?(wish.user_id) %>
+                    <span class="badge badge-info">Proposal pending</span>
+                  <% else %>
+                    <%# 017 FR-014: the one form inside the frame, and the only one
+                        that has to break out of it. Its redirect goes to this very
+                        screen, which contains the frame — so without turbo_frame
+                        "_top" Turbo would render that redirect into the frame, the
+                        "Swap proposal sent." toast would never appear, and the
+                        address would lose both filter selections. %>
+                    <%= button_to "Propose swap", locker_swap_proposals_path,
+                          params: { locker_swap_proposal: { recipient_id: wish.user_id } },
+                          class: "btn btn-primary btn-sm",
+                          form: { data: { turbo_submits_with: "Proposing…", turbo_frame: "_top" } } %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% elsif @floor_filters.each_value.any?(&:filtering?) %>
+      <%# 017 FR-016: an empty result from filtering is an ordinary outcome, and it
+          has to say so in its own words. Its own id, not this one with different
+          text: a single id would let a regression satisfy the selector while
+          saying the wrong thing. Both filters stay above, still showing what is in
+          force, so either can be relaxed from here (FR-015). %>
+      <p id="locker-wish-list-no-match" class="empty-state">
+        No wish matches these filters.
+      </p>
+    <% else %>
+      <%# Acceptance Scenario 2: nobody looking is an ordinary state to report. %>
+      <p id="locker-wish-list-empty" class="empty-state">
+        Nobody is looking for a locker right now.
+      </p>
+    <% end %>
+  </div>
+</turbo-frame>

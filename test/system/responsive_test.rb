@@ -140,6 +140,47 @@ class ResponsiveTest < ApplicationSystemTestCase
     end
   end
 
+  # 017 FR-023: the filters are a row of links, so the narrow treatment is that
+  # they wrap. Asserted the way the rest of this file asserts it — by measuring
+  # that nothing escapes the viewport — rather than by reading the stylesheet.
+  test "the floor filters wrap rather than overflow at phone width" do
+    log_in_as @user
+    visit locker_wishes_path
+
+    with_viewport(:phone) do
+      assert_selector "#locker-wish-filters"
+      assert_no_horizontal_overflow "the locker wishes filters"
+
+      escaping = page.evaluate_script(<<~JS)
+        (() => {
+          const limit = document.documentElement.clientWidth;
+          return Array.from(document.querySelectorAll("#locker-wish-filters a"))
+            .filter(el => {
+              const r = el.getBoundingClientRect();
+              return r.left < 0 || r.right > limit;
+            })
+            .map(el => el.textContent.trim());
+        })()
+      JS
+
+      assert_empty escaping, "floor choices escaping the viewport: #{escaping.inspect}"
+    end
+  end
+
+  # And they are still usable once wrapped: choosing one narrows the list at phone
+  # width exactly as it does at desktop width.
+  test "a floor filter still works at phone width" do
+    log_in_as @user
+    visit locker_wishes_path
+
+    with_viewport(:phone) do
+      within("#locker-wish-filter-looking-for") { click_on "7" }
+
+      assert_selector "#locker-wish-row-#{users(:bob).id}"
+      assert_no_selector "#locker-wish-row-#{users(:karl).id}"
+    end
+  end
+
   test "the proposal history is stacked cards on a phone" do
     log_in_as users(:bob)
     visit locker_swap_proposals_path

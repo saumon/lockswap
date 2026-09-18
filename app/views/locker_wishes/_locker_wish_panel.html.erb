@@ -18,9 +18,14 @@
       <%# FR-009: withdrawing is its own decision, separate from moving the wish
           to another floor, so it gets its own control rather than sharing the
           form below. %>
+      <%# 017 FR-019: the fields carrying the filters in force are not here — they
+          are inside the frame, and reach this form by its id. See the note on them
+          in locker_wishes/_locker_wish_list. %>
       <div class="row">
         <%= button_to "Cancel wish", locker_wish_path, method: :delete,
-              class: "btn btn-secondary btn-sm", form: { data: { turbo_submits_with: "Cancelling…" } } %>
+              class: "btn btn-secondary btn-sm",
+              form: { id: LockerWishesController::CANCEL_FORM_ID,
+                      data: { turbo_submits_with: "Cancelling…" } } %>
       </div>
     </div>
 

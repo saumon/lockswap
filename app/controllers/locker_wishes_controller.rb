@@ -1,10 +1,22 @@
-# Declaring, browsing, and cancelling locker search wishes (003).
+# Declaring, browsing, and cancelling locker search wishes (003), and narrowing
+# the list by floor (017).
 # Deliberately separate from HomeController and LockerProfilesController: this is
 # a different concern — what people are looking for, not what they already have.
 class LockerWishesController < ApplicationController
   # FR-013: every action here — viewing the list included — is for logged-in
   # users only; an anonymous visitor is sent to the login page instead.
   before_action :authenticate_user!
+
+  # 017: the two axes, and where each one's floor arrives from. The keys are the
+  # query parameters, so this is also what the filtered address looks like.
+  FILTER_AXES = %i[looking_for current_floor].freeze
+
+  # 017 FR-019: the two forms in the declare panel, named so that the fields
+  # carrying the filters — which live inside the frame, where a filter change
+  # refreshes them — can attach themselves to forms outside it. The ids are here
+  # rather than written twice in the views, so the two ends cannot drift apart.
+  DECLARE_FORM_ID = "locker-wish-form".freeze
+  CANCEL_FORM_ID = "locker-wish-cancel".freeze
 
   def index
     @locker_wish = own_locker_wish
@@ -18,7 +30,7 @@ class LockerWishesController < ApplicationController
     @locker_wish.floor = locker_wish_params[:floor]
 
     if save_locker_wish
-      redirect_to locker_wishes_path, notice: "Locker search saved."
+      redirect_to locker_wishes_path(filter_selections), notice: "Locker search saved."
     else
       load_wish_list
       render :index, status: :unprocessable_entity
@@ -31,17 +43,20 @@ class LockerWishesController < ApplicationController
   def destroy
     current_user.locker_wish&.destroy
 
-    redirect_to locker_wishes_path, notice: "Locker search cancelled."
+    redirect_to locker_wishes_path(filter_selections), notice: "Locker search cancelled."
   end
 
   private
 
     # The list itself, plus what the viewer may do with each row. Both rendering
-    # paths need all three, since a rejected declare re-renders the whole page.
+    # paths need all three, since a rejected declare re-renders the whole page —
+    # which is also why 017's filters are built here rather than in #index: a
+    # rejected declare must come back filtered exactly as it was (FR-019).
     # The two eligibility answers are fetched once rather than per row, which
     # would be a query per wish (Principle IV).
     def load_wish_list
-      @locker_wishes = all_locker_wishes
+      @floor_filters = build_floor_filters
+      @locker_wishes = filtered_locker_wishes
       @viewer_in_progress = LockerSwapProposal.in_progress_for?(current_user)
       @pending_recipient_ids = current_user.sent_swap_proposals.pending.pluck(:recipient_id)
     end
@@ -52,16 +67,48 @@ class LockerWishesController < ApplicationController
       current_user.locker_wish || current_user.build_locker_wish
     end
 
-    # FR-011/FR-012: every active wish, oldest declaration first. The rows each
-    # report their owner's saved floor and locker, so the users are loaded up
-    # front rather than one query per row.
-    #
-    # 004 Edge Case: someone mid-swap is no longer an open invitation, so their
-    # wish drops out of the list until the exchange completes — which destroys
-    # the wish outright. The wish row itself is never touched here.
-    def all_locker_wishes
-      LockerWish.where.not(user_id: LockerSwapProposal.in_progress_user_ids)
-                .includes(:user).order(created_at: :asc)
+    # 017 FR-006: each axis offers the floors found across *every* active wish,
+    # never only those left after the other axis has been applied — so setting one
+    # filter never adds to, removes from or reorders what the other offers. That
+    # is why the choices come from `LockerWish.active` and not from the relation
+    # below. Two bounded DISTINCT queries, one per axis: at most one row per
+    # floor, whatever the number of wishes (Principle IV).
+    def build_floor_filters
+      {
+        looking_for: FloorFilter.new(
+          selection: filter_selection(:looking_for), available: LockerWish.looked_for_floors
+        ),
+        current_floor: FloorFilter.new(
+          selection: filter_selection(:current_floor), available: LockerWish.owner_floors
+        )
+      }
+    end
+
+    # FR-010/FR-011: an axis left on "all floors" is a no-op, so the two scopes
+    # compose into the intersection when both are set, and into the single-axis
+    # list when only one is.
+    def filtered_locker_wishes
+      LockerWish.active
+                .looking_for(@floor_filters[:looking_for].selection)
+                .owner_on_floor(@floor_filters[:current_floor].selection)
+    end
+
+    # FR-020: a floor arriving in the address is matched exactly as it came, and
+    # anything that is not a plain string — `?looking_for[]=3` — is no filter at
+    # all rather than an error. Read separately from locker_wish_params, which
+    # stays exactly as wide as it was: nothing here can reach the wish record.
+    def filter_selection(axis)
+      value = params[axis]
+
+      value.is_a?(String) ? value : nil
+    end
+
+    # FR-019: what the declare and cancel redirects carry, so the screen the
+    # viewer lands back on is still filtered the way they left it. Blank axes are
+    # dropped rather than sent empty, so an unfiltered view redirects to the bare
+    # path it always did.
+    def filter_selections
+      FILTER_AXES.index_with { |axis| filter_selection(axis) }.compact_blank
     end
 
     def locker_wish_params
