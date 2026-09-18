@@ -102,7 +102,11 @@ labelled card per person, and nothing anywhere asks to be scrolled sideways. The
 acquired somebody in charge: whoever registered first, decided once and never handed on, with a menu
 of their own holding the list of everyone who has signed up. And signing up no longer takes the
 password on trust: it is typed twice and the two have to agree, with an eye on each field for anyone
-who would rather read back what they typed than find out at the login form.
+who would rather read back what they typed than find out at the login form. Being in charge has
+stopped being something one account holds alone, too: an administrator can hand the role to somebody
+else from the list they already had, behind a confirmation that names the account and says the grant
+cannot be taken back — and each row now says where its rights came from, so a site with several
+administrators can still answer how each of them got there.
 
 | Feature | Status |
 | --- | --- |
@@ -120,6 +124,7 @@ who would rather read back what they typed than find out at the login form.
 | **012 — Responsive layout and menu** | ✅ Shipped |
 | **013 — Admin role and user directory** | ✅ Shipped |
 | **014 — Password confirmation and visibility toggle** | ✅ Shipped |
+| **015 — Granting administrator rights** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -422,7 +427,10 @@ What feature 012 changes — see
   underneath someone navigating by Tab is not.
 
 What feature 013 adds — see
-[`specs/013-admin-user-directory/spec.md`](specs/013-admin-user-directory/spec.md):
+[`specs/013-admin-user-directory/spec.md`](specs/013-admin-user-directory/spec.md). Four of the
+statements below describe 013 as it shipped and **no longer describe the application**: feature 015
+lifted the one-administrator limit, gave the Users screen its one control, and closed the case where
+the site could be left with nobody in charge. They are marked where they occur:
 
 * **the first account ever registered is the site's administrator**, decided at the moment it signs
   up and with nothing to configure. There is no setup step, no seed, no environment variable: the
@@ -431,8 +439,13 @@ What feature 013 adds — see
   administrator deletes their own account: an application that asked "who is oldest?" would quietly
   hand the role to whoever is now oldest, and this one hands it to nobody. The site is left without
   an administrator until somebody says otherwise, which is the honest outcome — the role was given to
-  an account, not to a position in a queue;
-* **one administrator, and the database is what promises it.** The check reads the table before
+  an account, not to a position in a queue. **Superseded by 015**: nobody is promoted automatically,
+  still, but that outcome is no longer reachable — the last administrator's account cannot be
+  cancelled while there is anyone left to administer;
+* **one administrator, and the database is what promises it** — **Superseded by 015**, which lifted
+  the limit without giving up the promise: the index was narrowed rather than dropped, so any number
+  of accounts may be *granted* the role while exactly one can still *claim* it at signup, which is
+  what the paragraph below is really about. The check reads the table before
   writing to it, so two people signing up in the same instant can both find it empty and both claim
   the role; a unique index refuses the second, and the application catches that refusal and lets the
   signup through without the role rather than failing it. Losing a race is not a reason to be told
@@ -449,11 +462,13 @@ What feature 013 adds — see
   oldest first — which puts the administrator at the top without the ordering having to mention the
   role, since the account holding it is by definition the first one there was. Each row is an email
   address, the date it joined, and, on exactly one of them, a badge reading **Admin**: the label is
-  said outright rather than left to be inferred from a position in a list;
+  said outright rather than left to be inferred from a position in a list. **Superseded by 015**: as
+  many rows carry that badge as there are administrators, and each one now says how it got there;
 * it **reports, and offers nothing to press**. No promote, no demote, no edit, no delete — not
   because those were left for later, but because there is no such capability behind them: the role is
   claimed once at signup and by nothing else. A control that looked like one would be a promise the
-  application cannot keep;
+  application cannot keep. **Superseded by 015**, which added the capability first and the control
+  second, in that order; demote, edit and delete are still absent, and still for this reason;
 * it is **a table on a desktop and one labelled card per account on a phone**, from the same markup
   rendered once, on the single breakpoint 012 established — a new screen joins those rules rather
   than arriving with its own. It is audited for accessibility like every other screen, at both
@@ -499,6 +514,56 @@ What feature 014 adds — see
 * it is **reachable and operable from the keyboard alone**, and a real target under a thumb: the 44 px
   012 settled on, which it meets by standing as tall as the field it sits in. The screen goes through
   the same accessibility audit as every other one, at both widths, on every test run.
+
+What feature 015 adds — see
+[`specs/015-grant-admin-rights/spec.md`](specs/015-grant-admin-rights/spec.md):
+
+* **an administrator can hand the role to somebody else**, from a button on that account's row in
+  the list they already had. Nothing happens on the press: a confirmation names the account and says
+  the grant cannot be undone, and only validating it does anything. It is the same construction the
+  *Cancel my account* button has always used — the site's one existing way of asking "are you sure?"
+  — rather than a modal written for the occasion;
+* **no password is asked for on the way through**, which is exactly why the confirmation has to say
+  the grant is permanent. That dialog is the only thing between a pointer and an irreversible change,
+  and a confirmation that only confirms would be leaning on the reader already knowing what it costs.
+  Re-typing a password was considered and turned down for consistency: the closest thing the
+  application already does — closing your own account, which is no less final — is guarded by a
+  confirmation and nothing more;
+* **there can now be any number of administrators, and the database still promises the part worth
+  promising.** The index that made a second administrator impossible was narrowed rather than
+  dropped: it covers only accounts that hold the role *without* having been granted it. Two people
+  signing up in the same instant still cannot both claim it, so the race 013 settled stays settled,
+  while accounts that were granted the role fall outside the constraint entirely. The predicate is
+  the moment the grant happened and deliberately not the identity of whoever made it — that second
+  column empties when the granting account is deleted, and an index keyed on it would let a granted
+  administrator drift into the slot reserved for the very first account and collide with it;
+* **rights obtained by grant are the same rights.** The same badge, the same menu, the same screen,
+  and the ability to grant the role onwards in turn. Nothing anywhere asks *how* the role was
+  obtained, because everything asks only whether it is held — which is a property of how the checks
+  were written, not a promise anyone has to keep remembering;
+* **each row says where its rights came from**: *First registration*, or *Granted by* somebody *on* a
+  date. It is not a log. The role is granted at most once and never taken back, so its origin is a
+  single fact about the account rather than a history of events to page through — and it **outlives
+  the account that granted it**: when that person leaves, the row reads *Granted on* a date
+  *(account removed)* rather than quietly going blank where a name used to be;
+* **granting is the whole of what was added.** 013 named four things this screen would not do —
+  promote, demote, edit, delete — and gave the same reason for all four: there was no capability
+  behind any of them, and a control that looked like one would be a promise the application could not
+  keep. Exactly one of the four has a capability behind it now, so exactly one of them got a control.
+  The other three are still absent, and still for that reason rather than for lack of time;
+* **the last administrator cannot walk out.** Granting became the only way into the role and nothing
+  takes it away, which left cancelling an account as the only way out of it — and the way out led
+  somewhere with no way back, since the role is only ever claimed automatically on a site with no
+  accounts at all. So the cancellation is refused while other accounts remain, and the person is told
+  what to do about it rather than merely stopped. The one case it lets through is the sole account
+  left on a site: there is nobody to lock out, and whoever registers next claims the role exactly as
+  the first one did;
+* **the control says which account it acts on**, to a screen reader as well as to the eye. A column
+  of buttons all reading *Grant admin rights* is a column of identical buttons, and leaves somebody
+  who cannot see the row counting their way down it — so each one carries the account's address in
+  its accessible name. The screen stays a table on a desktop and one labelled card per account on a
+  phone, on the single breakpoint 012 established, and goes through the same accessibility audit as
+  every other screen at both widths.
 
 ## 🧭 Method: Spec-Driven Development
 
@@ -654,7 +719,15 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   signing up first on an empty instance and finding the Admin menu there, signing up second and
   finding nothing, the address refused when the second account types it anyway, the directory listing
   both accounts oldest first with the badge on one of them, and the administrator deleting their own
-  account to watch the role pass to nobody;
+  account to watch the role pass to nobody — that last step is **superseded by 015**, which refuses
+  the cancellation instead;
+* [`specs/015-grant-admin-rights/quickstart.md`](specs/015-grant-admin-rights/quickstart.md) —
+  granting the role from the list and declining the confirmation first to watch nothing happen,
+  signing in as the promoted account to find the menu there and grant the role onwards, the grant
+  route refused for an account that never had the role, and the walk that proves the site keeps
+  somebody in charge: administrators leaving one at a time until the last one is stopped, promoted
+  somebody else, and then allowed to go — with the row they promoted still saying when it happened
+  after they are gone;
 * [`specs/014-confirmation-mot-de-passe/quickstart.md`](specs/014-confirmation-mot-de-passe/quickstart.md) —
   signing up with the two passwords agreeing and then with them differing, the message staying away
   until the confirmation field is first left and clearing itself as the mistake is corrected, each eye

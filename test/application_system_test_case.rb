@@ -403,6 +403,19 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
       fill_in_reliably "Password", with: password
       click_on "Log in"
       assert_text "Welcome to LockSwap"
+
+      # The browser is shared across this single-worker suite, so the homepage is
+      # usually in Turbo's cache by the time anyone logs in. Turbo paints that
+      # cached copy as a preview and replaces it a moment later with the real
+      # response — and "Welcome to LockSwap" is in both, so the assertion above
+      # can match the preview and let a test start interacting with a DOM that is
+      # about to be thrown away.
+      #
+      # This closes that window, so every test that logs in starts from the page
+      # it thinks it is looking at. It is not a proven cure for the suite's
+      # residual flakiness — that survives this change — but the race is real and
+      # this is where it belongs.
+      wait_for_turbo
     end
 
     # Drops the session (non-persistent) cookie and leaves the persistent

@@ -1272,6 +1272,25 @@
 
   .data-table tr:last-child td { border-bottom: 0; }
 
+  /* 015: a cell whose value runs to more than one line — a badge and the line
+     that says where it came from.
+
+     The wrapper is load-bearing below the breakpoint, not decoration. There the
+     cell is a two-column grid, label then value, and every child of the cell is
+     its own grid item: a second child wraps onto the next row and lands in the
+     label column, reading as a label for the row beneath it. One wrapping
+     element keeps the cell at the one value the grid expects.
+
+     align-items: flex-start because a grid or flex item stretches by default,
+     which would pull the badge across the whole column and turn a tag into a
+     banner. */
+  .data-table .cell-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-1);
+  }
+
   /* --- 012 FR-005: the narrow treatment of a data list --------------------
      Below the breakpoint the two data lists stop being tables and become one
      stacked card per record. The alternative — keeping the table and letting

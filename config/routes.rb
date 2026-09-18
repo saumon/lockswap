@@ -34,10 +34,18 @@ Rails.application.routes.draw do
   # 013 FR-005: the administrator's own corner of the site. Namespaced from the
   # start, though it holds one destination today: "Admin" is a menu in the
   # navigation, and what sits under it belongs under it in the routes too.
-  # Index only — the screen reports who is registered and offers nothing to press
-  # (FR-009), so there is no other action to route.
+  #
+  # 015: the screen gained one write. A named member action rather than :update
+  # with a parameter, for the reason locker_swap_proposals routes accept/decline/
+  # confirm the same way — each decision keeps its own authorization and rules —
+  # and because a general update action on accounts is precisely what 015 FR-014
+  # says must not exist. A named action cannot be widened by accident.
   namespace :admin do
-    resources :users, only: :index
+    resources :users, only: :index do
+      member do
+        patch :grant_admin
+      end
+    end
   end
 
   # Defines the root path route ("/") — the homepage a successful login lands on (FR-005).

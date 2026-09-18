@@ -106,11 +106,18 @@ with the administrator's own account included.
 - **FR-009**: This feature MUST NOT let the administrator change any account's role, or otherwise
   edit or remove an account, from the Users list — the list is read-only; administrator status is
   assigned automatically at signup and by nothing else.
+  **Superseded by feature 015** (`specs/015-grant-admin-rights/`): the Users list gained one write —
+  granting administrator rights — and administrators may now coexist without limit. Everything else
+  this requirement forbids on that screen still holds (015 FR-014).
 - **FR-010**: The Users list MUST present accounts in the order they registered, oldest first, so the
   administrator's own entry is the first one shown.
 - **FR-011**: If the administrator's account is later deleted (via the existing "Cancel my account"
   capability), the system MUST NOT reassign administrator status to any other account; the site is
   left with no administrator until that is addressed outside this feature.
+  **Superseded by feature 015** (`specs/015-grant-admin-rights/`): the outcome this describes — a site
+  with registered accounts and no administrator — is no longer reachable, because 015 FR-016 refuses
+  the deletion that would produce it. The half that still holds is that nobody is promoted
+  automatically to fill a vacancy; rights are only ever granted deliberately.
 - **FR-012**: The Users list MUST carry an explicit "Admin" label on the administrator's row, so that
   row is identifiable at a glance and not only by its position in the list.
 
@@ -138,6 +145,7 @@ with the administrator's own account included.
 
 - There is exactly one administrator account at any time; this feature introduces no way to promote a
   second account or otherwise have more than one.
+  **Superseded by feature 015**, which introduces exactly that (015 FR-013).
 - The Users list shows each account's email address and registration order/date. It does not repeat
   floor, locker, or wish details already shown on the existing Locker wishes and homepage screens,
   since this feature is about who is registered, not what they hold or want.
