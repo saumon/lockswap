@@ -84,6 +84,47 @@ class User < ApplicationRecord
   def saved_floor = floor_in_database
   def saved_locker_number = locker_number_in_database
 
+  # 020: the admin Users screen's four filters (FR-004). Each is a no-op when
+  # left blank, so the controller composes all four unconditionally and none
+  # needs a branch of its own (mirrors LockerWish's looking_for/owner_on_floor,
+  # feature 017).
+  #
+  # Matched case-insensitively: RoleFilter sends the capitalized display values
+  # "Admin"/"Standard" as the filter's own query values (the same "the value is
+  # also the label" convention FloorFilter uses for floors), so this has to
+  # accept exactly what that sends (research.md R4, analyze finding F1).
+  scope :with_role, ->(role) {
+    case role.to_s.downcase
+    when "admin" then where(admin: true)
+    when "standard" then where(admin: false)
+    else all
+    end
+  }
+
+  # Exact match, same shape as LockerWish#owner_on_floor's exact-match half, but
+  # directly on User rather than through a join.
+  scope :on_floor, ->(floor) { floor.presence ? where(floor: floor) : all }
+
+  # FR-007 (clarified): exact match, not a substring — locker numbers are unique
+  # identifiers, not search text.
+  scope :with_locker_number, ->(number) { number.presence ? where(locker_number: number) : all }
+
+  # FR-008: partial, case-insensitive (free, via the email column's own NOCASE
+  # collation) match. sanitize_sql_like escapes a literal "%"/"_" in the search
+  # text; the ESCAPE '\\' clause is what makes SQLite actually treat those
+  # escaped characters as literal rather than as wildcards (research.md R4,
+  # analyze finding C1).
+  scope :email_containing, ->(text) {
+    text.presence ? where("email LIKE ? ESCAPE '\\'", "%#{sanitize_sql_like(text)}%") : all
+  }
+
+  # FR-005: every distinct floor saved by *any* registered user — independent of
+  # any filter currently applied, so setting one filter never narrows what the
+  # current-floor filter itself offers (research.md R3). Feeds FloorFilter's
+  # `available:` exactly as LockerWish.owner_floors does for the locker wishes
+  # screen.
+  def self.saved_floors = where.not(floor: [ nil, "" ]).distinct.pluck(:floor)
+
   # 015 FR-006, FR-017: the whole of granting. One write, so an account never
   # exists carrying the flag without the provenance that goes with it — a row in
   # that state would be indistinguishable from the bootstrap administrator, and

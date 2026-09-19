@@ -102,24 +102,262 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_select ".badge", text: "Admin", count: User.where(admin: true).count
   end
 
+  # --- 020 User Story 1: locker, floor and wish on every row ------------------
+
+  # FR-001/FR-002: the same values the account's own homepage shows, read off the
+  # row rather than assumed from the fixture, so the test states the rule.
+  test "each row shows the account's saved floor and locker, or their absence" do
+    sign_in users(:frank)
+
+    get admin_users_path
+
+    assert_select "#admin-user-row-#{users(:bob).id}-floor", text: users(:bob).saved_floor
+    assert_select "#admin-user-row-#{users(:bob).id}-locker", text: users(:bob).saved_locker_number
+
+    assert_select "#admin-user-row-#{users(:carol).id}-floor", text: users(:carol).saved_floor
+    assert_select "#admin-user-row-#{users(:carol).id}-locker", text: "No locker assigned"
+
+    assert_select "#admin-user-row-#{users(:alice).id}-floor", text: "Not set"
+  end
+
+  # FR-003: whether the account is looking for a locker, and on which floor.
+  test "each row shows the account's active wish, or that it has none" do
+    sign_in users(:frank)
+
+    get admin_users_path
+
+    assert_select "#admin-user-row-#{users(:bob).id}-wish",
+                  text: "Looking for floor #{users(:bob).locker_wish.saved_floor}"
+    assert_select "#admin-user-row-#{users(:dave).id}-wish", text: "Not looking for a locker"
+  end
+
+  # Principle IV: the Wish column reads user.locker_wish for every row; without
+  # eager-loading it that is a query per row, which would grow with the number of
+  # registered accounts.
+  test "listing the accounts costs the same however many have declared a wish" do
+    sign_in users(:frank)
+
+    get admin_users_path
+    baseline = count_queries { get admin_users_path }
+
+    User.insert_all!((1..5).map do |n|
+      {
+        email: "wisher#{n}@example.com",
+        encrypted_password: Devise::Encryptor.digest(User, VALID_PASSWORD),
+        floor: "9", created_at: Time.current, updated_at: Time.current
+      }
+    end)
+
+    assert_equal baseline, count_queries { get admin_users_path }
+  end
+
+  # --- 020 User Story 2: the four filters --------------------------------------
+
+  test "the current-locker filter narrows to the account holding that exact locker" do
+    sign_in users(:frank)
+
+    get admin_users_path, params: { current_locker: users(:quinn).locker_number }
+
+    listed = css_select(".data-table tbody td[data-label='Email']").map { |cell| cell.text.strip }
+
+    assert_equal [ users(:quinn).email ], listed
+  end
+
+  # FR-007: exact, not a substring — "1" must not also match locker "10".
+  test "the current-locker filter does not match a locker number by substring" do
+    sign_in users(:frank)
+    User.insert_all!([ {
+      email: "shortlocker@example.com",
+      encrypted_password: Devise::Encryptor.digest(User, VALID_PASSWORD),
+      floor: "3", locker_number: "1", created_at: Time.current, updated_at: Time.current
+    } ])
+
+    get admin_users_path, params: { current_locker: "1" }
+
+    listed = css_select(".data-table tbody td[data-label='Email']").map { |cell| cell.text.strip }
+
+    assert_equal [ "shortlocker@example.com" ], listed
+  end
+
+  test "the current-floor filter narrows to accounts on that exact floor" do
+    sign_in users(:frank)
+
+    get admin_users_path, params: { current_floor: users(:judy).floor }
+
+    listed = css_select(".data-table tbody td[data-label='Email']").map { |cell| cell.text.strip }
+
+    assert_equal [ users(:judy).email ], listed
+  end
+
+  test "the role filter narrows to administrators or to standard accounts" do
+    sign_in users(:frank)
+
+    get admin_users_path, params: { role: "admin" }
+    listed = css_select(".data-table tbody td[data-label='Email']").map { |cell| cell.text.strip }
+    assert_equal User.where(admin: true).order(:created_at).pluck(:email), listed
+
+    get admin_users_path, params: { role: "standard" }
+    listed = css_select(".data-table tbody td[data-label='Email']").map { |cell| cell.text.strip }
+    assert_equal User.where(admin: false).order(:created_at).pluck(:email), listed
+  end
+
+  # An unrecognized value is data-model.md's "must not error" rule (research.md
+  # R5) — the request must succeed and apply no role restriction.
+  test "an unrecognized role value applies no restriction rather than erroring" do
+    sign_in users(:frank)
+
+    get admin_users_path, params: { role: "superuser" }
+
+    assert_response :success
+    assert_select ".data-table tbody tr", count: User.count
+  end
+
+  test "the email filter narrows to accounts whose email contains the text, case-insensitively" do
+    sign_in users(:frank)
+
+    get admin_users_path, params: { email: "QUINN" }
+
+    listed = css_select(".data-table tbody td[data-label='Email']").map { |cell| cell.text.strip }
+
+    assert_equal [ users(:quinn).email ], listed
+  end
+
+  # FR-009: combined filters narrow to accounts matching every one of them, not
+  # accounts matching any one.
+  test "combining filters narrows to accounts matching every one of them" do
+    sign_in users(:frank)
+
+    get admin_users_path, params: { role: "standard", current_floor: users(:bob).floor }
+
+    listed = css_select(".data-table tbody td[data-label='Email']").map { |cell| cell.text.strip }
+
+    assert_equal [ users(:bob).email ], listed
+  end
+
+  # Principle IV: the filters compose into WHERE clauses on the one query, not
+  # extra queries of their own.
+  test "the filtered index issues no more queries than the unfiltered one" do
+    sign_in users(:frank)
+
+    baseline = count_queries { get admin_users_path }
+    filtered = count_queries do
+      get admin_users_path, params: { current_locker: "x", current_floor: "x", role: "admin", email: "x" }
+    end
+
+    assert_operator filtered, :<=, baseline
+  end
+
+  # FR-015: filtering removes non-matching rows without reordering the ones that
+  # remain.
+  test "filtered results keep the same registration-order sequence" do
+    sign_in users(:frank)
+
+    get admin_users_path, params: { role: "standard" }
+
+    listed = css_select(".data-table tbody td[data-label='Email']").map { |cell| cell.text.strip }
+
+    assert_equal User.where(admin: false).order(:created_at).pluck(:email), listed
+  end
+
+  # FR-012: filtering is strictly a read-only view — nothing about an account
+  # changes because of how it was looked up.
+  test "exercising every filter changes no account's data" do
+    sign_in users(:frank)
+    before = User.order(:id).map { |u| u.attributes.slice("email", "floor", "locker_number", "admin") }
+
+    get admin_users_path, params: { current_locker: users(:quinn).locker_number }
+    get admin_users_path, params: { current_floor: users(:bob).floor }
+    get admin_users_path, params: { role: "admin" }
+    get admin_users_path, params: { email: "quinn" }
+    get admin_users_path # cleared
+
+    after = User.order(:id).map { |u| u.attributes.slice("email", "floor", "locker_number", "admin") }
+
+    assert_equal before, after
+  end
+
+  # FR-016: the filters in force when the grant control's form was submitted are
+  # put back on the redirect, the same way 017's declare/cancel writes carry
+  # theirs (research.md R5).
+  test "the grant redirect carries whatever filter params were submitted with it" do
+    sign_in users(:frank)
+
+    patch grant_admin_admin_user_path(users(:carol)),
+      params: { current_floor: users(:carol).floor, role: "standard" }
+
+    assert_redirected_to admin_users_path(current_floor: users(:carol).floor, role: "standard")
+  end
+
+  # FR-014: the refusal does not depend on whether a filter happens to be set.
+  test "a non-administrator's request is refused even with filter params attached" do
+    sign_in users(:carol)
+
+    get admin_users_path, params: { role: "admin", email: "x" }
+    assert_redirected_to root_path
+
+    assert_no_changes -> { users(:dave).reload.admin? } do
+      patch grant_admin_admin_user_path(users(:dave)), params: { role: "admin" }
+    end
+    assert_redirected_to root_path
+  end
+
+  # --- 020 User Story 3: a filter combination matching nobody -----------------
+
+  # FR-011: told plainly, and distinct from there being no accounts at all
+  # (which cannot happen on this screen — see data-model.md "No-Match State").
+  test "a filter combination matching nobody shows the no-match message" do
+    sign_in users(:frank)
+
+    get admin_users_path, params: { role: "admin", current_floor: users(:bob).floor }
+
+    assert_select "#admin-user-directory-no-match", text: /no account matches/i
+    assert_select ".data-table", count: 0
+  end
+
+  # The chosen values are still on screen, so the administrator can see and
+  # relax what they are filtered on.
+  test "the no-match message still shows the filters that were set" do
+    sign_in users(:frank)
+
+    get admin_users_path, params: { role: "admin", current_floor: users(:bob).floor }
+
+    assert_select "#admin-user-filter-role [aria-current=?]", "true", text: "Admin"
+    assert_select "#admin-user-filter-current-floor [aria-current=?]", "true", text: users(:bob).floor
+  end
+
   # 013 FR-009 made this screen read-only and this test said so: no form, no
   # button, no input. 015 adds exactly one write — the grant — so the assertion
   # narrows to what is still forbidden (015 FR-014) rather than being deleted.
   # Granting is the only capability here; nothing removes rights, edits an account
   # or deletes one.
-  test "the screen offers no control but the grant" do
+  #
+  # 020 adds two text filters (current locker, email), which are search inputs
+  # over the existing list, not an account edit — so the "no form but the grant"
+  # half of this test is narrowed to allow exactly those two GET forms, and the
+  # "no text input" assertion is narrowed to name them rather than forbid every
+  # input outright (analyze finding D1).
+  test "the screen offers no control but the grant and its own filters" do
     sign_in users(:frank)
 
     get admin_users_path
 
     assert_select "#admin-user-directory form" do |forms|
       forms.each do |form|
+        next if form["method"] == "get" # the two filter forms
+
         assert_equal grant_admin_admin_user_path(id_in(form)), form["action"],
-                     "the only form on this screen should be a grant"
+                     "the only non-filter form on this screen should be a grant"
       end
     end
 
-    assert_select "#admin-user-directory input[type=?]", "text", count: 0
+    # Each of the two text filters is one visible field, plus a hidden
+    # pass-through of the same name inside the other filter's form (so
+    # submitting one never drops the other) — the count is on the visible
+    # field alone.
+    assert_select "#admin-user-directory input[type=?][name=?]", "text", "current_locker", count: 1
+    assert_select "#admin-user-directory input[type=?][name=?]", "text", "email", count: 1
+    assert_select "#admin-user-directory input[type=?]:not([name=current_locker]):not([name=email])",
+                  "text", count: 0
     assert_select "#admin-user-directory a[data-turbo-method=?]", "delete", count: 0
   end
 

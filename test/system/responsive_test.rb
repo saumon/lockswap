@@ -260,6 +260,33 @@ class ResponsiveTest < ApplicationSystemTestCase
     end
   end
 
+  # 020 FR-004: four filters — two link groups, two text inputs — is the
+  # widest filter bar the site has; the narrow treatment is that it wraps,
+  # exactly like the two-filter bar on the locker wishes screen above.
+  test "the admin users filter bar wraps rather than overflows at phone width" do
+    log_in_as users(:frank)
+    visit admin_users_path
+
+    with_viewport(:phone) do
+      assert_selector "#admin-user-directory-filters"
+      assert_no_horizontal_overflow "the admin users filters"
+
+      escaping = page.evaluate_script(<<~JS)
+        (() => {
+          const limit = document.documentElement.clientWidth;
+          return Array.from(document.querySelectorAll("#admin-user-directory-filters a, #admin-user-directory-filters input"))
+            .filter(el => {
+              const r = el.getBoundingClientRect();
+              return r.left < 0 || r.right > limit;
+            })
+            .map(el => el.tagName);
+        })()
+      JS
+
+      assert_empty escaping, "filter controls escaping the viewport: #{escaping.inspect}"
+    end
+  end
+
   # FR-007 for the one control 013 adds. The sweep below runs as carol, who has
   # no Admin menu to measure, so the administrator's own row of the navigation
   # would otherwise never be held to the touch target rule.

@@ -1,0 +1,28 @@
+<%# 020: one debounced text filter axis — current locker (exact match) or email
+    (partial match). Neither has a small enumerable choice set, so a link group
+    (locker_wishes/_floor_filter.html.erb's pattern, reused above for the
+    current-floor and role axes) cannot represent it; a text input is the only
+    sensible control (research.md R2).
+
+    A GET form targeting this same screen, submitted automatically: the
+    auto-submit Stimulus controller debounces the field's `input` event and
+    calls `requestSubmit()`, which is the smallest way to keep the "no Apply
+    control, effect follows the input" behaviour the two link filters already
+    have, without a request per keystroke. Being inside the turbo-frame, the
+    submission replaces only the list, exactly like a link-filter click. %>
+<%= form_with url: admin_users_path, method: :get,
+              html: { id: "admin-user-filter-#{axis.to_s.dasherize}-form", class: "filter-group",
+                      data: { controller: "auto-submit" } } do %>
+  <%= label_tag "admin-user-filter-#{axis.to_s.dasherize}", label, class: "filter-label" %>
+  <%= text_field_tag axis, admin_user_filter_current_value(axis),
+        id: "admin-user-filter-#{axis.to_s.dasherize}",
+        data: { "auto-submit-target": "field", action: "input->auto-submit#submit" },
+        class: "field-input filter-text" %>
+
+  <%# The other three axes travel as hidden fields, so submitting this form
+      never drops a filter set on one of the others (mirrors the two link
+      filters preserving each other's selection). %>
+  <% (Admin::UsersController::FILTER_AXES - [ axis ]).each do |other_axis| %>
+    <%= hidden_field_tag other_axis, admin_user_filter_current_value(other_axis), id: nil %>
+  <% end %>
+<% end %>

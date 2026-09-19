@@ -1301,6 +1301,17 @@
     font-weight: 600;
   }
 
+  /* 020: the two text filters (current locker, email) — same filter-bar row as
+     the link-based choices, but a search input has no "choice" to style, so
+     this sits directly on .field-input's own appearance rather than
+     duplicating it, sized to match .filter-choice's compact height. */
+  .filter-text {
+    width: auto;
+    min-width: 10rem;
+    padding: var(--spacing-1) var(--spacing-3);
+    font-size: var(--text-label);
+  }
+
   /* The table is the one thing allowed to scroll sideways on a narrow screen;
      the page body must not (FR-014). */
   .table-scroll {

@@ -119,7 +119,13 @@ are on, computed fresh every time the list is shown rather than remembered from 
 what you are looking for now does more than record it: **Their floor**, the filter that answers who
 already holds what you want, sets itself to that same floor the moment the wish is saved, moves with
 it the moment it changes, and stands back down to *All floors* the moment it is cancelled — so seeing
-who to approach costs one action instead of two.
+who to approach costs one action instead of two. And the administrator's own list of who is registered
+no longer stops at email and role: every row now says that account's current floor, current locker, and
+whether they are looking for one — the same facts already shown on the homepage and the locker wishes
+list, read off this one screen instead of two. Four filters sit above it, combinable and immediate: an
+exact locker number, a floor, a role, or part of an email, narrowing a long list down to the handful of
+accounts that actually matter, with a plain message when a combination matches nobody rather than a
+screen that looks broken.
 
 | Feature | Status |
 | --- | --- |
@@ -142,6 +148,7 @@ who to approach costs one action instead of two.
 | **017 — Floor filters on the locker wishes list** | ✅ Shipped |
 | **018 — "It's a match!" tag on locker wishes** | ✅ Shipped |
 | **019 — "Their floor" pre-filled from your wish** | ✅ Shipped |
+| **020 — Locker/floor/wish and filters on the admin users screen** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -707,6 +714,34 @@ What feature 019 adds — see
   the one the link named. Kept in the address the way every other selection is, with that one accepted
   trade-off.
 
+What feature 020 adds — see
+[`specs/020-admin-users-filters/spec.md`](specs/020-admin-users-filters/spec.md):
+
+* **every row on the admin Users screen now says where that account stands**: current floor, current
+  locker, and whether they are looking for one — the same three facts already shown on that person's
+  own homepage and on the locker wishes list, so an administrator no longer has to leave this screen
+  to answer "who holds what, and who wants what";
+* **"Not set", "No locker assigned" and "Not looking for a locker" are three different states**, said
+  plainly rather than left as blank cells — never having saved a floor is not the same as having no
+  locker, and neither is an error;
+* **four independent filters narrow the list**: current floor and role are chosen from a list of
+  links, the same keyboard-safe control the locker wishes filters introduced in 017; current locker
+  and email are typed, and the list updates shortly after typing stops — an exact match on the locker
+  number, any part of the email. Any combination of the four narrows to accounts matching every one of
+  them, not just one;
+* **only the list moves.** The four filters live inside the same kind of Turbo Frame 017 introduced,
+  so changing one replaces the rows in place — the filter bar itself, and the administrator's place on
+  the page, stay where they were;
+* **granting administrator rights from a filtered list leaves it filtered.** The existing grant
+  control (015) redirects back to the same narrowed view rather than resetting it, so promoting one
+  account from a shortlist does not mean rebuilding that shortlist by hand;
+* **a combination that matches nobody says so in its own words**, distinct from the screen simply
+  being empty, with every chosen filter still visible so one of them can be relaxed without losing the
+  others;
+* **nothing about the existing screen changed.** Same email, same "Joined" date, same **Admin** badge,
+  same grant control and its confirmation — the new columns and filters sit alongside all of it rather
+  than in place of any of it.
+
 ## 🧭 Method: Spec-Driven Development
 
 The project is built with **SDD** using [Spec Kit](https://github.com/github/spec-kit): the
@@ -899,7 +934,15 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   survive an unrelated filter change and the Back button before a genuine reload lets it go, changing
   the wish to move the filter with it even over a manual choice, a rejected change leaving it exactly
   as it was, cancelling to watch it fall back to *All floors* and stay there on the next visit, and
-  *Looking for floor* left alone throughout.
+  *Looking for floor* left alone throughout;
+* [`specs/020-admin-users-filters/quickstart.md`](specs/020-admin-users-filters/quickstart.md) —
+  reading each account's floor, locker and wish straight off the admin Users screen, narrowing by each
+  filter alone and then combining several, an exact-match locker filter that ignores a matching
+  substring, typing into the locker and email fields and watching the list settle a moment after
+  typing stops, moving across the floor and role choices with a keyboard without the list re-filtering,
+  a combination nobody satisfies showing its own message with every filter still visible, clearing a
+  filter to watch the list widen back out, and granting administrator rights from a filtered list to
+  find the same filters still applied on the way back.
 
 ## 🚢 Deploy
 
