@@ -121,11 +121,18 @@ class LockerWishTest < ApplicationSystemTestCase
 
   # Acceptance Scenarios 3 and 4: your own wish is listed like anyone else's, and
   # a profile with nothing on file reads as a plain state rather than a fault.
+  #
+  # 019: declaring now auto-fills "Their floor" to the declared floor ("4"),
+  # which nobody currently occupies — including alice herself, who has no
+  # saved floor of her own (017 FR-012 excludes her too once that filter is in
+  # force). This test is about row content, not the new filtering behaviour,
+  # so the filter is reset to "All floors" explicitly before any assertion.
   test "a wisher with nothing on file is listed alongside everyone else" do
     log_in_as users(:alice)
     visit locker_wishes_path
     open_wish_form "I'm looking for a locker"
     submit_wish "4"
+    visit locker_wishes_path(current_floor: "")
 
     alice = users(:alice)
     assert_selector "#locker-wish-row-#{alice.id}-floor", text: "4"
@@ -148,6 +155,10 @@ class LockerWishTest < ApplicationSystemTestCase
 
   # FR-012: a changed wish has to reach the people the list exists for, not just
   # the person who changed it.
+  #
+  # 019: bob's own wish (floor "7") would otherwise auto-fill "Their floor" and
+  # narrow the list to people currently on floor 7 (henry, iris) — excluding
+  # carol, who this test is actually checking for. Neutralised explicitly.
   test "a changed floor is what other people see in the list" do
     log_in_as users(:carol)
     visit locker_wishes_path
@@ -158,7 +169,7 @@ class LockerWishTest < ApplicationSystemTestCase
     assert_text "Signed out successfully."
 
     log_in_as users(:bob)
-    visit locker_wishes_path
+    visit locker_wishes_path(current_floor: "")
 
     assert_selector "#locker-wish-row-#{users(:carol).id}-floor", text: "6"
   end
@@ -167,11 +178,15 @@ class LockerWishTest < ApplicationSystemTestCase
   # over time.
 
   # Acceptance Scenario 1: gone for the person who cancelled, and for everyone.
+  #
+  # 019: carol's own wish (floor "5") matches nobody currently on that floor,
+  # so a bare visit would auto-fill "Their floor" and hide her own row before
+  # she even gets to cancel — unrelated to what this test checks. Neutralised.
   test "a cancelled wish disappears from the list for every viewer" do
     carol = users(:carol)
 
     log_in_as carol
-    visit locker_wishes_path
+    visit locker_wishes_path(current_floor: "")
     assert_selector "#locker-wish-row-#{carol.id}"
 
     click_on "Cancel wish"

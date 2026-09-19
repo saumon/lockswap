@@ -125,10 +125,27 @@ class AccessibilityTest < ApplicationSystemTestCase
     assert_axe_clean
   end
 
+  # 019: @user (carol) has an active wish (floor "5") nobody currently
+  # occupies, so a bare visit would auto-fill "Their floor" and land on the
+  # no-match state instead of the populated list this test means to check.
+  # Neutralised so the intended state is what's actually audited.
   test "the locker wish list is accessible" do
     log_in_as @user
-    visit locker_wishes_path
+    visit locker_wishes_path(current_floor: "")
     assert_selector "#locker-wish-list"
+    assert_axe_clean
+  end
+
+  # 019: the auto-selected state itself — reached without any filter
+  # interaction, unlike "a filtered locker wish list is accessible" below —
+  # gets its own accessibility pass with rows actually present.
+  test "a locker wish list narrowed by an auto-selected Their floor is accessible" do
+    log_in_as users(:bob) # wish floor "7" — matches henry and iris
+
+    visit locker_wishes_path
+
+    assert_selector "#locker-wish-filter-current-floor a[aria-current='true']", text: "7"
+    assert_selector "#locker-wish-row-#{users(:henry).id}"
     assert_axe_clean
   end
 
@@ -143,9 +160,12 @@ class AccessibilityTest < ApplicationSystemTestCase
   # 017 FR-021 / SC-008: the two filter axes, and the states they can put the
   # list into.
 
+  # 019: @user (carol) has an active wish (floor "5") that would otherwise
+  # auto-fill "Their floor" and exclude bob (current floor "3") — this test is
+  # about the looking-for axis, so current_floor is neutralised explicitly.
   test "a filtered locker wish list is accessible" do
     log_in_as @user
-    visit locker_wishes_path(looking_for: "7")
+    visit locker_wishes_path(looking_for: "7", current_floor: "")
     assert_selector "#locker-wish-row-#{users(:bob).id}"
     assert_axe_clean
   end
@@ -169,9 +189,12 @@ class AccessibilityTest < ApplicationSystemTestCase
   # FR-002/FR-021: two axes means two distinguishable landmarks, named with the
   # list's own column wording rather than an invented vocabulary — and the choice
   # in force is announced, not merely coloured.
+  # 019: @user (carol) has an active wish, so current_floor must be pinned to
+  # "" explicitly for the "All floors" assertion below to hold — otherwise it
+  # would auto-fill to her wish's floor rather than stay unfiltered.
   test "each floor filter is its own named landmark, with the choice in force announced" do
     log_in_as @user
-    visit locker_wishes_path(looking_for: "7")
+    visit locker_wishes_path(looking_for: "7", current_floor: "")
 
     assert_selector "#locker-wish-filter-looking-for[aria-label='Looking for floor']"
     assert_selector "#locker-wish-filter-current-floor[aria-label='Their floor']"
@@ -322,9 +345,12 @@ class AccessibilityTest < ApplicationSystemTestCase
     assert_tab_order_follows_visual_order
   end
 
+  # 019: @user (carol)'s wish floor ("5") matches nobody, so a bare visit
+  # would auto-fill "Their floor" and land on the no-match state — leaving no
+  # interactive rows for a tab-order check to prove anything about.
   test "tab order follows visual order on the locker wish list" do
     log_in_as @user
-    visit locker_wishes_path
+    visit locker_wishes_path(current_floor: "")
     assert_selector "#locker-wish-list"
     assert_tab_order_follows_visual_order
   end
@@ -362,9 +388,12 @@ class AccessibilityTest < ApplicationSystemTestCase
   # elements drops their implicit roles, so this is what proves the explicit
   # roles put them back — and that a screen-reader user still meets each record
   # as a set of labelled fields rather than as loose text.
+  # 019: @user (carol)'s wish floor ("5") matches nobody currently on it, so a
+  # bare visit would auto-fill "Their floor" and empty the list — the opposite
+  # of what the guard below needs. Neutralised explicitly.
   test "the locker wishes list is accessible as stacked cards" do
     log_in_as @user
-    visit locker_wishes_path
+    visit locker_wishes_path(current_floor: "")
 
     with_viewport(:phone) do
       # Guard against a vacuous pass: an empty list renders no table at all, and
