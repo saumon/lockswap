@@ -80,4 +80,4 @@ gem "devise", "~> 5.0"
 # json 3.0 made JSON.parse's options keyword-only, but Active Support 8.1.3.1 still
 # passes them positionally (active_support/json/decoding.rb), which breaks every
 # encrypted cookie read. Stay on the 2.x line until Rails ships the fix.
-gem "json", "< 3"
+gem "json", "< 4"
