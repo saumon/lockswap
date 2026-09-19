@@ -11,11 +11,13 @@
 
 <%# 003 FR-005: the "I'm looking for a locker" button lives on that page,
     so it has to be reachable from wherever the user happens to be. %>
-<%= link_to "Locker wishes", locker_wishes_path, class: "site-nav-link" %>
+<%= link_to "Locker wishes", locker_wishes_path, class: "site-nav-link",
+      "aria-current": ("page" if current_page?(locker_wishes_path)) %>
 
 <%# 004 FR-015: the history is a separate screen, so it needs a way in
     from anywhere too. %>
-<%= link_to "Proposal history", locker_swap_proposals_path, class: "site-nav-link" %>
+<%= link_to "Proposal history", locker_swap_proposals_path, class: "site-nav-link",
+      "aria-current": ("page" if current_page?(locker_swap_proposals_path)) %>
 
 <%# 013 FR-003/FR-004/FR-005: the administrator's menu, and nobody else's. The
     condition is what enforces FR-004 in the markup — a non-administrator's page
@@ -36,12 +38,14 @@
     <summary class="site-submenu-toggle">Admin</summary>
 
     <div class="site-submenu-panel">
-      <%= link_to "Users", admin_users_path, class: "site-nav-link" %>
+      <%= link_to "Users", admin_users_path, class: "site-nav-link",
+            "aria-current": ("page" if current_page?(admin_users_path)) %>
       <%# 016 FR-001/FR-002: the second administrator destination. It sits inside
           the same condition as the first, so a non-administrator is never sent
           the link at all — and, as above, that is presentation only: the refusal
           that matters is require_admin! on the controllers behind it. %>
-      <%= link_to "Danger Zone", admin_danger_zone_path, class: "site-nav-link" %>
+      <%= link_to "Danger Zone", admin_danger_zone_path, class: "site-nav-link",
+            "aria-current": ("page" if current_page?(admin_danger_zone_path)) %>
     </div>
   </details>
 <% end %>

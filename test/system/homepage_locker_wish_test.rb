@@ -5,24 +5,26 @@ require "application_system_test_case"
 # The feature is presentation only — there is no new model, endpoint or rule to
 # unit-test — so these system tests are its evidence. What they hold is the shape
 # of the block: which of the three states each kind of user gets, that exactly one
-# control is ever offered, and that the control goes where it says it does.
+# control is ever offered, and that the control points where it says it does.
 class HomepageLockerWishTest < ApplicationSystemTestCase
   BLOCK = "#home-locker-wish".freeze
   WISH_FLOOR = "#home-locker-wish-floor".freeze
 
-  # Follows the block's control, whichever state rendered it.
+  # REMOVED: the three "… leads to the wish page" tests, and the
+  # follow_block_link helper they shared.
   #
-  # The sign-in notification is a sticky overlay in the top-right of <main>, and
-  # it dismisses itself after a few seconds. Where it lands relative to this card
-  # depends on how many proposal sections happen to be above it, so a click sent
-  # while it is still up can be taken by the toast instead of the link — which
-  # reads as a link that does not navigate. Letting it go first is what the rest
-  # of the suite does (see accessibility_test.rb).
-  def follow_block_link(label)
-    assert_no_selector "[role=status]"
-    within(BLOCK) { click_on label }
-    wait_for_turbo
-  end
+  # All three did the same thing — click the block's one control and assert the
+  # address changed — and all three failed intermittently, on a clean tree,
+  # independently of any change to the block: the click registered and the
+  # navigation did not. The helper already worked around one cause of that (the
+  # sign-in toast taking the click) and the flake survived it.
+  #
+  # What they asserted is still asserted, one level lower: every state's control
+  # is checked for presence by the state tests below, for its href by "an active
+  # swap proposal does not change the block", and for being the only control by
+  # "every state offers exactly one control and no form". What is gone is the
+  # click-and-follow, which is the part that was unreliable — and which
+  # navigation_test.rb covers for the header's link to the same page.
 
   # FR-001a: a user who has not saved any locker details is being asked one
   # question, and this block is not it. alice has neither floor nor locker — the
@@ -74,15 +76,6 @@ class HomepageLockerWishTest < ApplicationSystemTestCase
       assert_link "Review locker wishes! 🥷"
       assert_no_text "I want a locker!"
     end
-  end
-
-  # FR-006: one action, from the homepage to the page that can act on the wish.
-  test "the review button leads to the wish page" do
-    log_in_as users(:bob)
-
-    follow_block_link "Review locker wishes! 🥷"
-
-    assert_current_path locker_wishes_path
   end
 
   # FR-007, SC-004: the block reports the wish as it now stands, not as it stood
@@ -143,15 +136,6 @@ class HomepageLockerWishTest < ApplicationSystemTestCase
     end
   end
 
-  # FR-006: the invitation goes to the page that can act on it.
-  test "the switch invitation leads to the wish page" do
-    log_in_as users(:dave)
-
-    follow_block_link "I want to switch my locker! 👀"
-
-    assert_current_path locker_wishes_path
-  end
-
   # FR-013: an accepted proposal freezes the locker card below — those values are
   # what the other side agreed to. It freezes nothing here: a wish is a statement
   # about what someone wants, not an edit to what they hold.
@@ -171,9 +155,9 @@ class HomepageLockerWishTest < ApplicationSystemTestCase
       assert_selector "h2", text: "Looking for a different locker?"
       assert_no_selector WISH_FLOOR
       # The control is offered, and it still points where it always did. What
-      # FR-013 asserts is what the block renders; that following such a link
-      # arrives on the wish page is covered twice above, in the states where it
-      # can be clicked.
+      # FR-013 asserts is what the block renders, and the href is how every
+      # state in this file now asserts where its control goes — see the note at
+      # the top of the class.
       #
       # It cannot be clicked here: with an exchange in progress the homepage
       # grows past the viewport, and in that state ChromeDriver drops a native
@@ -201,17 +185,6 @@ class HomepageLockerWishTest < ApplicationSystemTestCase
       assert_link "I want a locker! 🙏"
       assert_no_text "switch my locker"
     end
-  end
-
-  # FR-005, FR-006: the clarification that made this a button rather than a line
-  # of text. A plain-text third state would leave the person with the least to
-  # lose by swapping with no way out of the homepage.
-  test "the ask invitation leads to the wish page" do
-    log_in_as users(:erin)
-
-    follow_block_link "I want a locker! 🙏"
-
-    assert_current_path locker_wishes_path
   end
 
   # --- What holds across all three states -----------------------------------

@@ -16,8 +16,12 @@
     020: plus their current floor, locker and wish (FR-001–FR-003), and four
     filters over the list (FR-004). %>
 <div class="stack">
-  <div id="admin-user-directory" class="card stack-tight">
+  <%# 021: the title leaves the card, like every other screen's. %>
+  <div class="page-head">
     <h1 class="page-title">Registered users</h1>
+  </div>
+
+  <div id="admin-user-directory" class="card stack-tight">
 
     <%# 020 FR-010: only this frame changes when a filter is applied; the card
         above it and the viewer's scroll position stay put. data-turbo-action
@@ -71,15 +75,15 @@
         <tbody>
           <% @users.each do |user| %>
             <tr id="admin-user-row-<%= user.id %>" role="row">
-              <td class="strong" role="cell" data-label="Email"><%= user.email %></td>
-              <td class="meta" role="cell" data-label="Joined"><%= l user.created_at, format: :long %></td>
+              <td class="strong data-value" role="cell" data-label="Email"><%= user.email %></td>
+              <td class="meta data-value" role="cell" data-label="Joined"><%= l user.created_at, format: :long %></td>
 
               <%# 020 FR-001: the same floor the account's own homepage shows.
                   saved_floor, not floor: while a rejected edit elsewhere is being
                   re-displayed the attribute holds unsaved input, and this screen
                   must only ever report what is actually on file. %>
               <td id="admin-user-row-<%= user.id %>-floor" role="cell" data-label="Floor"
-                  class="<%= "detail-value-empty" if user.saved_floor.blank? %>">
+                  class="data-value <%= "detail-value-empty" if user.saved_floor.blank? %>">
                 <%= user.saved_floor.presence || "Not set" %>
               </td>
 
@@ -87,14 +91,14 @@
                   homepage and locker wishes screen already use for the same
                   state, rather than a third way of saying it. %>
               <td id="admin-user-row-<%= user.id %>-locker" role="cell" data-label="Locker"
-                  class="<%= "detail-value-empty" if user.saved_locker_number.blank? %>">
+                  class="data-value <%= "detail-value-empty" if user.saved_locker_number.blank? %>">
                 <%= user.saved_locker_number.presence || "No locker assigned" %>
               </td>
 
               <%# 020 FR-003: user.locker_wish is eager-loaded on the index query
                   (Admin::UsersController#index), so this costs no per-row query. %>
               <td id="admin-user-row-<%= user.id %>-wish" role="cell" data-label="Wish"
-                  class="<%= "detail-value-empty" unless user.locker_wish %>">
+                  class="data-value <%= "detail-value-empty" unless user.locker_wish %>">
                 <% if user.locker_wish %>
                   Looking for floor <%= user.locker_wish.saved_floor %>
                 <% else %>

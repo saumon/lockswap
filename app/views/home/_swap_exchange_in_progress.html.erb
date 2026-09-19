@@ -4,7 +4,7 @@
 <% counterpart = @exchange_in_progress.requester_id == current_user.id ? @exchange_in_progress.recipient : @exchange_in_progress.requester %>
 <% viewer_is_recipient = @exchange_in_progress.recipient_id == current_user.id %>
 
-<div id="swap-exchange-in-progress" class="card stack-tight">
+<div id="swap-exchange-in-progress" class="card card--them stack-tight">
   <div class="row">
     <h2 class="card-title">Exchange in progress</h2>
     <span class="badge badge-success">Accepted</span>
