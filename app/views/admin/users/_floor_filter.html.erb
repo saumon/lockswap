@@ -1,0 +1,23 @@
+<%# 020: one link-based filter axis — current floor (backed by FloorFilter) or
+    role (backed by RoleFilter), both rendered from this one partial since both
+    share the same small interface (selection, filtering?, current?, choices).
+    Mirrors locker_wishes/_floor_filter.html.erb (feature 017) exactly, for the
+    same reason that partial exists: FR-008-equivalent keyboard behaviour rules
+    out a <select> that submits on change, so this is a labelled <nav> of links
+    with aria-current on the one in force — moving focus through them without
+    activating one never re-filters the list. %>
+<nav id="admin-user-filter-<%= axis.to_s.dasherize %>" class="filter-group" aria-label="<%= label %>">
+  <span class="filter-label" aria-hidden="true"><%= label %></span>
+
+  <%= link_to all_label,
+        admin_user_filter_path(axis: axis, value: nil),
+        class: "filter-choice",
+        aria: { current: ("true" unless filter.filtering?) } %>
+
+  <% filter.choices.each do |choice| %>
+    <%= link_to choice,
+          admin_user_filter_path(axis: axis, value: choice),
+          class: "filter-choice",
+          aria: { current: ("true" if filter.current?(choice)) } %>
+  <% end %>
+</nav>

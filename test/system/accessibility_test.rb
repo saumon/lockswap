@@ -247,6 +247,43 @@ class AccessibilityTest < ApplicationSystemTestCase
     names.each { |name| assert_match(/\A Grant\ administrator\ rights\ to\ \S+@\S+ \z/x, name) }
   end
 
+  # 020: the admin Users screen's four filters, audited the same way 017's two
+  # already are above — a filtered list, the no-match state, and the two link
+  # filters as named landmarks with the choice in force announced.
+  test "a filtered admin users list is accessible" do
+    log_in_as users(:frank)
+    visit admin_users_path(role: "standard")
+    assert_no_text users(:grace).email
+    assert_axe_clean
+  end
+
+  test "an admin users list matching no filter is accessible" do
+    log_in_as users(:frank)
+    visit admin_users_path(role: "admin", current_floor: users(:bob).floor)
+    assert_selector "#admin-user-directory-no-match"
+    assert_axe_clean
+  end
+
+  test "the two text filters have accessible labels" do
+    log_in_as users(:frank)
+    visit admin_users_path
+
+    assert_selector "label[for='admin-user-filter-current-locker']"
+    assert_selector "label[for='admin-user-filter-email']"
+    assert_axe_clean
+  end
+
+  test "each admin users link filter is its own named landmark, with the choice in force announced" do
+    log_in_as users(:frank)
+    visit admin_users_path(current_floor: users(:bob).floor)
+
+    assert_selector "#admin-user-filter-current-floor[aria-label='Current floor']"
+    assert_selector "#admin-user-filter-role[aria-label='Role']"
+
+    within("#admin-user-filter-current-floor") { assert_selector "a[aria-current='true']", text: users(:bob).floor }
+    within("#admin-user-filter-role") { assert_selector "a[aria-current='true']", text: "All roles" }
+  end
+
   # 016: the Danger Zone is audited like every other screen, in both of its
   # states. The empty one is not a trivial case here — it is a different page
   # (a statement where the table would be), and it is the state the screen is in

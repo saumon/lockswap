@@ -48,3 +48,11 @@ iris_wish:
   user: iris
   floor: "3"
   created_at: 2026-03-06 09:00:00
+
+# 020: quinn (users.yml) is deliberately given no wish here — every existing
+# locker-wish fixture is a member of feature 017's exact expected sets
+# (floors, emails, counts), and quinn exists only for 020's own filter tests.
+# Adding a wish for her would silently grow those 017 sets and break its
+# "unchanged" regression evidence (research.md R6) for no benefit: 020's own
+# wish-column coverage is already provided by bob (has a wish) and dave (does
+# not), neither of which is new.

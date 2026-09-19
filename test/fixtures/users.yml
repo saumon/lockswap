@@ -133,3 +133,22 @@ iris:
   failed_attempts: 0
   floor: "7"
   created_at: 2026-02-11 09:00:00
+
+# 020: exists for the admin Users screen's filters. The literal underscore in the
+# email is what the fixture email_containing's escaping test needs (research.md
+# R4) — without it, nothing on file distinguishes "_" being escaped from "_"
+# acting as a single-character SQL wildcard, since a wildcard would still
+# (accidentally) match every other email here. floor "6" and locker "Q99" are
+# both new values, so saved_floors and the current-locker filter each have
+# something to find that no other fixture already provides.
+#
+# Deliberately no locker wish (see the note in locker_wishes.yml): every
+# existing wish fixture is a member of feature 017's exact expected sets, and
+# 020's own Wish-column coverage is already provided by bob/dave.
+quinn:
+  email: quinn_search@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  failed_attempts: 0
+  floor: "6"
+  locker_number: "Q99"
+  created_at: 2026-02-12 09:00:00

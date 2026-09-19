@@ -57,15 +57,26 @@ class AdminUsersTest < ApplicationSystemTestCase
   # 013 FR-009 asserted this screen offered nothing to press. 015 adds one thing:
   # the grant. So the assertion narrows to what 015 FR-014 still forbids — nothing
   # here removes rights, edits an account or deletes one.
-  test "the screen offers no control but the grant" do
+  #
+  # 020 narrows this further, deliberately: the current-locker and email filters
+  # are search inputs, not an account edit, so their presence does not weaken
+  # what this test guards against. What still must not exist is any field that
+  # touches an account's own data.
+  test "the screen offers no control but the grant and its own filters" do
     log_in_as @administrator
     visit admin_users_path
 
     within "#admin-user-directory" do
-      assert_no_field
       assert_no_link "Edit"
       assert_no_link "Delete"
       assert_no_selector "button", text: /Remove|Revoke|Demote|Delete|Edit/i
+
+      # 020 FR-004: the only fields on this screen are the current-locker and
+      # email filters — nothing that edits an account.
+      assert_selector "input[name='current_locker']"
+      assert_selector "input[name='email']"
+      assert_no_selector "input:not([name='current_locker']):not([name='email'])"
+      assert_no_selector "textarea"
 
       # Every button on the screen is a grant, and there is one per standard row.
       assert_selector "button", count: User.where(admin: false).count

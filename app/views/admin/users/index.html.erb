@@ -1,26 +1,66 @@
 <% content_for :title, "Users" %>
 
+<%# 020 research.md R1: an advancing frame navigation caches the page snapshot
+    for the address being left, taken after the frame has already been
+    re-drawn — so without this a Back visit could show a stale filtered list
+    under a URL that no longer matches it. Mirrors locker_wishes/index.html.erb
+    (feature 017), which found and fixed the same thing. %>
+<% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
+<% end %>
+
 <%# 013 User Story 2: who is registered on this site, and who was first.
     015: and one thing to do about it — grant administrator rights (FR-001).
     That is the only capability here; nothing on this screen removes rights,
-    edits an account or deletes one (FR-014). %>
+    edits an account or deletes one (FR-014).
+    020: plus their current floor, locker and wish (FR-001–FR-003), and four
+    filters over the list (FR-004). %>
 <div class="stack">
   <div id="admin-user-directory" class="card stack-tight">
     <h1 class="page-title">Registered users</h1>
 
-    <%# 012 FR-005: a table above the breakpoint, one labelled card per account
+    <%# 020 FR-010: only this frame changes when a filter is applied; the card
+        above it and the viewer's scroll position stay put. data-turbo-action
+        "advance" pushes the filtered address into history so the view stays
+        shareable and reachable with back/forward, and frame_history_controller
+        (feature 017, reused unchanged) is what makes Back actually re-render
+        it — see research.md R1. %>
+    <turbo-frame id="admin-user-directory-list" data-turbo-action="advance"
+                 data-controller="frame-history">
+      <%# FR-004: the four filters sit with the list they narrow. %>
+      <div id="admin-user-directory-filters" class="filter-bar">
+        <%= render "admin/users/floor_filter", filter: @current_floor_filter, axis: :current_floor,
+              label: "Current floor", all_label: "All floors" %>
+        <%= render "admin/users/floor_filter", filter: @role_filter, axis: :role,
+              label: "Role", all_label: "All roles" %>
+        <%= render "admin/users/text_filter", axis: :current_locker, label: "Current locker" %>
+        <%= render "admin/users/text_filter", axis: :email, label: "Email" %>
+      </div>
+
+      <%# 012 FR-005: a table above the breakpoint, one labelled card per account
         below it, from the same markup rendered once — so both forms show the
         same accounts in the same order, because there is only one order.
 
         The explicit roles are what keep that safe: changing an element's display
         drops the implicit table roles, and a screen reader has to meet each
         account as a set of labelled fields either way (012 FR-005d). %>
+    <%# 020 FR-011: viewing this screen already requires being a registered
+        administrator, so @users can never be empty when no filter is set —
+        the only empty state reachable here is the filtered one
+        (data-model.md "No-Match State"). %>
+    <% if @users.any? %>
     <div class="table-scroll">
       <table class="data-table" role="table">
         <thead>
           <tr role="row">
             <th scope="col" role="columnheader">Email</th>
             <th scope="col" role="columnheader">Joined</th>
+            <%# 020 FR-001/FR-002/FR-003: the same three facts the account's own
+                homepage and the locker wishes screen already show, so the
+                administrator no longer has to leave this screen to see them. %>
+            <th scope="col" role="columnheader">Floor</th>
+            <th scope="col" role="columnheader">Locker</th>
+            <th scope="col" role="columnheader">Wish</th>
             <%# FR-012: its own column rather than a mark tacked onto the email,
                 so the one row that differs says how it differs. %>
             <th scope="col" role="columnheader">Role</th>
@@ -33,6 +73,34 @@
             <tr id="admin-user-row-<%= user.id %>" role="row">
               <td class="strong" role="cell" data-label="Email"><%= user.email %></td>
               <td class="meta" role="cell" data-label="Joined"><%= l user.created_at, format: :long %></td>
+
+              <%# 020 FR-001: the same floor the account's own homepage shows.
+                  saved_floor, not floor: while a rejected edit elsewhere is being
+                  re-displayed the attribute holds unsaved input, and this screen
+                  must only ever report what is actually on file. %>
+              <td id="admin-user-row-<%= user.id %>-floor" role="cell" data-label="Floor"
+                  class="<%= "detail-value-empty" if user.saved_floor.blank? %>">
+                <%= user.saved_floor.presence || "Not set" %>
+              </td>
+
+              <%# 020 FR-002: "No locker assigned" reuses the exact wording the
+                  homepage and locker wishes screen already use for the same
+                  state, rather than a third way of saying it. %>
+              <td id="admin-user-row-<%= user.id %>-locker" role="cell" data-label="Locker"
+                  class="<%= "detail-value-empty" if user.saved_locker_number.blank? %>">
+                <%= user.saved_locker_number.presence || "No locker assigned" %>
+              </td>
+
+              <%# 020 FR-003: user.locker_wish is eager-loaded on the index query
+                  (Admin::UsersController#index), so this costs no per-row query. %>
+              <td id="admin-user-row-<%= user.id %>-wish" role="cell" data-label="Wish"
+                  class="<%= "detail-value-empty" unless user.locker_wish %>">
+                <% if user.locker_wish %>
+                  Looking for floor <%= user.locker_wish.saved_floor %>
+                <% else %>
+                  Not looking for a locker
+                <% end %>
+              </td>
 
               <%# 008 FR-025: the tint decorates the word, it does not replace it —
                   "Admin" is what carries the meaning, for a reader who cannot
@@ -95,14 +163,27 @@
                       aria-label names the account too (FR-015): a column of
                       buttons all reading "Grant admin rights" tells a screen
                       reader which row it is on only by position, which is exactly
-                      what the requirement forbids relying on. %>
+                      what the requirement forbids relying on.
+
+                      020 FR-016, research.md R5: the filters in force travel with
+                      this form as hidden fields — it is already inside the frame
+                      they filter, so no cross-frame attachment trick is needed,
+                      unlike 017's declare panel. turbo_frame: "_top" makes the
+                      redirect a full-page navigation rather than one confined to
+                      this frame, which is what makes the flash notice (rendered
+                      outside the frame, in the layout) visible afterwards —
+                      mirrors 017's "Propose swap" button. %>
                   <% message = "Grant administrator rights to #{user.email}? This cannot be undone." %>
                   <%= button_to "Grant admin rights",
                         grant_admin_admin_user_path(user),
                         method: :patch,
+                        params: Admin::UsersController::FILTER_AXES.index_with { |axis|
+                          admin_user_filter_current_value(axis)
+                        }.compact_blank,
                         class: "btn btn-secondary btn-sm",
                         aria: { label: "Grant administrator rights to #{user.email}" },
-                        data: { confirm: message, turbo_confirm: message } %>
+                        data: { confirm: message, turbo_confirm: message },
+                        form: { data: { turbo_frame: "_top" } } %>
                 <% end %>
               </td>
             </tr>
@@ -110,5 +191,13 @@
         </tbody>
       </table>
     </div>
+    <% else %>
+      <%# Distinct id from any per-row content, so a regression cannot satisfy
+          this selector while showing the wrong message. %>
+      <p id="admin-user-directory-no-match" class="empty-state">
+        No account matches the current filters.
+      </p>
+    <% end %>
+    </turbo-frame>
   </div>
 </div>

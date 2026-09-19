@@ -627,6 +627,80 @@ class UserTest < ActiveSupport::TestCase
     assert_not_predicate user, :valid?
   end
 
+  # --- 020: the admin Users screen's four filters ----------------------------
+
+  test "with_role matches administrators and standard accounts case-insensitively" do
+    assert_includes User.with_role("admin"), users(:frank)
+    assert_not_includes User.with_role("admin"), users(:carol)
+
+    assert_includes User.with_role("standard"), users(:carol)
+    assert_not_includes User.with_role("standard"), users(:frank)
+
+    # research.md R4/F1: RoleFilter sends the capitalized display value as the
+    # filter's own query value, so the scope has to accept it too.
+    assert_includes User.with_role("Admin"), users(:frank)
+    assert_includes User.with_role("STANDARD"), users(:carol)
+  end
+
+  test "with_role applies no restriction for a blank or unrecognized value" do
+    [ nil, "", "   ", "superuser" ].each do |value|
+      assert_equal User.count, User.with_role(value).count, "#{value.inspect} should not filter"
+    end
+  end
+
+  test "on_floor matches a floor exactly" do
+    assert_includes User.on_floor(users(:bob).floor), users(:bob)
+    assert_not_includes User.on_floor(users(:bob).floor), users(:carol)
+  end
+
+  test "on_floor applies no restriction when blank" do
+    assert_equal User.count, User.on_floor(nil).count
+    assert_equal User.count, User.on_floor("").count
+  end
+
+  test "with_locker_number matches a locker number exactly, not a substring" do
+    assert_includes User.with_locker_number(users(:bob).locker_number), users(:bob)
+
+    # FR-007: the clarified exact-match decision — a shorter locker number
+    # elsewhere on file must not match "B12" by substring.
+    User.insert_all!([ {
+      email: "shortlocker@example.com",
+      encrypted_password: Devise::Encryptor.digest(User, VALID_PASSWORD),
+      floor: "3", locker_number: "1", created_at: Time.current, updated_at: Time.current
+    } ])
+
+    assert_not_includes User.with_locker_number("1").map(&:email), users(:bob).email
+  end
+
+  test "with_locker_number applies no restriction when blank" do
+    assert_equal User.count, User.with_locker_number(nil).count
+  end
+
+  test "email_containing matches any account whose email contains the text, case-insensitively" do
+    assert_includes User.email_containing("quinn"), users(:quinn)
+    assert_includes User.email_containing("QUINN"), users(:quinn)
+    assert_includes User.email_containing("quinn_search"), users(:quinn)
+  end
+
+  # research.md R4/C1: a literal "%"/"_" in the search text must be matched
+  # literally, not act as a SQL wildcard that would also match every other email.
+  test "email_containing treats a literal underscore as a literal character" do
+    matches = User.email_containing("n_s")
+
+    assert_includes matches, users(:quinn)
+    assert_equal 1, matches.count, "an unescaped '_' would also match e.g. \"ana#{"s"}\" via the wildcard"
+  end
+
+  test "email_containing applies no restriction when blank" do
+    assert_equal User.count, User.email_containing(nil).count
+  end
+
+  test "saved_floors returns every distinct floor saved by any registered user" do
+    assert_equal User.where.not(floor: [ nil, "" ]).distinct.pluck(:floor).sort, User.saved_floors.sort
+    assert_includes User.saved_floors, users(:bob).floor
+    assert_not_includes User.saved_floors, nil
+  end
+
   private
 
     # Stages the state the rescue exists for: another signup has already taken the
