@@ -18,7 +18,9 @@ class LockerWishesControllerTest < ActionDispatch::IntegrationTest
       post locker_wish_path, params: { locker_wish: { floor: "4" } }
     end
 
-    assert_redirected_to locker_wishes_path
+    # 019 FR-003: every successful declare's redirect now carries the new
+    # floor as "Their floor," incidental to what this test is actually about.
+    assert_redirected_to locker_wishes_path(current_floor: "4")
     assert_equal 1, LockerWish.where(user: users(:alice)).count
     assert_equal "4", users(:alice).reload.locker_wish.floor
   end
@@ -34,7 +36,8 @@ class LockerWishesControllerTest < ActionDispatch::IntegrationTest
       post locker_wish_path, params: { locker_wish: { floor: "9" } }
     end
 
-    assert_redirected_to locker_wishes_path
+    # 019 FR-003: as above — the redirect now carries the declared floor.
+    assert_redirected_to locker_wishes_path(current_floor: "9")
     assert_equal "9", users(:dave).reload.locker_wish.floor
     assert_equal "D07", users(:dave).locker_number
   end
@@ -162,13 +165,136 @@ class LockerWishesControllerTest < ActionDispatch::IntegrationTest
     assert_select "#locker-wish-row-#{users(:bob).id}"
   end
 
-  # FR-019: the filters survive the viewer's own save...
-  test "declaring a wish returns to the list still filtered" do
+  # --- 019: pre-filling "Their floor" from the viewer's own wish -------------
+
+  # FR-001: a fresh, unfiltered request derives "Their floor" from the
+  # viewer's own active wish rather than defaulting to "All floors".
+  test "a fresh request with no current_floor param derives it from the viewer's active wish" do
+    sign_in users(:bob) # wish floor "7"
+
+    get locker_wishes_path
+
+    assert_select "#locker-wish-filter-current-floor a[aria-current='true']", text: "7"
+    assert_select "#locker-wish-row-#{users(:henry).id}"
+    assert_select "#locker-wish-row-#{users(:karl).id}", false
+  end
+
+  # FR-002: the same request, for a viewer with no active wish, still defaults
+  # to "All floors".
+  test "a fresh request derives All floors when the viewer has no active wish" do
+    sign_in users(:dave) # no wish
+
+    get locker_wishes_path
+
+    assert_select "#locker-wish-filter-current-floor a[aria-current='true']", text: "All floors"
+  end
+
+  # FR-008/contract "Request -> selection": an explicit value in the address —
+  # even one that differs from the viewer's own wish — is respected exactly as
+  # 017 already respects it, not overridden by the derivation.
+  test "an explicit current_floor wins over the viewer's own wish floor" do
+    sign_in users(:bob) # wish floor "7"
+
+    get locker_wishes_path(current_floor: "3")
+
+    assert_select "#locker-wish-filter-current-floor a[aria-current='true']", text: "3"
+    assert_select "#locker-wish-row-#{users(:bob).id}"
+    assert_select "#locker-wish-row-#{users(:henry).id}", false
+  end
+
+  # Same contract, the other side: an explicit *blank* value ("All floors",
+  # chosen deliberately) is respected too, not treated as absent.
+  test "an explicit blank current_floor is respected as All floors, not re-derived" do
+    sign_in users(:bob) # wish floor "7"
+
+    get locker_wishes_path(current_floor: "")
+
+    assert_select "#locker-wish-filter-current-floor a[aria-current='true']", text: "All floors"
+    assert_select "#locker-wish-row-#{users(:henry).id}"
+  end
+
+  # FR-006: a rejected declare must not change "Their floor" from whatever was
+  # submitted — including a value the viewer had set manually, different from
+  # their (still unsaved) floor.
+  test "a rejected declare leaves the submitted current_floor unchanged" do
+    sign_in users(:dave)
+
+    post locker_wish_path, params: { locker_wish: { floor: "" }, current_floor: "3" }
+
+    assert_response :unprocessable_entity
+    assert_select "#locker-wish-filter-current-floor a[aria-current='true']", text: "3"
+  end
+
+  # FR-012: the derivation reads only the signed-in viewer's own wish, never
+  # anyone else's — proven by two viewers whose wishes point at different
+  # floors.
+  test "the derivation is scoped to the viewer's own wish, not anyone else's" do
+    sign_in users(:carol) # wish floor "5" — bob's is "7", a different active wish
+
+    get locker_wishes_path
+
+    assert_select "#locker-wish-filter-current-floor a[aria-current='true']", text: "5"
+    assert_select "#locker-wish-filter-current-floor a[aria-current='true']", text: "7", count: 0
+  end
+
+  # Principle IV: deriving "Their floor" from the viewer's own wish reads an
+  # association the controller already loads (`own_locker_wish`), so it must
+  # not cost a query beyond what an unfiltered request already issues.
+  test "deriving current_floor from an active wish costs no extra queries" do
+    sign_in users(:dave)
+    without_wish = count_queries { get locker_wishes_path }
+
+    sign_out users(:dave)
+    sign_in users(:bob)
+    with_wish = count_queries { get locker_wishes_path }
+
+    assert_operator with_wish, :<=, without_wish,
+      "deriving current_floor issued #{with_wish} queries against #{without_wish} without a wish"
+  end
+
+  # FR-004: cancelling drops current_floor from the redirect target entirely,
+  # rather than carrying forward whatever was submitted.
+  test "cancelling drops current_floor from the redirect, regardless of what was submitted" do
+    sign_in users(:bob) # wish floor "7"
+
+    delete locker_wish_path, params: { current_floor: "5" }
+
+    assert_redirected_to locker_wishes_path
+  end
+
+  # The redirect alone isn't the whole story: the *next* render must actually
+  # land on "All floors" too, now that there is no wish left to derive from.
+  test "a fresh request after cancelling shows All floors, having no wish left" do
+    sign_in users(:bob) # wish floor "7"
+    delete locker_wish_path
+
+    get locker_wishes_path
+
+    assert_select "#locker-wish-filter-current-floor a[aria-current='true']", text: "All floors"
+  end
+
+  # Cancelling with current_floor already blank is a no-op on that axis, not
+  # an error.
+  test "cancelling with current_floor already blank redirects the same way" do
+    sign_in users(:bob)
+
+    delete locker_wish_path, params: { current_floor: "" }
+
+    assert_redirected_to locker_wishes_path
+  end
+
+  # FR-019: "looking for floor" survives the viewer's own save, unchanged from
+  # 017. "Their floor" does not survive it — 019 FR-003 overwrites whatever was
+  # submitted with the newly declared floor, which is the whole point of this
+  # feature. Rewritten from its 017 form on purpose (research R3): that version
+  # asserted `current_floor: "2"` — the value submitted — survived the redirect
+  # unchanged; it now asserts `current_floor: "4"` — the declared floor — does.
+  test "declaring a wish returns to the list still filtered, its own floor overriding Their Floor" do
     sign_in users(:dave)
 
     post locker_wish_path, params: { locker_wish: { floor: "4" }, looking_for: "3", current_floor: "2" }
 
-    assert_redirected_to locker_wishes_path(looking_for: "3", current_floor: "2")
+    assert_redirected_to locker_wishes_path(looking_for: "3", current_floor: "4")
   end
 
   # ...and their cancel.
@@ -180,14 +306,18 @@ class LockerWishesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to locker_wishes_path(looking_for: "3")
   end
 
-  # FR-018: an unfiltered view redirects to the bare path it always did, rather
-  # than to one carrying two empty parameters.
-  test "declaring with no filter in force redirects to the bare list" do
+  # FR-018/FR-007: "looking for floor" redirects to the bare path it always did
+  # when nobody touched it, rather than to one carrying an empty parameter.
+  # "Their floor" is the one exception (019): every successful declare now sets
+  # it explicitly, so the redirect is never fully bare once a wish is declared.
+  # Rewritten from its 017 form on purpose (research R3): that version asserted
+  # the redirect carried no parameters at all.
+  test "declaring with no filter in force redirects carrying only the declared floor" do
     sign_in users(:dave)
 
     post locker_wish_path, params: { locker_wish: { floor: "4" } }
 
-    assert_redirected_to locker_wishes_path
+    assert_redirected_to locker_wishes_path(current_floor: "4")
   end
 
   # Spec Edge Cases: a rejected declare comes back filtered exactly as it was,
@@ -221,10 +351,15 @@ class LockerWishesControllerTest < ActionDispatch::IntegrationTest
   # (floor "7", wish "3" each) — see test/fixtures/users.yml and
   # test/fixtures/locker_wishes.yml.
 
+  # 019: bob's own wish (floor "7") would otherwise auto-fill "Their floor" and
+  # narrow the list to henry/iris alone, making the "and nowhere else" rows
+  # below pass vacuously (absent, not merely untagged) rather than actually
+  # proving anything. Pinned to "All floors" so every row this test names is
+  # still on screen to be checked.
   test "the tag appears on every row that reciprocates with the viewer, and nowhere else" do
     sign_in users(:bob)
 
-    get locker_wishes_path
+    get locker_wishes_path(current_floor: "")
 
     assert_select "#locker-wish-row-#{users(:henry).id}-swap span.badge-success", text: "It's a match!"
     assert_select "#locker-wish-row-#{users(:iris).id}-swap span.badge-success", text: "It's a match!"
@@ -283,13 +418,21 @@ class LockerWishesControllerTest < ActionDispatch::IntegrationTest
   # requests: reusing a session for a second request in the same test carries an
   # unrelated extra Warden/session lookup that has nothing to do with this
   # feature and would make the comparison noisy.
+  #
+  # 019: current_floor is pinned to "" (All floors) explicitly for both viewers.
+  # Left to auto-derive, bob's and carol's wishes point at different floors with
+  # different numbers of current occupants — one filtered result empty, the
+  # other not — which costs a different number of queries for a reason this
+  # test has nothing to do with (the pre-existing `@locker_wishes.any?` then
+  # `.each` evaluation taking a different path for an empty relation). Pinning
+  # both to unfiltered isolates the one thing 018 is actually asserting here.
   test "rendering the list issues the same number of queries whether or not a match is present" do
     sign_in users(:bob) # reciprocates with henry and iris
-    with_matches = count_queries { get locker_wishes_path }
+    with_matches = count_queries { get locker_wishes_path(current_floor: "") }
 
     sign_out users(:bob)
     sign_in users(:carol) # floor "2", wish "5" — nobody reciprocates
-    without_matches = count_queries { get locker_wishes_path }
+    without_matches = count_queries { get locker_wishes_path(current_floor: "") }
 
     assert_equal with_matches, without_matches
   end

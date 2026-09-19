@@ -80,11 +80,14 @@ class MotionTest < ApplicationSystemTestCase
 
   # FR-016a / SC-006a: no scroll-triggered reveals. Content far down a long page
   # is already visible; scrolling is not what makes it appear.
+  # 019: the filler wishes below carry no saved current floor, so @user
+  # (carol)'s own wish floor ("5") auto-filling "Their floor" would exclude
+  # every one of them (017 FR-012) and leave nothing to scroll to. Neutralised.
   test "content further down the page is visible without scrolling to it" do
     20.times { |i| LockerWish.create!(user: User.create!(email: "filler#{i}@example.com", password: VALID_PASSWORD), floor: "#{i + 1}") }
 
     log_in_as @user
-    visit locker_wishes_path
+    visit locker_wishes_path(current_floor: "")
 
     last_row = all("#locker-wish-list tbody tr").last
     assert_equal "1", page.evaluate_script(

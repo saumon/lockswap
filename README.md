@@ -115,7 +115,11 @@ today, or by both at once — which is the shortlist of people a straight two-wa
 address carries what is being filtered, so a narrowed view can be shared or come back to, and only the
 list moves when it changes. And the list now points out the one swap guaranteed to work both ways: a
 row is tagged **It's a match!** the moment its person is on the floor you want and wants the floor you
-are on, computed fresh every time the list is shown rather than remembered from before.
+are on, computed fresh every time the list is shown rather than remembered from before. And declaring
+what you are looking for now does more than record it: **Their floor**, the filter that answers who
+already holds what you want, sets itself to that same floor the moment the wish is saved, moves with
+it the moment it changes, and stands back down to *All floors* the moment it is cancelled — so seeing
+who to approach costs one action instead of two.
 
 | Feature | Status |
 | --- | --- |
@@ -137,6 +141,7 @@ are on, computed fresh every time the list is shown rather than remembered from 
 | **016 — Danger Zone: allowed email domains** | ✅ Shipped |
 | **017 — Floor filters on the locker wishes list** | ✅ Shipped |
 | **018 — "It's a match!" tag on locker wishes** | ✅ Shipped |
+| **019 — "Their floor" pre-filled from your wish** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -676,6 +681,32 @@ What feature 018 adds — see
 * **it survives the floor filters from 017 unchanged**, adds no query of its own, and reuses the
   badge the screen already uses for other statuses rather than a new visual language.
 
+What feature 019 adds — see
+[`specs/019-floor-filter-prefill/spec.md`](specs/019-floor-filter-prefill/spec.md):
+
+* **declaring what you are looking for narrows the list to match, in the same action.** The moment a
+  wish is saved, *Their floor* — the filter that answers "who already holds what I want" — is set to
+  that same floor, and *Everyone looking for a locker* is already narrowed to it; finding out who to
+  approach used to mean declaring, then filtering by hand, and now costs one action instead of two;
+* **it keeps tracking the wish, not just the moment it was declared.** Leaving the screen and coming
+  back, or simply reloading it, shows the same narrowed list again with nothing pressed — for as long
+  as the wish stays active, every fresh look at the screen re-derives the filter from it;
+* **changing the wish moves the filter with it**, immediately, even over a floor picked by hand
+  earlier in the same visit — the filter is allowed to disagree with you for a while, but never with
+  the wish that is actually on file;
+* **cancelling puts the filter back to *All floors*** at the same moment the wish itself is
+  withdrawn, and it stays there on the next visit too, since there is nothing left to derive a floor
+  from;
+* **a floor chosen by hand still holds its ground for the rest of the visit** — through an unrelated
+  click on the other filter, through Back and Forward — and is only given up by leaving and coming
+  back, or by the wish itself changing. *Looking for floor*, the screen's other filter, is never
+  touched by any of this;
+* **the one case the address alone cannot decide**: a bookmarked or shared link that already names a
+  floor for *Their floor* reads exactly like returning to a step earlier in the same visit — both are
+  the same request — so reopening it while a wish is still active shows the wish's floor rather than
+  the one the link named. Kept in the address the way every other selection is, with that one accepted
+  trade-off.
+
 ## 🧭 Method: Spec-Driven Development
 
 The project is built with **SDD** using [Spec Kit](https://github.com/github/spec-kit): the
@@ -861,7 +892,14 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   declaring a wish that reciprocates with someone else's and watching the tag appear on just that row,
   confirming it stays away with no wish of your own or no saved floor, confirming your own row never
   carries it, proposing a swap to a tagged row and watching the tag sit next to *Proposal pending*
-  rather than disappear, the tag surviving a floor filter, and cancelling the wish to watch it go.
+  rather than disappear, the tag surviving a floor filter, and cancelling the wish to watch it go;
+* [`specs/019-floor-filter-prefill/quickstart.md`](specs/019-floor-filter-prefill/quickstart.md) —
+  declaring a wish and watching *Their floor* narrow the list without touching it, leaving and
+  returning (or simply reloading) to find it narrowed again, picking a floor by hand and watching it
+  survive an unrelated filter change and the Back button before a genuine reload lets it go, changing
+  the wish to move the filter with it even over a manual choice, a rejected change leaving it exactly
+  as it was, cancelling to watch it fall back to *All floors* and stay there on the next visit, and
+  *Looking for floor* left alone throughout.
 
 ## 🚢 Deploy
 

@@ -23,9 +23,13 @@ class LockerSwapProposalTest < ApplicationSystemTestCase
 
   # Acceptance Scenario 2: there is no control to propose to yourself, so the
   # rule never has to be explained after the fact.
+  #
+  # 019: carol has an active wish (floor "5") that nobody currently occupies, so
+  # a bare visit would auto-fill "Their floor" to "5" and empty the list
+  # entirely — unrelated to what this test checks. Neutralised explicitly.
   test "no propose control is offered on your own row" do
     log_in_as users(:carol)
-    visit locker_wishes_path
+    visit locker_wishes_path(current_floor: "")
 
     assert_selector "#locker-wish-row-#{users(:carol).id}"
     assert_no_selector "#locker-wish-row-#{users(:carol).id} input[value='Propose swap']"

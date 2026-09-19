@@ -37,9 +37,17 @@
         refreshes them, and attach themselves to their forms by id. The HTML `form`
         attribute is what makes that legal, and it costs no JavaScript.
         Sent at the top level, never inside locker_wish: nothing here may reach the
-        wish record. %>
+        wish record.
+
+        019: current_floor's field is unconditional, unlike looking_for's —
+        omitting it when "All floors" is in force would mean a rejected declare
+        resubmits with the key entirely absent, which
+        LockerWishesController#current_floor_selection reads as "not yet decided",
+        silently replacing a manual "All floors" with the wish's floor (research
+        R4). looking_for has no such derivation to protect, so it keeps 017's
+        original guard. %>
     <% @floor_filters.each do |axis, filter| %>
-      <% next unless filter.filtering? %>
+      <% next if axis == :looking_for && !filter.filtering? %>
       <% [ LockerWishesController::DECLARE_FORM_ID, LockerWishesController::CANCEL_FORM_ID ].each do |form_id| %>
         <%= hidden_field_tag axis, filter.selection, id: nil, form: form_id %>
       <% end %>

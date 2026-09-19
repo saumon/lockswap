@@ -30,7 +30,12 @@ class LockerWishesController < ApplicationController
     @locker_wish.floor = locker_wish_params[:floor]
 
     if save_locker_wish
-      redirect_to locker_wishes_path(filter_selections), notice: "Locker search saved."
+      # 019 FR-003: the redirect always reflects the just-saved floor, even
+      # over a current_floor the viewer had set manually before declaring
+      # (research R3) — not left to current_floor_selection's general
+      # absent-key fallback to produce the right answer a request later.
+      redirect_to locker_wishes_path(filter_selections.merge(current_floor: @locker_wish.saved_floor)),
+        notice: "Locker search saved."
     else
       load_wish_list
       render :index, status: :unprocessable_entity
@@ -43,7 +48,13 @@ class LockerWishesController < ApplicationController
   def destroy
     current_user.locker_wish&.destroy
 
-    redirect_to locker_wishes_path(filter_selections), notice: "Locker search cancelled."
+    # 019 FR-004: drop current_floor from the redirect target entirely rather
+    # than carrying forward whatever was submitted — there is no wish left to
+    # derive it from either way, so the next render's fallback already lands on
+    # "All floors" (research R3); dropping it (rather than setting it to "")
+    # keeps this redirect identical to 017's when no wish existed to begin with.
+    redirect_to locker_wishes_path(filter_selections.except(:current_floor)),
+      notice: "Locker search cancelled."
   end
 
   private
@@ -86,9 +97,21 @@ class LockerWishesController < ApplicationController
           selection: filter_selection(:looking_for), available: LockerWish.looked_for_floors
         ),
         current_floor: FloorFilter.new(
-          selection: filter_selection(:current_floor), available: LockerWish.owner_floors
+          selection: current_floor_selection, available: LockerWish.owner_floors
         )
       }
+    end
+
+    # 019 FR-001/FR-002/FR-008: absent from the address entirely means "not yet
+    # decided this visit" — derived from the viewer's own active wish.
+    # Present, even blank (an explicit "All floors"), means it was already
+    # decided — by a filter click, by this feature's own create/destroy
+    # redirect, or by Back/Forward reproducing an address from earlier in the
+    # visit — and is respected exactly as it arrives. `current_user.locker_wish`
+    # is already loaded by `own_locker_wish` on every path that reaches here, so
+    # this costs no extra query (research R2).
+    def current_floor_selection
+      params.key?(:current_floor) ? filter_selection(:current_floor) : current_user.locker_wish&.saved_floor
     end
 
     # FR-010/FR-011: an axis left on "all floors" is a no-op, so the two scopes

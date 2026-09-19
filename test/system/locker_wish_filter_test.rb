@@ -38,6 +38,23 @@ class LockerWishFilterTest < ApplicationSystemTestCase
     find("#{group} a[aria-current='true']").text
   end
 
+  # 019: declaring a first wish and changing an existing one go through two
+  # different disclosures ("I'm looking for a locker" vs "Change floor"), per
+  # `_locker_wish_panel.html.erb` — these two helpers name that difference so a
+  # test's intent (declare vs. change) reads at the call site.
+  def declare_wish(floor)
+    find("summary", text: "I'm looking for a locker").click
+    fill_in_reliably "Floor", with: floor
+    click_on "Save my wish"
+    assert_text "Locker search saved."
+  end
+
+  def change_wish(floor)
+    find("summary", text: "Change floor").click
+    fill_in_reliably "Floor", with: floor
+    click_on "Save my wish"
+  end
+
   # --- User Story 1: the floor people are looking for ------------------------
 
   # Scenario 1: the list is narrowed to exactly the rows for that floor.
@@ -83,9 +100,15 @@ class LockerWishFilterTest < ApplicationSystemTestCase
   end
 
   # Scenario 4: the viewer's own wish is listed like anyone else's.
+  #
+  # 019: karl has an active wish (floor "3") but no saved current floor of his
+  # own, so a bare visit would auto-fill "Their floor" to "3" and immediately
+  # exclude him (017 FR-012 already hides no-saved-floor people from a specific
+  # current-floor filter) — nothing to do with the looking-for axis this test is
+  # actually about. Explicitly neutralised so the test still isolates that axis.
   test "the viewer's own row is shown when it matches the filter" do
     log_in_as users(:karl)
-    visit locker_wishes_path
+    visit locker_wishes_path(current_floor: "")
     choose LOOKING_FOR, "3"
 
     within "#locker-wish-row-#{users(:karl).id}" do
@@ -194,7 +217,12 @@ class LockerWishFilterTest < ApplicationSystemTestCase
 
     # The address is updated after the frame has swapped, so it is asserted with a
     # waiting matcher rather than read the moment the list looks right.
-    assert_current_path locker_wishes_path, ignore_query: false
+    #
+    # 019: current_floor stays in the address as an explicit empty value even
+    # when cleared, unlike looking_for — that asymmetry (research R4) is what
+    # lets a deliberate "All floors" choice survive the rest of the visit
+    # instead of being silently re-derived from the viewer's wish.
+    assert_current_path locker_wishes_path(current_floor: ""), ignore_query: false
   end
 
   # Scenario 4: the screen opens unfiltered.
@@ -328,9 +356,13 @@ class LockerWishFilterTest < ApplicationSystemTestCase
 
   # --- FR-019: the filters survive the viewer's own writes -------------------
 
+  # 019: as above, current_floor is neutralised on the initial visit so karl's
+  # own row is excluded only for the reason this test is actually checking (the
+  # looking-for filter no longer matching his new floor), not incidentally by
+  # his wish's floor auto-filling "Their floor" against his own missing one.
   test "saving a wish comes back to the list still filtered" do
     log_in_as users(:karl)
-    visit locker_wishes_path
+    visit locker_wishes_path(current_floor: "")
     choose LOOKING_FOR, "3"
 
     assert_selector "#locker-wish-row-#{users(:karl).id}"
@@ -354,5 +386,168 @@ class LockerWishFilterTest < ApplicationSystemTestCase
     assert_text "Locker search cancelled."
     assert_equal "7", current_choice(LOOKING_FOR)
     assert_equal [ "bob@example.com" ], listed_people
+  end
+
+  # --- 019: pre-filling "Their floor" from the viewer's own wish -------------
+  #
+  # dave declares fresh in each of these (he holds no wish at the start of any
+  # test, per the file-level note above), so "Their floor" starts on "All
+  # floors" and every change to it is this feature's own doing.
+
+  # Spec Story 1, scenario 1: the moment a wish is saved, "Their floor" already
+  # shows its floor and the list is already narrowed to it.
+  test "declaring a wish pre-fills Their floor without touching it" do
+    log_in_as users(:dave)
+    visit locker_wishes_path
+    assert_current_choice CURRENT_FLOOR, "All floors"
+
+    declare_wish "3"
+
+    assert_current_choice CURRENT_FLOOR, "3"
+    assert_equal [ "bob@example.com" ], listed_people
+  end
+
+  # Scenario 6 / SC-005: the same holds on a later, unrelated visit — leaving
+  # and coming back, or simply reloading — with no interaction at all.
+  test "the pre-fill survives leaving and returning, and a plain reload" do
+    log_in_as users(:dave)
+    visit locker_wishes_path
+    declare_wish "3"
+
+    visit root_path
+    visit locker_wishes_path
+    assert_current_choice CURRENT_FLOOR, "3"
+    assert_equal [ "bob@example.com" ], listed_people
+
+    visit locker_wishes_path
+    assert_current_choice CURRENT_FLOOR, "3"
+  end
+
+  # Scenario 4 / FR-008: a manual choice holds for the rest of the visit,
+  # through an unrelated interaction on the other axis.
+  #
+  # Scenario 5 / FR-009 / research R1: Back reproduces the in-visit selection
+  # that was in force before the manual change — not a re-derived one — while a
+  # fresh reload afterwards discards the manual choice and re-derives from the
+  # wish, per FR-001.
+  test "a manual change to Their floor holds through browsing and Back, but a reload re-derives it" do
+    log_in_as users(:dave)
+    visit locker_wishes_path
+    declare_wish "3"
+    assert_current_choice CURRENT_FLOOR, "3"
+
+    choose CURRENT_FLOOR, "7"
+    choose LOOKING_FOR, "5"
+    assert_current_choice CURRENT_FLOOR, "7"
+
+    page.go_back
+    assert_current_choice LOOKING_FOR, "All floors"
+    assert_current_choice CURRENT_FLOOR, "7"
+
+    visit locker_wishes_path
+    assert_current_choice CURRENT_FLOOR, "3"
+  end
+
+  # Scenario 2: changing the wish's floor mid-visit updates "Their floor" to
+  # the new value, even overriding a manual choice made earlier in the visit.
+  test "changing the wish's floor mid-visit updates Their floor, overriding a manual choice" do
+    log_in_as users(:dave)
+    visit locker_wishes_path
+    declare_wish "3"
+    choose CURRENT_FLOOR, "7"
+    assert_current_choice CURRENT_FLOOR, "7"
+
+    change_wish "10"
+
+    assert_text "Locker search saved."
+    assert_current_choice CURRENT_FLOOR, "10"
+  end
+
+  # Scenario 3 / FR-006: a rejected floor change leaves "Their floor" exactly
+  # as it was, whether or not that value came from a manual choice.
+  test "a rejected floor change leaves Their floor unchanged" do
+    log_in_as users(:dave)
+    visit locker_wishes_path
+    declare_wish "3"
+    choose CURRENT_FLOOR, "7"
+
+    change_wish ""
+
+    assert_text "Floor can't be blank"
+    assert_current_choice CURRENT_FLOOR, "7"
+  end
+
+  # Scenario 7 / FR-013: a pre-filled floor nobody currently occupies is an
+  # ordinary empty result, not an error and not the unfiltered list.
+  test "a pre-filled floor matching nobody shows the no-match message" do
+    log_in_as users(:dave)
+    visit locker_wishes_path
+    declare_wish "99"
+
+    assert_current_choice CURRENT_FLOOR, "99"
+    assert_selector "#locker-wish-list-no-match"
+  end
+
+  # Scenario 8 / FR-007: "Looking for floor" is never touched by any of this,
+  # whether declaring, changing, or cancelling.
+  test "Looking for floor is never altered by declaring, changing, or cancelling a wish" do
+    log_in_as users(:dave)
+    visit locker_wishes_path
+    choose LOOKING_FOR, "5"
+
+    declare_wish "3"
+    assert_current_choice LOOKING_FOR, "5"
+
+    change_wish "7"
+    assert_text "Locker search saved."
+    assert_current_choice LOOKING_FOR, "5"
+
+    click_on "Cancel wish"
+    assert_text "Locker search cancelled."
+    assert_current_choice LOOKING_FOR, "5"
+  end
+
+  # Spec Story 2, scenario 1: cancelling resets "Their floor" to "All floors"
+  # immediately, and the full list is shown again.
+  test "cancelling resets Their floor to All floors and shows the full list" do
+    log_in_as users(:dave)
+    visit locker_wishes_path
+    declare_wish "3"
+    assert_current_choice CURRENT_FLOOR, "3"
+    assert_not_includes listed_people, "carol@example.com"
+
+    click_on "Cancel wish"
+
+    assert_text "Locker search cancelled."
+    assert_current_choice CURRENT_FLOOR, "All floors"
+    assert_includes listed_people, "carol@example.com"
+  end
+
+  # Scenario 4 / SC-002: it stays on "All floors" on a later visit too, since
+  # there is no longer an active wish to derive it from.
+  test "Their floor stays on All floors after cancelling, even after a reload" do
+    log_in_as users(:dave)
+    visit locker_wishes_path
+    declare_wish "3"
+
+    click_on "Cancel wish"
+    visit locker_wishes_path
+
+    assert_current_choice CURRENT_FLOOR, "All floors"
+  end
+
+  # Scenario 3: "Looking for floor" is untouched by the cancel — already
+  # covered end to end in the "never altered" test above, exercised again here
+  # in isolation for Story 2's own independent test.
+  test "Looking for floor is untouched by cancelling a wish" do
+    log_in_as users(:dave)
+    visit locker_wishes_path
+    choose LOOKING_FOR, "5"
+    declare_wish "3"
+
+    click_on "Cancel wish"
+
+    assert_text "Locker search cancelled."
+    assert_current_choice LOOKING_FOR, "5"
   end
 end

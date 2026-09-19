@@ -62,9 +62,12 @@ class ResponsiveTest < ApplicationSystemTestCase
 
   # --- The data lists (FR-005) ----------------------------------------------
 
+  # 019: @user (carol) has an active wish (floor "5") nobody currently occupies,
+  # so a bare visit would auto-fill "Their floor" to "5" and empty the list —
+  # unrelated to the breakpoint behaviour this test checks. Neutralised.
   test "the wish list is stacked cards on a phone and a table on a desktop" do
     log_in_as @user
-    visit locker_wishes_path
+    visit locker_wishes_path(current_floor: "")
     assert_selector ".data-table tbody tr", minimum: 1
 
     with_viewport(:phone) do
@@ -117,9 +120,11 @@ class ResponsiveTest < ApplicationSystemTestCase
   # SC-004a / FR-005b: the point of the restack. "Propose swap" is the primary
   # action of the product, and on a phone it has to be on screen rather than
   # behind a sideways swipe nobody discovers.
+  # 019: as above — @user (carol)'s wish floor matches nobody, so the list must
+  # be explicitly unfiltered for this test's unrelated assertion to hold.
   test "the propose-swap control is on screen at phone width" do
     log_in_as @user
-    visit locker_wishes_path
+    visit locker_wishes_path(current_floor: "")
 
     with_viewport(:phone) do
       assert_button "Propose swap"
@@ -169,9 +174,14 @@ class ResponsiveTest < ApplicationSystemTestCase
 
   # And they are still usable once wrapped: choosing one narrows the list at phone
   # width exactly as it does at desktop width.
+  #
+  # 019: @user (carol)'s wish floor ("5") would otherwise auto-fill "Their
+  # floor" and exclude bob (current floor "3") once looking-for is narrowed to
+  # "7" — this test is about the looking-for axis, so current_floor is
+  # neutralised explicitly.
   test "a floor filter still works at phone width" do
     log_in_as @user
-    visit locker_wishes_path
+    visit locker_wishes_path(current_floor: "")
 
     with_viewport(:phone) do
       within("#locker-wish-filter-looking-for") { click_on "7" }
