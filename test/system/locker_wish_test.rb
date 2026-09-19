@@ -203,4 +203,27 @@ class LockerWishTest < ApplicationSystemTestCase
     assert_selector "#locker-wish-floor", text: "8"
     assert_equal "8", users(:carol).reload.locker_wish.floor
   end
+
+  # 018 Acceptance Scenarios 1, 9, 10: bob (floor "3", wish "7") reciprocates
+  # exactly with henry (floor "7", wish "3").
+  test "a reciprocal row carries the match tag, alongside the swap control and later the pending status" do
+    log_in_as users(:bob)
+    visit locker_wishes_path
+
+    within "#locker-wish-row-#{users(:henry).id}" do
+      assert_text "It's a match!"
+      assert_button "Propose swap"
+    end
+
+    within "#locker-wish-row-#{users(:henry).id}" do
+      click_on "Propose swap"
+    end
+    assert_text "Swap proposal sent."
+
+    within "#locker-wish-row-#{users(:henry).id}" do
+      assert_text "It's a match!"
+      assert_text "Proposal pending"
+      assert_no_button "Propose swap"
+    end
+  end
 end

@@ -56,4 +56,19 @@ class LockerWish < ApplicationRecord
   # attribute holds the input being corrected, so anything reporting what is
   # actually saved has to read past it.
   def saved_floor = floor_in_database
+
+  # 018 FR-001/FR-002: true exactly when this wish reciprocates with a viewer's
+  # own two floors — this wish's own floor is the floor the viewer currently
+  # occupies, AND this wish's person is currently on the floor the viewer wants.
+  # Both directions read `saved_floor`, on both sides, for the same reason
+  # `saved_floor` exists at all: a rejected declare must never make a match
+  # flicker on or off an input that was never saved (research R1).
+  #
+  # Excludes nothing about *whose* wish this is — the caller decides that the
+  # viewer's own row never qualifies (FR-006); this predicate only ever compares
+  # floor values.
+  def reciprocal_match?(viewer_current_floor, viewer_wish_floor)
+    saved_floor.present? && viewer_current_floor.present? && saved_floor == viewer_current_floor &&
+      user.saved_floor.present? && viewer_wish_floor.present? && user.saved_floor == viewer_wish_floor
+  end
 end

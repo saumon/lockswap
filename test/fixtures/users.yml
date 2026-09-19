@@ -112,3 +112,24 @@ karl:
   encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
   failed_attempts: 0
   created_at: 2026-02-09 09:00:00
+
+# 018: two accounts whose floor and wish reciprocate exactly with bob's (floor "3",
+# wish "7") — henry and iris are both floor "7", wish "3", so a viewer signed in as
+# bob sees an "It's a match!" tag on both of their rows at once. Two rather than
+# one so a test can show more than one row tagged simultaneously (FR-007). `erin`
+# was considered first and rejected: she already exists above with floor "5" and no
+# wish, and is asserted against by 010's homepage test — reusing her would either
+# collide at fixture load or silently break that test.
+henry:
+  email: henry@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  failed_attempts: 0
+  floor: "7"
+  created_at: 2026-02-10 09:00:00
+
+iris:
+  email: iris@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  failed_attempts: 0
+  floor: "7"
+  created_at: 2026-02-11 09:00:00

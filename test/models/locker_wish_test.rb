@@ -65,7 +65,10 @@ class LockerWishTest < ActiveSupport::TestCase
   # --- 017 FR-004/FR-010: the floor being looked for --------------------------
 
   test "looking_for matches the wished floor exactly" do
-    assert_equal [ users(:karl).id ], LockerWish.active.looking_for("3").map(&:user_id)
+    # 018: henry and iris also wish for floor "3" (they reciprocate with bob),
+    # oldest declaration first, same as every other active-scope ordering.
+    assert_equal [ users(:karl).id, users(:henry).id, users(:iris).id ],
+      LockerWish.active.looking_for("3").map(&:user_id)
   end
 
   test "looking_for with a blank floor is all floors" do
@@ -102,9 +105,53 @@ class LockerWishTest < ActiveSupport::TestCase
   end
 
   # Only the floors of people who actually hold a wish, and only where one is set:
-  # karl has no floor, so nothing stands in for him here.
+  # karl has no floor, so nothing stands in for him here. 018: henry and iris are
+  # both floor "7", but owner_floors is distinct, so "7" appears only once.
   test "owner_floors offers each wisher's saved floor once, and no blank" do
-    assert_equal %w[10 2 3], LockerWish.owner_floors.sort
+    assert_equal %w[10 2 3 7], LockerWish.owner_floors.sort
     assert_not_includes LockerWish.owner_floors, nil
+  end
+
+  # --- 018 FR-001/FR-002/FR-005: the reciprocal-match predicate ---------------
+  #
+  # henry_wish (floor "3", henry's own saved floor "7") is the fixture pair
+  # exercised throughout: bob's current floor "3" and wish floor "7" reciprocate
+  # with it exactly.
+
+  test "reciprocal_match? is true only when both directions hold" do
+    assert locker_wishes(:henry_wish).reciprocal_match?("3", "7")
+  end
+
+  test "reciprocal_match? is false when only the row's own floor matches the viewer's current floor" do
+    refute locker_wishes(:henry_wish).reciprocal_match?("3", "9")
+  end
+
+  test "reciprocal_match? is false when only the row owner's saved floor matches the viewer's wish" do
+    refute locker_wishes(:henry_wish).reciprocal_match?("9", "7")
+  end
+
+  test "reciprocal_match? is false when the viewer's current floor is blank" do
+    [ nil, "", "  " ].each do |blank|
+      refute locker_wishes(:henry_wish).reciprocal_match?(blank, "7")
+    end
+  end
+
+  test "reciprocal_match? is false when the viewer's wish floor is blank" do
+    [ nil, "", "  " ].each do |blank|
+      refute locker_wishes(:henry_wish).reciprocal_match?("3", blank)
+    end
+  end
+
+  # karl has no saved floor of his own (see users.yml) — "Not set" cannot match
+  # anything, however the viewer's own floors are set.
+  test "reciprocal_match? is false when the row owner has no saved floor" do
+    refute locker_wishes(:karl_wish).reciprocal_match?("3", "anything")
+  end
+
+  # Floors are free text everywhere else in this codebase (looking_for,
+  # owner_on_floor) — the predicate must not normalize what those don't either.
+  test "reciprocal_match? compares floors as exact strings" do
+    refute locker_wishes(:henry_wish).reciprocal_match?("03", "7")
+    refute locker_wishes(:henry_wish).reciprocal_match?(" 3", "7")
   end
 end

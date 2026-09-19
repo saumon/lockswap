@@ -59,6 +59,13 @@ class LockerWishesController < ApplicationController
       @locker_wishes = filtered_locker_wishes
       @viewer_in_progress = LockerSwapProposal.in_progress_for?(current_user)
       @pending_recipient_ids = current_user.sent_swap_proposals.pending.pluck(:recipient_id)
+
+      # 018 FR-001/FR-003/FR-004: read past any unsaved edit, same reason as
+      # everywhere else `saved_floor` is used (research R1). `current_user` and
+      # `current_user.locker_wish` are both already loaded above and by
+      # `own_locker_wish`, so neither read costs a query.
+      @viewer_current_floor = current_user.saved_floor
+      @viewer_wish_floor = current_user.locker_wish&.saved_floor
     end
 
     # An unsaved wish stands in for "has not declared yet", so the view has

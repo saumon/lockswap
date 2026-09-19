@@ -45,7 +45,9 @@ class LockerWishFilterTest < ApplicationSystemTestCase
     log_in_as users(:dave)
     visit locker_wishes_path
 
-    assert_equal [ "bob@example.com", "carol@example.com", "judy@example.com", "karl@example.com" ],
+    # 018: henry and iris are two more active wishes, declared after karl's.
+    assert_equal [ "bob@example.com", "carol@example.com", "judy@example.com", "karl@example.com",
+                   "henry@example.com", "iris@example.com" ],
       listed_people
 
     choose LOOKING_FOR, "5"
@@ -97,7 +99,8 @@ class LockerWishFilterTest < ApplicationSystemTestCase
     visit locker_wishes_path
 
     assert_equal %w[All\ floors 3 5 7 10], choices_in(LOOKING_FOR)
-    assert_equal %w[All\ floors 2 3 10], choices_in(CURRENT_FLOOR)
+    # 018: henry and iris are both saved on floor "7", so it now joins the choices.
+    assert_equal %w[All\ floors 2 3 7 10], choices_in(CURRENT_FLOOR)
   end
 
   # Scenario 6 (FR-008): moving across the choices is not choosing. A select that

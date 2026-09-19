@@ -215,6 +215,98 @@ class LockerWishesControllerTest < ActionDispatch::IntegrationTest
       "filtering issued #{filtered} queries against #{unfiltered} unfiltered"
   end
 
+  # --- 018: the reciprocal-match tag ------------------------------------------
+  #
+  # bob (floor "3", wish "7") reciprocates exactly with both henry and iris
+  # (floor "7", wish "3" each) — see test/fixtures/users.yml and
+  # test/fixtures/locker_wishes.yml.
+
+  test "the tag appears on every row that reciprocates with the viewer, and nowhere else" do
+    sign_in users(:bob)
+
+    get locker_wishes_path
+
+    assert_select "#locker-wish-row-#{users(:henry).id}-swap span.badge-success", text: "It's a match!"
+    assert_select "#locker-wish-row-#{users(:iris).id}-swap span.badge-success", text: "It's a match!"
+    assert_select "#locker-wish-row-#{users(:carol).id}-swap span.badge-success", count: 0
+    assert_select "#locker-wish-row-#{users(:judy).id}-swap span.badge-success", count: 0
+    assert_select "#locker-wish-row-#{users(:karl).id}-swap span.badge-success", count: 0
+  end
+
+  # FR-003: no wish of the viewer's own means nothing to reciprocate, whatever
+  # any row's floors are.
+  test "no row carries the tag when the viewer has not declared a wish" do
+    sign_in users(:dave)
+
+    get locker_wishes_path
+
+    assert_select "span.badge-success", count: 0
+  end
+
+  # FR-004: karl has a wish but no saved floor of his own.
+  test "no row carries the tag when the viewer's own current floor is not recorded" do
+    sign_in users(:karl)
+
+    get locker_wishes_path
+
+    assert_select "span.badge-success", count: 0
+  end
+
+  # FR-006 / spec Edge Cases: bob's own row would satisfy the formula once his
+  # wish floor is set to match his own current floor exactly (the "mirror" case),
+  # yet it must never carry the tag — the exclusion is unconditional.
+  test "the viewer's own row never carries the tag, even if it would otherwise qualify" do
+    sign_in users(:bob)
+    users(:bob).locker_wish.update!(floor: users(:bob).saved_floor)
+
+    get locker_wishes_path
+
+    assert_select "#locker-wish-row-#{users(:bob).id}-swap span.badge-success", count: 0
+  end
+
+  # FR-008: a floor filter narrows which rows are reached, not how a reached row
+  # is evaluated.
+  test "the tag survives narrowing by a floor filter" do
+    sign_in users(:bob)
+
+    get locker_wishes_path(looking_for: "3")
+
+    assert_select "#locker-wish-row-#{users(:henry).id}-swap span.badge-success", text: "It's a match!"
+    assert_select "#locker-wish-row-#{users(:iris).id}-swap span.badge-success", text: "It's a match!"
+  end
+
+  # Principle IV / contract "Query-budget contract": the two extra reads this
+  # feature introduces are attribute reads on associations already loaded, so
+  # the query count must not depend on whether any row actually matches.
+  #
+  # Two separate, freshly-signed-in viewers rather than one viewer across two
+  # requests: reusing a session for a second request in the same test carries an
+  # unrelated extra Warden/session lookup that has nothing to do with this
+  # feature and would make the comparison noisy.
+  test "rendering the list issues the same number of queries whether or not a match is present" do
+    sign_in users(:bob) # reciprocates with henry and iris
+    with_matches = count_queries { get locker_wishes_path }
+
+    sign_out users(:bob)
+    sign_in users(:carol) # floor "2", wish "5" — nobody reciprocates
+    without_matches = count_queries { get locker_wishes_path }
+
+    assert_equal with_matches, without_matches
+  end
+
+  # FR-009 / spec Edge Cases: the tag is recomputed fresh on every render, never
+  # remembered from a previous one.
+  test "cancelling the viewer's own wish removes the tag on the next render" do
+    sign_in users(:bob)
+    get locker_wishes_path
+    assert_select "#locker-wish-row-#{users(:henry).id}-swap span.badge-success"
+
+    delete locker_wish_path
+    get locker_wishes_path
+
+    assert_select "span.badge-success", count: 0
+  end
+
   private
 
     # What each axis offers, in the order it offers it — so a comparison catches a

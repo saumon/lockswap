@@ -34,3 +34,17 @@ karl_wish:
   user: karl
   floor: "3"
   created_at: 2026-03-04 09:00:00
+
+# 018: henry and iris (floor "7" each, see users.yml) both wish for floor "3" —
+# exactly reciprocating bob (floor "3", wish "7"). Two reciprocating rows rather
+# than one so a test can assert both are tagged "It's a match!" at once for the
+# same viewer (FR-007).
+henry_wish:
+  user: henry
+  floor: "3"
+  created_at: 2026-03-05 09:00:00
+
+iris_wish:
+  user: iris
+  floor: "3"
+  created_at: 2026-03-06 09:00:00
