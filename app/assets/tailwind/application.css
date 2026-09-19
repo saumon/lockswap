@@ -19,7 +19,8 @@
   --color-brand-green: #0AB486;
   --color-brand-blue: #0A77F1;
 
-  /* Mark artwork only — the locker faces and their shaded sides. */
+  /* The locker faces and their shaded sides, traced from the mark. The two
+     lit faces are also the accent ramp — see --color-action-from below. */
   --color-locker-blue: #2588F3;
   --color-locker-blue-deep: #014DA7;
   --color-locker-green: #41D5A5;
@@ -32,16 +33,18 @@
      IMPORTANT: --color-brand-green is 2.66:1 on white. That fails the 4.5:1
      text bar AND the 3:1 non-text bar. It is legal in the wordmark only
      because WCAG 2.1 SC 1.4.3 exempts text that is part of a logo or brand
-     name. Everywhere else, green means --color-accent. */
-  --color-ink: #0E2A47;          /* 14.57:1 — body and headings */
-  --color-ink-muted: #50607A;    /*  6.37:1 — secondary and help text */
-  --color-accent: #07795A;       /*  5.40:1 — green text, primary fill */
-  --color-accent-strong: #06684D;/*  6.79:1 — primary hover/active */
+     name. Everywhere else, green TEXT means --color-accent — and green as a
+     FILL means --color-action, which is the brand green with an ink label on
+     it rather than a white one. See the swap axis below. */
+  --color-ink: #0A1F38;          /* 16.11:1 — body and headings */
+  --color-ink-muted: #50607A;    /*  6.36:1 white, 5.91:1 canvas */
+  --color-accent: #07795A;       /*  5.40:1 — green text */
+  --color-accent-strong: #06684D;/*  6.79:1 */
   --color-link: #0A5AC2;         /*  6.45:1 — link text, focus ring */
-  --color-canvas: #F7F9FB;       /* page ground */
+  --color-canvas: #F4F7FA;       /* page ground, carries the grid */
   --color-surface: #FFFFFF;      /* cards and panels */
-  --color-border: #D8E0E9;       /* decorative separation only */
-  --color-border-strong: #C7D2DE;/* input borders at rest */
+  --color-border: #DCE4EC;       /* decorative separation only */
+  --color-border-strong: #C3D0DE;/* input borders at rest */
 
   /* --- Status pairs -------------------------------------------------------
      Text-on-tint, each verified >= 4.5:1. Every badge also carries a text
@@ -55,16 +58,145 @@
   --color-status-neutral: #0E2A47;
   --color-status-neutral-tint: #EEF2F6;   /* 12.96:1 */
 
+  /* --- 021: the swap axis -------------------------------------------------
+     The logo is two lockers, one blue and one green, changing places. That is
+     the one idea this interface is built on, so the two colours are given a
+     fixed meaning and are never spent on decoration:
+
+       rail-you    blue   — what is yours: your locker, your wish, your row
+       rail-them   green  — what is somebody else's: the pool, their offer
+       rail-system navy   — neither: shells, headers, reference
+       rail-alert  rose   — destructive
+
+     Every card carries one of these as a 3px hinge down its leading edge, and
+     the wish list carries them on its rows. A reader who has seen one screen
+     can read the next one by colour before reading a word of it.
+
+     These are surfaces and edges, never text. Blue is 4.27:1 on white, which
+     clears the 3:1 non-text bar and misses the 4.5:1 text bar; link TEXT is
+     --color-link, which is the same hue taken dark enough to pass. */
+  --color-rail-you: #0A77F1;
+  --color-rail-them: #0AB486;
+  --color-rail-system: #0A1F38;
+  --color-rail-alert: #9F1239;
+
+  /* --- 021: the action fill -----------------------------------------------
+     Every accent control on the site is one fill: the swap axis itself, run
+     as a gradient from blue to green, with a white label. There is no second
+     treatment — the primary button, the row action and the filter choice in
+     force are the same object at different sizes.
+
+     THE TWO ENDS ARE THE TWO LOCKER DOORS. #3499FD is the top stop of the
+     blue door's own gradient in shared/_brand_mark, and #41D5A5 is the green
+     door's face, which the palette already carries as --color-locker-green.
+     The button is the mark: blue door on the left, green door on the right,
+     and the hover below exchanges them.
+
+     THE LABEL IS WHITE, AND ON THIS RAMP IT DOES NOT MEET WCAG. Measured,
+     not estimated: white is 2.95:1 on the blue end and 1.87:1 on the green,
+     against a 4.5:1 bar for normal text. It was set white by explicit
+     instruction, over ink, which measures 5.62:1 at the blue end and 8.91:1
+     at the green and passed everywhere on the same ramp.
+
+     Recorded here so nobody has to rediscover it, and so the two ways out are
+     on the table when someone does:
+
+       - keep the label white and darken the ramp. #0671F1 -> #05776E, the
+         mark's arrow blue and its deep green, is the brightest pair of the
+         artwork's own colours that carries white: 4.53:1 and 5.43:1.
+       - keep the ramp and set --color-action-ink back to #0A1F38.
+
+     Nothing else in this stylesheet is below its bar. If an audit flags one
+     thing, it will be this, and this is the note that explains it.
+
+     The ramp is declared blue -> green -> blue so a 200%-wide window can slide
+     across it; see .btn-primary for what that is for. */
+  --color-action-from: #3499FD;  /* blue door, lit    — ink 5.62:1 */
+  --color-action-to: #41D5A5;    /* green door, lit   — ink 8.91:1 */
+  --color-action-ink: #FFFFFF;   /* see the note above: 1.87:1 worst */
+  --gradient-action: linear-gradient(100deg,
+    var(--color-action-from) 0%,
+    var(--color-action-to) 50%,
+    var(--color-action-from) 100%);
+
+  /* --- 021: the bar -------------------------------------------------------
+     Frosted glass, not a dark slab. The bar is white held at 58% over a heavy
+     blur, so the grid and whatever content is passing underneath stay legible
+     through it and the bar reads as a layer of the page rather than a lid on
+     top of it. It is sticky, which is the whole point: a translucent surface
+     with nothing moving behind it is just a lighter colour.
+
+     58% rather than the 72% this started at, and the blur went 20px -> 24px
+     with it: the wider the blur, the less any one thing passing underneath
+     shows as itself rather than as a tint.
+
+     A bar this transparent raises the obvious question of whether its own
+     labels still hold their contrast while content slides behind them. They
+     do, and it was measured rather than assumed: the ground behind the nav
+     labels was sampled out of the rendered pixels at four scroll positions,
+     with the wish list's rows passing under the bar, and the darkest ground
+     any glyph sat on was rgb(250,252,254) — 6.20:1 against --color-ink-muted,
+     against 6.36:1 for the same token on plain white. A 24px blur over
+     content as sparse as a table row does not deliver enough dark anywhere to
+     move the composite. A brightness() lift was tried here to guard the case
+     and removed again: it bought 0.16 of a ratio point that was never needed,
+     and an operation in a filter that recomposites on every scroll frame is
+     not free.
+
+     This holds for the content this product has. A screen that put a large
+     dark field under the bar would have to be measured again.
+
+     One value, one material: the menu panel is this tint and this blur too,
+     with nothing held back. See the note on .site-header::before for the
+     reason the panel's filter has to be reached the way it is.
+
+     The ink is the page's ink. Nothing in the bar needs its own palette any
+     more, which is one fewer set of contrast ratios to keep true:
+     --color-bar-ink is --color-ink (16.11:1) and --color-bar-ink-muted is
+     --color-ink-muted (6.36:1). They stay named for the bar so a future
+     change to the material has one place to go.
+
+     NOTE ON COST: backdrop-filter is not animated, but it does force the bar
+     onto its own composited layer and re-blur while content scrolls beneath
+     it. That is the price of the material and it is paid on one element, of
+     fixed height, once per frame. Nothing else on the site may take one. */
+  --color-bar: #FFFFFF94;
+  --color-bar-edge: #DCE4EC;
+  --color-bar-ink: #0A1F38;
+  --color-bar-ink-muted: #50607A;
+  --color-bar-blur: blur(24px) saturate(180%);
+  /* The bar's own height, named because the notification layer has to clear
+     it and a sticky bar is no longer something a toast can simply scroll
+     past. Changing one without the other puts a toast behind the glass. */
+  --size-bar: 4.25rem;
+
+  /* --- 021: the floor -----------------------------------------------------
+     A locker bank is a grid, so the canvas is one: navy at ~5%, 24px pitch,
+     drawn on the body and masked by every white surface laid over it. It is
+     what stops the page reading as a void with cards floating in it. */
+  --color-grid: #0A1F380C;
+  --color-row-hover: #F4F7FA;
+
   /* --- Typography ---------------------------------------------------------
-     One family, one variable file. The fallback stack is rounded-first so the
-     pre-swap paint is not a different shape from the loaded face. */
+     Two families, two jobs, both served from our own origin.
+
+     Nunito is the logo's own face and carries everything written: headings,
+     prose, labels, controls.
+
+     JetBrains Mono carries everything MEASURED: floor numbers, locker numbers,
+     e-mail addresses, dates, and the column headings above them. Its figures
+     are tabular, so a column of locker numbers lines up on the digit rather
+     than drifting. The contrast between the two — rounded humanist against
+     rigid mono — is the typographic idea; neither family is doing the other's
+     job anywhere. */
   --font-brand: "Nunito", ui-rounded, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
 
   --text-display: 2.5rem;
-  --text-display--line-height: 1.1;
+  --text-display--line-height: 1.05;
   --text-display--font-weight: 800;
   --text-h1: 1.875rem;
-  --text-h1--line-height: 1.2;
+  --text-h1--line-height: 1.15;
   --text-h1--font-weight: 800;
   --text-h2: 1.25rem;
   --text-h2--line-height: 1.3;
@@ -79,10 +211,21 @@
   --text-label: 0.875rem;
   --text-label--line-height: 1.4;
   --text-label--font-weight: 600;
+  /* Measured values. Slightly smaller than --text-sm because mono runs large
+     at the same nominal size, so this matches it optically. */
+  --text-data: 0.8125rem;
+  --text-data--line-height: 1.45;
+  --text-data--font-weight: 500;
 
   /* --- Spacing, radius, shadow -------------------------------------------
-     Shadows are tinted with the brand navy rather than neutral black: grey
-     shadow on a white canvas reads muddy, navy reads clean. */
+     Radii are tighter than they were (1.25rem -> 0.75rem at the largest). A
+     soft 20px corner is the single most generic thing a SaaS card can do; at
+     12px the card reads as a panel in a tool rather than as a pill.
+
+     Shadows are tinted with the brand navy rather than neutral black, and
+     cards no longer use one at all — they are separated by their border and
+     their hinge, against a canvas that is not empty. --shadow-lg survives for
+     the two things that genuinely float: the menu panel and the toasts. */
   --spacing-1: 0.25rem;
   --spacing-2: 0.5rem;
   --spacing-3: 0.75rem;
@@ -92,20 +235,26 @@
   --spacing-7: 3rem;
   --spacing-8: 4rem;
 
-  --radius-sm: 0.5rem;
-  --radius-md: 0.875rem;
-  --radius-lg: 1.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
 
-  --shadow-sm: 0 1px 2px rgb(14 42 71 / 0.05);
-  --shadow-md: 0 4px 12px rgb(14 42 71 / 0.08);
-  --shadow-lg: 0 12px 32px rgb(14 42 71 / 0.12);
+  --shadow-sm: 0 1px 2px rgb(10 31 56 / 0.04);
+  --shadow-md: 0 4px 12px rgb(10 31 56 / 0.08);
+  --shadow-lg: 0 18px 40px -12px rgb(10 31 56 / 0.35);
 
   /* --- Motion -------------------------------------------------------------
      FR-019 bounds: interaction feedback settles within 200ms, the page
-     entrance completes within 400ms. These sit inside those with headroom. */
+     entrance completes within 400ms. These sit inside those with headroom.
+
+     --motion-stagger is the step between one entering block and the next. At
+     five steps the last block starts 160ms in and finishes at 400ms exactly,
+     which is the bound — so nothing may be added to that chain without
+     shortening the step. */
   --motion-fast: 120ms;
   --motion-base: 180ms;
-  --motion-entrance: 320ms;
+  --motion-entrance: 240ms;
+  --motion-stagger: 40ms;
   --motion-brand: 1100ms;
   --motion-flourish: 900ms;
   /* The brand mark's perpetual pulse. The one duration here that is not an
@@ -164,6 +313,17 @@
   src: url("nunito-latin-variable.woff2") format("woff2");
 }
 
+/* 021: the measured face. Same terms as the one above — our own origin, one
+   variable file, latin subset, font-display: swap. 31KB, SIL OFL, and the
+   licence in app/assets/fonts/OFL.txt covers it as it covers Nunito. */
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("jetbrains-mono-latin-variable.woff2") format("woff2");
+}
+
 /* ===========================================================================
    Base shell.
    =========================================================================== */
@@ -173,10 +333,27 @@
     /* Anchors and any future in-page jumps ease rather than teleport; the
        reduced-motion block below turns this off again. */
     scroll-behavior: smooth;
+
+    /* 021: the bar is sticky, so anything scrolled to the top of the viewport
+       lands underneath 68px of glass — an in-page anchor, and, more to the
+       point, any control the browser scrolls into view when the keyboard
+       reaches it. scroll-padding reserves the bar's height plus a margin at
+       the top of every scroll, so nothing is ever brought to rest behind it.
+       Paired with --size-bar the same way the notification layer is. */
+    scroll-padding-top: calc(var(--size-bar) + var(--spacing-4));
   }
 
   body {
     background-color: var(--color-canvas);
+    /* 021: the grid. Two hairline gradients rather than an image — nothing to
+       fetch, and it recolours with the token. It scrolls with the page rather
+       than being fixed: a floor that slides under the content reads as a floor,
+       and a fixed background repaints the whole viewport on every scroll frame
+       on mobile, which is exactly the cost FR-021 exists to avoid. */
+    background-image:
+      linear-gradient(to right, var(--color-grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--color-grid) 1px, transparent 1px);
+    background-size: 1.5rem 1.5rem;
     color: var(--color-ink);
     font-family: var(--font-brand);
     font-size: var(--text-body);
@@ -194,6 +371,7 @@
     outline-offset: 2px;
     border-radius: var(--radius-sm);
   }
+
 }
 
 /* ===========================================================================
@@ -271,6 +449,7 @@
   .brand-wordmark-swap {
     color: var(--color-brand-green);
   }
+
 
   .brand-stacked {
     display: flex;
@@ -376,9 +555,19 @@
     padding: var(--spacing-3) var(--spacing-5);
     border: 1px solid transparent;
     border-radius: var(--radius-md);
-    font-family: inherit;
+    /* 021: the measured face, the same one the filter choices are set in — a
+       control is a key you press, not a sentence, and the two now read as one
+       family of objects. Named rather than inherited either way: an <input>
+       does not inherit font from its ancestors at all, and a button inside a
+       .data-table cell would otherwise pick up whatever the cell is set in.
+
+       One step above the chips (--text-label against their --text-data)
+       because a page-level action is not a filter; .btn-sm drops to the
+       chips' own size, so the controls that sit beside them match exactly. */
+    font-family: var(--font-mono);
     font-size: var(--text-label);
     font-weight: 600;
+    letter-spacing: -0.01em;
     line-height: 1.2;
     text-align: center;
     text-decoration: none;
@@ -391,13 +580,40 @@
     opacity: 0.55;
   }
 
+  /* 021: THE ACCENT FILL — one treatment, everywhere.
+
+     The gradient runs blue to green across the control, left to right, the
+     same direction as the hairline under the bar and for the same reason: it
+     is the swap, stated on the thing that performs it.
+
+     THE SWEEP. The image is declared blue -> green -> blue and sized to twice
+     the control, so only half of it is ever visible: at rest that window
+     shows blue -> green, and on hover or focus the window slides to the other
+     half, which shows green -> blue. The gradient does not brighten or move
+     the button — it reverses. On a product whose whole subject is two people
+     exchanging places, that is the only hover this control should have.
+
+     This is the stylesheet's one animated property that is neither transform
+     nor opacity. The rule exists to keep scrolling smooth; this repaints one
+     small element, on pointer or keyboard interaction, never while anything
+     is scrolling, and is over in 180ms. background-position is also the
+     cheapest way to do it: the alternative is a cross-faded pseudo-element,
+     and .btn-primary has to work on <input type="submit">, which cannot have
+     one — two system tests match that element by its value.
+
+     background-color is under the image as a fallback, for anything that
+     cannot paint the gradient. */
   .btn-primary {
-    background-color: var(--color-accent);   /* white on this is 5.40:1 */
-    color: #FFFFFF;
+    background-color: var(--color-action-from);
+    background-image: var(--gradient-action);
+    background-size: 200% 100%;
+    background-position: 0 0;
+    color: var(--color-action-ink);
   }
 
-  .btn-primary:hover:not(:disabled) {
-    background-color: var(--color-accent-strong);
+  .btn-primary:hover:not(:disabled),
+  .btn-primary:focus-visible:not(:disabled) {
+    background-position: 100% 0;
   }
 
   .btn-secondary {
@@ -408,6 +624,7 @@
 
   .btn-secondary:hover:not(:disabled) {
     background-color: var(--color-canvas);
+    border-color: var(--color-rail-you);
   }
 
   .btn-destructive {
@@ -429,6 +646,18 @@
 
   .btn-quiet:hover:not(:disabled) {
     background-color: var(--color-status-info-tint);
+  }
+
+  /* A button sitting on the glass. Filled white it would be the one opaque
+     patch in the bar and would read as a sticker on it; transparent, it is
+     part of the same material and the outline alone carries it. */
+  .site-header .btn-secondary {
+    background-color: transparent;
+  }
+
+  .site-header .btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-surface);
+    border-color: var(--color-ink-muted);
   }
 
   /* --- Forms --------------------------------------------------------------- */
@@ -563,24 +792,62 @@
     text-decoration: none;
   }
 
-  /* --- Cards and panels ---------------------------------------------------- */
+  /* --- Cards and panels ----------------------------------------------------
+     021: THE HINGE.
+
+     A card is a locker door, and it is hung on a 3px coloured edge down its
+     leading side. That edge is the card's subject, read off the swap axis:
+     blue for what is yours, green for what is somebody else's, navy for a
+     shell that is neither. Two cards side by side are no longer the same
+     object twice.
+
+     This replaces the drop shadow rather than joining it. An identical soft
+     grey shadow under every card is the thing that makes a page of cards read
+     as one undifferentiated mass; the border plus the hinge plus a canvas that
+     is not blank separate them better and cost nothing to paint.
+
+     overflow: hidden is load-bearing — the hinge is a full-height rectangle and
+     the card is rounded, so the corners have to be clipped by the card. */
   .card {
+    position: relative;
+    overflow: hidden;
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    padding: var(--spacing-6);
+    padding: var(--spacing-5);
+    /* The hinge sits inside the border box, so the content is pushed clear of
+       it and still lines up with the padding everywhere else. */
+    padding-inline-start: calc(var(--spacing-5) + 3px);
   }
 
+  .card::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 3px;
+    background-color: var(--color-rail-system);
+    /* Drawn downwards on entry; see the motion section. At rest it is simply
+       there, so a card is complete whether or not anything animated. */
+    transform-origin: top;
+  }
+
+  /* The three subjects. Nothing else may set the hinge colour: a fourth
+     meaning would make the axis unreadable. */
+  .card--you::before   { background-color: var(--color-rail-you); }
+  .card--them::before  { background-color: var(--color-rail-them); }
+  .card--alert::before { background-color: var(--color-rail-alert); }
+
   .card-tight {
-    padding: var(--spacing-5);
+    padding: var(--spacing-4);
+    padding-inline-start: calc(var(--spacing-4) + 3px);
   }
 
   .card-title {
     color: var(--color-ink);
     font-size: var(--text-h2);
-    font-weight: 700;
-    letter-spacing: -0.01em;
+    font-weight: 800;
+    letter-spacing: -0.02em;
     margin: 0;
   }
 
@@ -589,11 +856,31 @@
     margin: 0;
   }
 
+  /* 021: the page title is not a card.
+
+     It used to be wrapped in one, which put the single most important line on
+     each screen inside the same white rounded box as everything under it. Now
+     it sits directly on the canvas, on its own hinge, and the grid runs behind
+     it — so the first thing the eye lands on is the only thing at that level. */
+  /* The rail here is the axis itself — blue at the top running to green at the
+     bottom — rather than one side of it. A page is not "yours" or "theirs";
+     it is the place the two meet, and this is the one mark that says so on
+     every screen. Same gradient, same direction, as the hairline under the
+     bar. border-image paints only the side that has a width. */
+  .page-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+    padding-inline-start: var(--spacing-4);
+    border-inline-start: 3px solid transparent;
+    border-image: linear-gradient(to bottom, var(--color-rail-you), var(--color-rail-them)) 1;
+  }
+
   .page-title {
     color: var(--color-ink);
     font-size: var(--text-h1);
     font-weight: 800;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
     margin: 0;
   }
 
@@ -608,12 +895,34 @@
      Native <details>/<summary>, kept native: it is the accessible, JS-free
      choice. The labelled variant below is found in tests by its summary text;
      the icon-only one (009) by its aria-label, since it has no text to find. */
+  /* The wish panel is a card in every respect except that it opens, so it is
+     hung on the same hinge — and it is always the reader's own wish, so the
+     hinge is blue. */
   .disclosure {
+    position: relative;
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
     overflow: hidden;
+  }
+
+  .disclosure::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 3px;
+    background-color: var(--color-rail-you);
+    transform-origin: top;
+    z-index: 1;
+  }
+
+  /* Child combinators on purpose: this has to beat .disclosure-summary's own
+     padding shorthand further down (same layer, so specificity decides), and a
+     .disclosure-nested inside must not be indented a second time. */
+  .disclosure > .disclosure-summary,
+  .disclosure > .disclosure-body {
+    padding-inline: calc(var(--spacing-5) + 3px) var(--spacing-5);
   }
 
   .disclosure-summary {
@@ -774,10 +1083,75 @@
     color: var(--color-ink);
   }
 
-  /* --- Shell --------------------------------------------------------------- */
+  /* --- Shell ----------------------------------------------------------------
+     021: the bar is frosted glass.
+
+     Sticky at the top of the viewport, white at 72%, over a 20px blur with the
+     saturation pushed so the colour passing underneath stays colour rather
+     than turning to grey mud. Content scrolls under it and remains faintly
+     readable through it — which is the only reason a translucent bar is worth
+     having, and why it is sticky rather than static.
+
+     Under it runs a 2px hairline that goes blue to green, left to right — the
+     swap axis, stated once at the top of every screen, and the one thing that
+     separates the glass from the canvas. It is drawn as a pseudo-element
+     rather than a border-image so it can span the full bleed while the nav
+     inside stays in its column.
+
+     z-index 40 sits under the notification layer's 50 on purpose: a toast is
+     the most urgent thing on the screen and must never be behind the glass.
+     The layer's own offset is what keeps the two from overlapping at all. */
   .site-header {
-    background-color: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+
+  /* THE GLASS IS ON A PSEUDO-ELEMENT, NOT ON .site-header. This is not a
+     stylistic choice and must not be "simplified" back.
+
+     An element with a backdrop-filter becomes a Backdrop Root: its
+     descendants' own backdrop-filters no longer see the page, only what is
+     painted inside that root. The menu panel is a descendant of this header,
+     so with the filter on .site-header itself the panel's blur sampled the
+     header's interior — which is empty everywhere the panel hangs below it —
+     and blurred nothing at all. It declared a backdrop-filter and rendered a
+     flat tint.
+
+     Moving the tint and the filter onto ::before fixes it at the source. The
+     pseudo-element is a leaf, so the backdrop root it forms contains nothing
+     that needs to see past it, and .site-header is an ordinary positioned
+     element again — which leaves the panel free to filter the page.
+
+     z-index: -1 puts it behind the nav's content while staying inside the
+     header's own stacking context, which z-index: 40 above establishes. */
+  .site-header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--color-bar);
+    -webkit-backdrop-filter: var(--color-bar-blur);
+    backdrop-filter: var(--color-bar-blur);
+  }
+
+  /* Where the material is not available the bar is simply opaque. A 58% white
+     with nothing behind it to blur is a smear, not a frost. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .site-header::before,
+    .site-menu-panel,
+    .site-bar .site-submenu-panel {
+      background-color: var(--color-surface);
+    }
+  }
+
+  .site-header::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 2px;
+    background-image: linear-gradient(to right, var(--color-rail-you), var(--color-rail-them));
   }
 
   .site-nav {
@@ -791,25 +1165,49 @@
     justify-content: space-between;
     gap: var(--spacing-4);
     margin-inline: auto;
-    max-width: 64rem;
-    padding: var(--spacing-4) var(--spacing-5);
+    /* 021: 68rem, matched to .site-main. Wider than the old 64 because the wish
+       list and the admin directory are five- and seven-column tables and were
+       being squeezed; not wider still, because the prose in the cards has to
+       stay inside a readable measure. */
+    max-width: 68rem;
+    /* Fixed rather than derived from whatever the tallest control happens to
+       be: --size-bar is what the notification layer clears, and a bar whose
+       height drifts with its contents would put a toast under the glass. */
+    min-height: var(--size-bar);
+    padding: var(--spacing-3) var(--spacing-5);
   }
 
+  /* On the glass and in the panel that hangs off it. 6.36:1 at rest against
+     the material's lightest rendering, 16.11:1 on hover. */
   .site-nav-link {
-    color: var(--color-ink-muted);
+    color: var(--color-bar-ink-muted);
     font-size: var(--text-label);
     font-weight: 600;
     text-decoration: none;
   }
 
   .site-nav-link:hover {
-    color: var(--color-ink);
+    color: var(--color-bar-ink);
+  }
+
+  /* 021: the bar never said which screen you were on. aria-current is the
+     selector, so the mark cannot be drawn without also being announced — the
+     same rule 017 set for the filter choices. Full ink plus the axis green
+     underlining it; the colour is a second signal, never the only one, because
+     assistive technology has the attribute itself. */
+  .site-nav-link[aria-current] {
+    color: var(--color-bar-ink);
+    /* --color-accent rather than the brand green: on a light bar the green at
+       full saturation is 2.69:1, and a 2px state indicator has to clear 3:1
+       (SC 1.4.11). This is the same green taken dark enough — 5.40:1 — and it
+       is the green .btn-row already outlines in. */
+    box-shadow: inset 0 -2px 0 var(--color-accent);
   }
 
   .site-main {
     margin-inline: auto;
     width: 100%;
-    max-width: 64rem;
+    max-width: 68rem;
     padding-inline: var(--spacing-5);
     padding-block: var(--spacing-7);
   }
@@ -841,8 +1239,10 @@
   /* The signed-in user's email: this is what gives way on a narrow screen, not
      the brand and not the controls. */
   .site-nav-identity {
-    color: var(--color-ink-muted);
-    font-size: var(--text-sm);
+    color: var(--color-bar-ink-muted);
+    /* An address is measured, not written. */
+    font-family: var(--font-mono);
+    font-size: var(--text-data);
     max-width: 16rem;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -856,21 +1256,71 @@
      The panel is absolutely positioned rather than pushed into the flow so
      that opening the menu does not shove the page down — the bar keeps its
      height, and the panel is drawn over the content beneath it. */
+  /* 021: the panel is the full width of the screen.
+
+     It used to be a floating card inset 24px from either edge, which on a
+     phone is a rounded box hovering inside a bar that is itself full bleed —
+     two different ideas of where the chrome ends. Edge to edge, it is one
+     surface continuing the bar downwards: the sheet IS the bar, extended.
+
+     inset-inline: 0 resolves against .site-nav's padding box, and the nav is
+     the full viewport width below the breakpoint (its 68rem cap never binds
+     there), so this is the screen's width exactly — never more, so FR-014's
+     "the page body must not scroll sideways" still holds.
+
+     No radius and no side borders follow from that: a corner rounded against
+     the edge of the screen is a corner rounded against nothing.
+
+     The inline padding is short by the rows' own 12px hit area, so the link
+     TEXT lands on the same 24px gutter the brand lock-up starts from while
+     each row's target still runs 12px past it either side. */
   .site-menu-panel {
     position: absolute;
     top: 100%;
-    right: var(--spacing-5);
-    left: var(--spacing-5);
-    z-index: 20;
+    inset-inline: 0;
+    /* Above the notification layer's 50, unlike the bar itself at 40. A toast
+       may sit in front of the closed chrome — it is the most urgent thing on
+       the screen — but not in the middle of a menu the reader has just opened
+       and is reading. The menu is a deliberate act; the toast will leave on
+       its own. */
+    z-index: 60;
     display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: var(--spacing-2);
-    padding: var(--spacing-4);
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    padding: var(--spacing-3) calc(var(--spacing-5) - var(--spacing-3)) var(--spacing-4);
+    /* Exactly the bar's material: the same tint at the same strength, and the
+       same blur. The sheet is the bar, extended.
+
+       Earlier this was held at 85% because at 58% the page behind stayed
+       fully readable and an open menu looked like two screens stacked. That
+       was the missing blur, not the tint — see the note on .site-header::before
+       for why the filter declared here was rendering nothing. With the blur
+       actually reaching the page there is no reason for a second density.
+
+       The shadow is what says it is in front; there is no border, because a
+       full-bleed sheet has no side to draw one on. */
+    background-color: var(--color-bar);
+    -webkit-backdrop-filter: var(--color-bar-blur);
+    backdrop-filter: var(--color-bar-blur);
     box-shadow: var(--shadow-lg);
+  }
+
+  /* The open sheet covers the bar's own hairline, so it carries it instead:
+     wherever the chrome ends, the blue-to-green line is what ends it. */
+  .site-menu-panel::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 2px;
+    background-image: linear-gradient(to right, var(--color-rail-you), var(--color-rail-them));
+  }
+
+  /* The one child that carries no hit-area padding of its own, so it is
+     nudged onto the gutter by hand rather than sitting 12px inside it. */
+  .site-menu-panel .btn {
+    margin-inline: var(--spacing-3);
   }
 
   /* FR-007: 2.75rem, not a step on the spacing scale — 44px is the touch target
@@ -884,7 +1334,7 @@
     height: 2.75rem;
     margin-inline-start: auto;
     border-radius: var(--radius-sm);
-    color: var(--color-ink);
+    color: var(--color-bar-ink);
     cursor: pointer;
     list-style: none;
   }
@@ -930,6 +1380,31 @@
     border-radius: var(--radius-sm);
   }
 
+  .site-menu-panel .site-nav-link:hover {
+    background-color: var(--color-canvas);
+  }
+
+  /* --- 021: the current page, inside a panel -------------------------------
+     The rows here are --color-ink-muted like every other destination, and at
+     58% with the blur actually reaching the page that holds: the worst ground
+     a label sits on is the page's green filter chip showing through, measured
+     at rgb(228,249,245) — 5.82:1, clear of the 4.5:1 bar with room.
+
+     Worth recording what that number was before the blur was fixed, because
+     it is the whole case for the pseudo-element: the same tint at the same
+     58%, with the panel's filter rendering nothing, put that ground at
+     rgb(152,223,204) and 4.18:1 — a failure. A 24px blur is not decoration
+     here; it is what keeps the most saturated thing this product draws from
+     landing under a label at full strength.
+
+     The extra weight on the current page stays. It was added when a stricter
+     ground had forced every row to the same colour, and it is worth keeping
+     now that they differ again. */
+  .site-menu-panel .site-nav-link[aria-current],
+  .site-bar .site-submenu-panel .site-nav-link[aria-current] {
+    font-weight: 700;
+  }
+
   .site-menu-panel .site-nav-identity {
     max-width: 100%;
     padding-inline: var(--spacing-3);
@@ -954,7 +1429,7 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-2);
-    color: var(--color-ink-muted);
+    color: var(--color-bar-ink-muted);
     font-size: var(--text-label);
     font-weight: 600;
     cursor: pointer;
@@ -966,7 +1441,7 @@
   }
 
   .site-submenu-toggle:hover {
-    color: var(--color-ink);
+    color: var(--color-bar-ink);
   }
 
   /* The same caret .disclosure-summary draws, at the smaller size this row wants:
@@ -1024,9 +1499,11 @@
       gap: var(--spacing-2);
       min-width: 9rem;
       padding: var(--spacing-3);
-      background-color: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
+      background-color: var(--color-bar);
+      -webkit-backdrop-filter: var(--color-bar-blur);
+      backdrop-filter: var(--color-bar-blur);
+      border: 1px solid var(--color-bar-edge);
+      border-radius: var(--radius-md);
       box-shadow: var(--shadow-lg);
     }
 
@@ -1037,6 +1514,10 @@
       padding-inline: var(--spacing-2);
       border-radius: var(--radius-sm);
       white-space: nowrap;
+    }
+
+    .site-bar .site-submenu-panel .site-nav-link:hover {
+      background-color: var(--color-canvas);
     }
   }
 
@@ -1066,6 +1547,10 @@
 /* --- Auth screens, detail lists and tables --------------------------------- */
 
 @layer components {
+  .auth-page .card::before {
+    background-image: linear-gradient(to bottom, var(--color-rail-you), var(--color-rail-them));
+  }
+
   .auth-page {
     display: flex;
     flex-direction: column;
@@ -1105,7 +1590,11 @@
   /* 012 FR-018a: this was the site's only width-based media query, at 40rem.
      It moves to the one breakpoint so that a single value governs everywhere. */
   @media (min-width: 48rem) {
-    .detail-grid { grid-template-columns: 1fr 1fr; }
+    .detail-grid {
+      grid-template-columns: repeat(2, minmax(0, 15rem));
+      justify-content: start;
+      gap: var(--spacing-6);
+    }
   }
 
   .detail-term {
@@ -1114,26 +1603,51 @@
     font-weight: 600;
   }
 
+  /* A floor and a locker number are the same measured values the tables carry,
+     so they are set the same way — one larger step, because here they are the
+     subject of the card rather than one cell among forty. */
   .detail-value {
     color: var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: var(--text-body);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    letter-spacing: -0.02em;
     margin-top: var(--spacing-1);
   }
 
-  /* Never having a value set is an ordinary state, not a warning. */
+  /* Never having a value set is an ordinary state, not a warning. 021: and
+     "No locker assigned" is prose rather than a measurement, so where it stands
+     in for a value it drops back out of the measured face. Scoped to the pair,
+     because the same class also marks empty <td>s that were never in it. */
   .detail-value-empty {
     color: var(--color-ink-muted);
   }
 
+  .detail-value.detail-value-empty {
+    font-family: var(--font-brand);
+    font-weight: 400;
+  }
+
   /* A row inside a card: the list items on the homepage swap sections. */
+  /* A row inside a card: the list items on the homepage swap sections.
+     021: hung on the swap axis like the card around it, at 2px rather than 3 —
+     it is one record inside a subject, not a subject of its own. The caller
+     sets the direction with .tile--them / .tile--you; untinted, it is grey. */
   .tile {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-2);
     padding: var(--spacing-4);
+    padding-inline-start: calc(var(--spacing-4) - 2px);
     background-color: var(--color-canvas);
     border: 1px solid var(--color-border);
+    border-inline-start: 2px solid var(--color-border-strong);
     border-radius: var(--radius-md);
   }
+
+  .tile--them { border-inline-start-color: var(--color-rail-them); }
+  .tile--you  { border-inline-start-color: var(--color-rail-you); }
 
   .tile-head {
     display: flex;
@@ -1141,6 +1655,14 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--spacing-3);
+  }
+
+  /* One element carrying both: .tile sets flex-direction: column, which .tile-head
+     inherits, so `align-items: center` centred the text instead of putting the
+     action opposite it. The head is a row wherever it appears — that is what it
+     is for — and it still wraps to two lines when there is no width for one. */
+  .tile.tile-head {
+    flex-direction: row;
   }
 
   .tile-line { margin: 0; }
@@ -1185,6 +1707,9 @@
   .btn-sm {
     min-height: 2.25rem;
     padding: var(--spacing-2) var(--spacing-4);
+    /* Exactly the filter choices' size, so a control standing next to one
+       reads as the same object. */
+    font-size: var(--text-data);
   }
 
   /* --- 012 FR-007 / FR-007b: touch targets below the breakpoint ------------
@@ -1273,32 +1798,52 @@
     color: var(--color-ink-muted);
   }
 
+  .filter-text {
+    font-family: var(--font-mono);
+  }
+
+  /* 021: squared off and set in mono. Most of these choices are floor
+     numbers, so they are measured values and belong in the measured face; and
+     a pill is the most generic shape a filter can take. A 6px corner reads as
+     a key on a console. */
   .filter-choice {
     display: inline-flex;
     align-items: center;
     padding: var(--spacing-1) var(--spacing-3);
     border: 1px solid var(--color-border-strong);
-    border-radius: 9999px;
-    font-size: var(--text-label);
-    line-height: 1.4;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: var(--text-data);
+    line-height: 1.5;
     color: var(--color-ink);
     text-decoration: none;
     white-space: nowrap;
   }
 
   .filter-choice:hover {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
+    border-color: var(--color-rail-you);
+    color: var(--color-link);
   }
 
   /* The choice in force. aria-current is the selector, so the state cannot be
-     styled without also being announced (FR-015, FR-021). White on
-     --color-accent is 5.40:1. */
+     styled without also being announced (FR-015, FR-021). 021: the accent
+     fill, identical to the buttons' — same ramp, same white label, same
+     sweep. A chip that is in force and a button that can be pressed are the
+     same kind of object and now look it. */
   .filter-choice[aria-current] {
-    background-color: var(--color-accent);
-    border-color: var(--color-accent);
-    color: var(--color-surface);
-    font-weight: 600;
+    background-color: var(--color-action-from);
+    background-image: var(--gradient-action);
+    background-size: 200% 100%;
+    background-position: 0 0;
+    border-color: transparent;
+    color: var(--color-action-ink);
+    font-weight: 700;
+  }
+
+  .filter-choice[aria-current]:hover {
+    background-position: 100% 0;
+    border-color: transparent;
+    color: var(--color-action-ink);
   }
 
   /* 020: the two text filters (current locker, email) — same filter-bar row as
@@ -1327,22 +1872,85 @@
     text-align: left;
   }
 
+  /* 021: the column names are in the measured face, because they name measured
+     things and because it ties the head of the column to the figures under it.
+     Sentence case, never uppercase. */
   .data-table th {
     padding: var(--spacing-2) var(--spacing-4) var(--spacing-2) 0;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border-strong);
     color: var(--color-ink-muted);
-    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: var(--text-data);
+    font-weight: 500;
     white-space: nowrap;
   }
 
   .data-table td {
-    padding: var(--spacing-3) var(--spacing-4) var(--spacing-3) 0;
+    padding: var(--spacing-2) var(--spacing-4) var(--spacing-2) 0;
     border-bottom: 1px solid var(--color-border);
     color: var(--color-ink);
     vertical-align: middle;
   }
 
   .data-table tr:last-child td { border-bottom: 0; }
+
+  /* 021: the row rail.
+
+     Every row carries a 2px leading edge, transparent until the pointer or the
+     keyboard is on the row, and then green — the pool side of the swap axis,
+     because every row in these tables is somebody else. The reader's own row
+     is marked permanently, and in blue, by [data-mine] below.
+
+     A border rather than a pseudo-element: <tr> cannot be positioned
+     reliably, and this has to survive the row becoming a block-level card
+     below the breakpoint, which it does — there it is the card's leading edge.
+
+     The header row is given the same transparent border and the same indent,
+     and never a colour. Without it the column names sit 14px to the left of
+     the figures they name, which is the one misalignment a table cannot
+     afford. */
+  .data-table tr > *:first-child {
+    border-inline-start: 2px solid transparent;
+    padding-inline-start: var(--spacing-3);
+  }
+
+  .data-table tbody tr:hover > *:first-child,
+  .data-table tbody tr:focus-within > *:first-child {
+    border-inline-start-color: var(--color-rail-them);
+  }
+
+  .data-table tbody tr:hover > * {
+    background-color: var(--color-row-hover);
+  }
+
+  /* A row that is permanently on one side of the axis says so, whatever the
+     pointer is doing. One attribute, one meaning, both tables:
+
+       data-rail="you"   the reader's own wish row; a proposal they sent
+       data-rail="them"  a proposal they received
+
+     FR-025: never the only signal. The wish list says "This is you" in the
+     Swap column, and the history has a Direction column that reads "Sent" or
+     "Received" in words. */
+  .data-table tbody tr[data-rail="you"] > *:first-child {
+    border-inline-start-color: var(--color-rail-you);
+  }
+
+  .data-table tbody tr[data-rail="them"] > *:first-child {
+    border-inline-start-color: var(--color-rail-them);
+  }
+
+  /* 021: measured values — floor, locker number, address, date. Tabular
+     figures, so a column of locker numbers lines up on the digit instead of
+     drifting; a column you can scan down is the whole reason this table is a
+     table. Applied per cell rather than to every <td>, because a cell holding
+     prose or a control is not a measurement. */
+  .data-value {
+    font-family: var(--font-mono);
+    font-size: var(--text-data);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
 
   /* 015: a cell whose value runs to more than one line — a badge and the line
      that says where it came from.
@@ -1406,10 +2014,24 @@
 
     .data-table tr {
       padding: var(--spacing-4);
+      padding-inline-start: calc(var(--spacing-4) - 2px);
       border: 1px solid var(--color-border);
+      border-inline-start: 2px solid var(--color-border-strong);
       border-radius: var(--radius-md);
       background-color: var(--color-surface);
     }
+
+    /* 021: in this form the row is a card, so the rail is its leading edge
+       rather than an inset border on the first cell — and it is permanent,
+       because there is no hover on a touchscreen to reveal it. */
+    .data-table tbody tr > *:first-child {
+      border-inline-start: 0;
+      padding-inline-start: 0;
+    }
+
+    .data-table tbody tr { border-inline-start-color: var(--color-rail-them); }
+    .data-table tbody tr[data-rail="you"] { border-inline-start-color: var(--color-rail-you); }
+    .data-table tbody tr[data-rail="them"] { border-inline-start-color: var(--color-rail-them); }
 
     .data-table tr + tr {
       margin-top: var(--spacing-3);
@@ -1503,11 +2125,36 @@
     transform var(--motion-base) var(--ease-in-out);
 }
 
+/* 021: the accent fill's sweep. Its own declaration rather than a fifth entry
+   in the list above, because it is the one property here that repaints — see
+   .btn-primary for why that is allowed on exactly these two selectors and
+   nowhere else. 180ms, inside FR-019's 200ms bound. */
+.btn-primary,
+.filter-choice {
+  transition:
+    background-color var(--motion-fast) var(--ease-in-out),
+    background-position var(--motion-base) var(--ease-in-out),
+    border-color var(--motion-fast) var(--ease-in-out),
+    color var(--motion-fast) var(--ease-in-out),
+    transform var(--motion-base) var(--ease-in-out);
+}
+
 /* No transition on .card: every card on this site is a container, not a
    control, so nothing triggers a hover state on one. The component contract
    reserves the lift for interactive cards, and there are none yet — a
    transition with no trigger is dead weight, and animating box-shadow would
-   also break the transform/opacity-only rule for no visible benefit. */
+   also break the transform/opacity-only rule for no visible benefit.
+
+   021: the data rows ARE reactive, and their rail and ground change together
+   rather than snapping. Colour only — no geometry, so no layout, and the row
+   under the pointer of a fast scroll never stutters. */
+.data-table tbody tr > *,
+.filter-choice {
+  transition:
+    background-color var(--motion-fast) var(--ease-in-out),
+    border-color var(--motion-fast) var(--ease-in-out),
+    color var(--motion-fast) var(--ease-in-out);
+}
 
 /* FR-017: the lift applies to keyboard focus as well as the pointer — a
    keyboard user should get the same feedback, not a lesser one. */
@@ -1516,8 +2163,11 @@
   transform: translateY(-1px);
 }
 
+/* 021: every button is pressable, and every button says so. The lift above
+   answers the pointer arriving; this answers it landing. Transform only, so a
+   press costs one composited frame and nothing else. */
 .btn:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.97);
 }
 
 /* The chevron turns rather than jumping (FR-017). */
@@ -1533,20 +2183,69 @@
    hidden to begin with beyond the first frames, so content is readable whether
    or not the animation runs — and under reduced motion it is over in 0.01ms. */
 @keyframes page-enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* 021: the blocks of a screen arrive one after another rather than all at once.
+
+   Deliberately split from the fade above, and deliberately transform-only: if
+   the wrapper faded AND each block faded, the two opacities would multiply and
+   the last block would spend most of its entrance at a quarter strength,
+   looking washed out rather than staged. So the wrapper carries the fade, the
+   blocks carry the rise, and neither is ever compounded.
+
+   The chain is bounded by SC-006b's 400ms: 160ms of stagger plus a 240ms rise
+   is exactly 400. That is why the stagger stops at the fifth block — the sixth
+   and beyond simply arrive with the fifth rather than pushing past the bound. */
+@keyframes block-rise {
+  from { transform: translateY(10px); }
+  to   { transform: translateY(0); }
+}
+
+/* 021: and the hinge on each card is drawn downwards, from the top edge. It is
+   the one thing on the page that is not just arriving — it is being put there,
+   which is what makes the entrance read as constructed rather than as a fade.
+
+   scaleY on a pseudo-element, so it is a compositor job and the 3px strip never
+   touches layout. It waits out the block's own rise before it starts. */
+@keyframes hinge-draw {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .page-enter {
     animation: page-enter var(--motion-entrance) var(--ease-out) 1 both;
   }
+
+  .page-enter > .stack > * {
+    animation: block-rise var(--motion-entrance) var(--ease-out) 1 both;
+  }
+
+  .page-enter > .stack > :nth-child(2) { animation-delay: calc(1 * var(--motion-stagger)); }
+  .page-enter > .stack > :nth-child(3) { animation-delay: calc(2 * var(--motion-stagger)); }
+  .page-enter > .stack > :nth-child(4) { animation-delay: calc(3 * var(--motion-stagger)); }
+  .page-enter > .stack > :nth-child(n+5) { animation-delay: calc(4 * var(--motion-stagger)); }
+
+  .page-enter .card::before,
+  .page-enter .disclosure::before {
+    animation: hinge-draw var(--motion-base) var(--ease-out) 1 both;
+    animation-delay: var(--motion-entrance);
+  }
+}
+
+/* 021: a button that leads somewhere says so, and the arrow moves the way the
+   reader is about to. Only on <a>: an <input type=submit> has no pseudo-element
+   to put it in, and two system tests match on that element by its value. */
+a.btn-arrow::after {
+  content: "\2192";
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+
+a.btn-arrow:hover::after,
+a.btn-arrow:focus-visible::after {
+  transform: translateX(3px);
 }
 
 /* FR-018: Turbo swaps a submit button's label while the form is in flight. The
@@ -1561,7 +2260,10 @@ form[aria-busy="true"] .btn {
 @layer components {
   .toast-layer {
     position: sticky;
-    top: var(--spacing-4);
+    /* Clear of the glass, which is sticky now and would otherwise be what a
+       pinned toast slides behind. --size-bar is the bar's published height;
+       the two are a pair. */
+    top: calc(var(--size-bar) + var(--spacing-4));
     z-index: 50;
     display: flex;
     flex-direction: column;

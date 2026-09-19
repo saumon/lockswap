@@ -11,7 +11,7 @@
     two places, and accessibility_test.rb and motion_test.rb both match on it. %>
 <turbo-frame id="locker-wish-list" data-turbo-action="advance"
              data-controller="frame-history">
-  <div class="card stack-tight">
+  <div class="card card--them stack-tight">
     <h2 class="card-title">Everyone looking for a locker</h2>
 
     <%# 017 FR-001: the filters sit with the list they narrow, well clear of the
@@ -82,17 +82,17 @@
           <tbody>
             <% @locker_wishes.each do |wish| %>
               <% row_id = "locker-wish-row-#{wish.user_id}" %>
-              <tr id="<%= row_id %>" role="row">
-                <td id="<%= row_id %>-floor" class="strong" role="cell" data-label="Looking for floor"><%= wish.floor %></td>
-                <td id="<%= row_id %>-person" role="cell" data-label="Person"><%= wish.user.email %></td>
+              <tr id="<%= row_id %>" role="row" data-rail="<%= wish.user_id == current_user.id ? "you" : "them" %>">
+                <td id="<%= row_id %>-floor" class="strong data-value" role="cell" data-label="Looking for floor"><%= wish.floor %></td>
+                <td id="<%= row_id %>-person" class="data-value" role="cell" data-label="Person"><%= wish.user.email %></td>
 
                 <%# Edge Case: never having saved a floor is distinct from having no
                     locker, and neither is an error — both are plain status text. %>
-                <td id="<%= row_id %>-current-floor" role="cell" data-label="Their floor" class="<%= "detail-value-empty" if wish.user.saved_floor.blank? %>">
+                <td id="<%= row_id %>-current-floor" role="cell" data-label="Their floor" class="data-value <%= "detail-value-empty" if wish.user.saved_floor.blank? %>">
                   <%= wish.user.saved_floor.presence || "Not set" %>
                 </td>
 
-                <td id="<%= row_id %>-current-locker" role="cell" data-label="Their locker" class="<%= "detail-value-empty" if wish.user.saved_locker_number.blank? %>">
+                <td id="<%= row_id %>-current-locker" role="cell" data-label="Their locker" class="data-value <%= "detail-value-empty" if wish.user.saved_locker_number.blank? %>">
                   <%= wish.user.saved_locker_number.presence || "No locker assigned" %>
                 </td>
 

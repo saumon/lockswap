@@ -125,7 +125,16 @@ whether they are looking for one — the same facts already shown on the homepag
 list, read off this one screen instead of two. Four filters sit above it, combinable and immediate: an
 exact locker number, a floor, a role, or part of an email, narrowing a long list down to the handful of
 accounts that actually matter, with a plain message when a combination matches nobody rather than a
-screen that looks broken.
+screen that looks broken. And the product has stopped looking like a tasteful default: the logo's two
+lockers — one blue, one green, changing places — are now the whole interface. Blue means what is
+yours and green means somebody else's, on the leading edge of every card, on the rail of every row,
+and on the buttons, which run the two colours as a gradient and reverse it under the pointer.
+Everything measured — a floor, a locker number, an address, a date — is set in a monospaced face with
+tabular figures, so a column of locker numbers lines up on the digit; everything written stays in the
+brand's own face. The page sits on a faint grid rather than an empty white field, the page titles have
+come out of their cards, and the header has become a strip of frosted glass that the content scrolls
+underneath. All of it is written down, so the next change extends it instead of replacing it with
+something else tasteful.
 
 | Feature | Status |
 | --- | --- |
@@ -149,6 +158,7 @@ screen that looks broken.
 | **018 — "It's a match!" tag on locker wishes** | ✅ Shipped |
 | **019 — "Their floor" pre-filled from your wish** | ✅ Shipped |
 | **020 — Locker/floor/wish and filters on the admin users screen** | ✅ Shipped |
+| **021 — Design system rebuilt around the swap axis** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -742,6 +752,68 @@ What feature 020 adds — see
   same grant control and its confirmation — the new columns and filters sit alongside all of it rather
   than in place of any of it.
 
+What feature 021 brings — this one has no spec of its own; it was a design pass, and the contract it
+produced is written down in [`CLAUDE.md`](CLAUDE.md):
+
+* **the logo has become the interface.** The mark is two lockers, one blue and one green, changing
+  places; those two colours now carry a fixed meaning everywhere and are never spent on decoration.
+  Blue is what belongs to the reader — their locker, their wish, their own row in a list, a proposal
+  they sent. Green is somebody else's — the pool of people looking, an offer made to them, a proposal
+  received. Navy is neither, and red is destructive. Having seen one screen you can read the next one
+  by colour before reading a word of it;
+* **cards are hung on a hinge, not floated on a shadow.** Each card carries a 3px coloured edge down
+  its leading side, taken from that axis, and no drop shadow at all. An identical soft grey shadow
+  under every card is precisely what makes a page of cards read as one undifferentiated mass; a
+  coloured edge says what the card is about before it is read. The data lists carry the same mark as a
+  2px rail on each row — permanent where the row has a side, on hover where it does not;
+* **there is one accent fill on the site**, at two sizes. The primary button, the action inside a
+  table row and the filter choice in force used to be three different green objects; they are now the
+  same one. It is the swap axis as a gradient, and both ends are lifted from the mark itself rather
+  than picked to look like it: the blue is the top stop of the blue door's own gradient, the green is
+  the green door's face;
+* **that fill reverses under the pointer.** The gradient is declared blue → green → blue and drawn at
+  twice the width of the control, so half of it shows at a time; hovering slides the window to the
+  other half. The button does not brighten and does not move — the two colours change places. On a
+  product about two people exchanging lockers, that is the only hover it should have;
+* **two typefaces, two jobs.** Nunito, the logo's own face, carries everything *written*: headings,
+  prose, labels. JetBrains Mono carries everything *measured*: floors, locker numbers, email
+  addresses, dates, column headings, filter chips and buttons — with tabular figures, so a column of
+  locker numbers lines up on the digit instead of drifting. Both are served from this application, one
+  variable file each, on the same terms 008 set for the first one. No text is uppercased anywhere;
+* **the header is frosted glass and the page scrolls underneath it.** White at 58% over a wide blur,
+  sticky at the top, with a hairline running blue to green beneath it — the axis, stated once at the
+  top of every screen. On a phone the menu opens as a full-width sheet of the same material rather
+  than a rounded card floating inside a full-bleed bar;
+* **the canvas is not blank.** A navy grid at 5%, at a 24px pitch — the locker bank the product is
+  about — so the page has a floor rather than being a white void with cards in it;
+* **page titles left their cards.** The most important line on each screen used to sit in the same
+  white rounded box as everything under it. It now sits directly on the grid, carrying the axis as a
+  gradient, because a page belongs to neither side — it is where the two meet;
+* **it is denser, because it is a tool.** Card padding, table rows and corner radii all came down; the
+  column is wider, to give the five- and seven-column tables room they were being squeezed out of. A
+  20px corner is the single most generic thing a card can do;
+* **the movement is staged, and it is bounded.** The page fades, its blocks rise in sequence 40ms
+  apart, and each card's hinge is drawn downwards — so a screen reads as constructed rather than as a
+  fade. The whole chain finishes in 400ms, which is the budget 008 set, and anyone who has asked their
+  system for less motion still gets none of it;
+* **every colour pair was computed, not eyeballed** — and where a claim could not be computed it was
+  measured off the rendered pixels instead. Whether the header's own labels survive content sliding
+  behind the glass, and whether the menu panel's blur was doing anything at all, were both settled by
+  sampling the screenshot rather than by argument. The second found a real bug: a `backdrop-filter` on
+  an ancestor silently stops a descendant's from seeing the page, so the panel had been declaring a
+  blur and painting a flat tint;
+* **one known exception, stated rather than buried.** The button label is white, and on this gradient
+  white measures 2.95:1 at the blue end and 1.87:1 at the green, against a 4.5:1 bar. It was set white
+  deliberately, over an ink label that measured 5.62:1 and 8.91:1 on the same fill. The automated audit
+  does not catch it — no tool computes contrast over a gradient — so it is recorded in the stylesheet,
+  in `CLAUDE.md`, and here, together with the two ways out of it. Nothing else on the site is below its
+  bar;
+* **two system test files were trimmed**, on request, for being flaky rather than wrong:
+  `locker_wish_filter_test.rb` was removed entirely, and three "click the control and check the
+  address changed" tests were removed from the homepage wish block's file. What those three asserted
+  is still asserted one level lower — the control's presence, its target, and its uniqueness — and the
+  suite went from 288 system tests to 255.
+
 ## 🧭 Method: Spec-Driven Development
 
 The project is built with **SDD** using [Spec Kit](https://github.com/github/spec-kit): the
@@ -756,6 +828,11 @@ same chain of commands, whose artifacts are versioned under `specs/`:
 | `/speckit-tasks` | `tasks.md` | the ordered breakdown into tasks |
 | `/speckit-analyze` | — | checks the three documents against each other |
 | `/speckit-implement` | the code | runs the tasks, tests first |
+
+One feature is not in `specs/`: **021** was a design pass rather than a change of behaviour, driven
+by review of the rendered screens instead of by a specification, and what it settled is recorded as a
+standing contract in [`CLAUDE.md`](CLAUDE.md) rather than as a one-off spec. Anything that changes
+what the application *does* still goes through the chain above.
 
 The project's non-negotiable rules (code quality, testing, experience consistency, performance) live
 in [`.specify/memory/constitution.md`](.specify/memory/constitution.md) and are checked at the
@@ -823,6 +900,12 @@ The accessibility audit runs as an ordinary system test, screen by screen, so a 
 control that cannot be reached by keyboard breaks the build like any other regression. It carries one
 documented exemption — the colour contrast of the brand wordmark, which the WCAG standard exempts as
 a logotype — and that exemption is scoped to that one element and that one rule.
+
+It has one blind spot worth naming: **no automated tool computes contrast over a gradient**, so the
+white label on the accent buttons introduced in 021 passes the audit while measuring 1.87:1 at the
+green end of its fill. That is a deliberate choice rather than an oversight, and it is the only thing
+on the site below its bar — see feature 021 above, and the note on `--color-action-ink` in the
+stylesheet, for the numbers and the two ways out.
 
 Since 012 the same suite also drives the **viewport itself**, at a phone width and a desktop width,
 and asserts the things that have to be true of every screen at both: that the page does not scroll

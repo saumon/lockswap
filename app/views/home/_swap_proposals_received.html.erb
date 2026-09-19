@@ -2,16 +2,16 @@
     single button; declining opens a <details> disclosure holding the optional
     comment, the same no-JavaScript pattern 002 and 003 use for deliberate
     actions. %>
-<div id="swap-proposals-received" class="card stack-tight">
+<div id="swap-proposals-received" class="card card--them stack-tight">
   <h2 class="card-title">Swap proposals for you</h2>
 
   <ul class="stack-tight">
     <% @received_pending_proposals.each do |proposal| %>
-      <li id="swap-proposal-received-<%= proposal.id %>" class="tile">
+      <li id="swap-proposal-received-<%= proposal.id %>" class="tile tile--them">
         <div class="tile-head">
           <div>
             <p>
-              <span class="strong"><%= proposal.requester.email %></span> would like to swap lockers with you
+              <span class="strong data-value"><%= proposal.requester.email %></span> would like to swap lockers with you
             </p>
             <p class="meta">
               Floor <%= proposal.requester.saved_floor.presence || "not set" %> ·

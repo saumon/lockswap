@@ -15,6 +15,13 @@
 <% end %>
 
 <div class="stack">
+  <%# 021: this screen had no <h1> at all — every other one names itself, and
+      this is the screen the product is actually for. Outside the panel and
+      outside the list, on the canvas, like the titles on the other screens. %>
+  <div class="page-head">
+    <h1 class="page-title">Locker wishes</h1>
+  </div>
+
   <%= render "locker_wishes/locker_wish_panel" %>
   <%= render "locker_wishes/locker_wish_list" %>
 </div>

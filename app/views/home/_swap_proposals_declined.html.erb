@@ -1,12 +1,12 @@
 <%# 004 FR-007/FR-009: proposals of this user's that came back declined, with
     whatever the decliner said about it. Shown once — the controller marks them
     acknowledged as it hands them over — and kept afterwards in the history. %>
-<div id="swap-proposals-declined" class="card stack-tight">
+<div id="swap-proposals-declined" class="card card--alert stack-tight">
   <h2 class="card-title">Proposals that were declined</h2>
 
   <ul class="stack-tight">
     <% @recently_declined_sent.each do |proposal| %>
-      <li id="swap-proposal-declined-<%= proposal.id %>" class="tile">
+      <li id="swap-proposal-declined-<%= proposal.id %>" class="tile tile--you">
         <div class="row">
           <span class="badge badge-error">Declined</span>
         </div>

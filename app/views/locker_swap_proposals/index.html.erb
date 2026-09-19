@@ -4,8 +4,12 @@
     it ended up, and why if somebody said. Read-only by design — the homepage is
     where proposals are acted on; this is where they are looked back at. %>
 <div class="stack">
-  <div id="swap-proposal-history" class="card stack-tight">
+  <%# 021: the title leaves the card, like every other screen's. %>
+  <div class="page-head">
     <h1 class="page-title">Your swap proposals</h1>
+  </div>
+
+  <div id="swap-proposal-history" class="card stack-tight">
 
     <% if @proposals.any? %>
       <%# 012 FR-005: six columns is more than a phone can hold, so below the
@@ -36,10 +40,14 @@
             <% @proposals.each do |proposal| %>
               <% sent = proposal.requester_id == current_user.id %>
               <% row_id = "swap-proposal-history-row-#{proposal.id}" %>
-              <tr id="<%= row_id %>" role="row">
+              <%# 021: the swap axis, on the one table where direction is the
+                  subject. Blue for a proposal this reader sent, green for one
+                  they received — the same two colours the cards are hung on,
+                  and the Direction column says it in words beside them. %>
+              <tr id="<%= row_id %>" role="row" data-rail="<%= sent ? "you" : "them" %>">
                 <td class="strong" role="cell" data-label="Direction"><%= sent ? "Sent" : "Received" %></td>
-                <td role="cell" data-label="Person"><%= sent ? proposal.recipient.email : proposal.requester.email %></td>
-                <td class="meta" role="cell" data-label="Sent"><%= l proposal.created_at, format: :long %></td>
+                <td class="data-value" role="cell" data-label="Person"><%= sent ? proposal.recipient.email : proposal.requester.email %></td>
+                <td class="meta data-value" role="cell" data-label="Sent"><%= l proposal.created_at, format: :long %></td>
 
                 <%# "accepted" is the spec's "exchange in progress"; the column
                     says what a reader would call it, not what the column stores. %>

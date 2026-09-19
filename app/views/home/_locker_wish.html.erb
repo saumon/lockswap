@@ -12,7 +12,7 @@
     Every state links to the wish page rather than acting here: declaring,
     changing and cancelling all live there, and this block only reports and
     points (FR-009). %>
-<div id="home-locker-wish" class="card stack-tight">
+<div id="home-locker-wish" class="card card--you stack-tight">
   <% if current_user.locker_wish&.persisted? %>
     <%# The heading the wish page's own panel carries, deliberately: the same card
         title for the same thing on both screens is continuity, not repetition. %>
@@ -27,11 +27,14 @@
       <dd id="home-locker-wish-floor" class="detail-value"><%= current_user.locker_wish.saved_floor %></dd>
     </dl>
 
-    <div class="row">
-      <%# A link, not a button_to: this navigates and changes nothing, so it is
-          announced as a link and the back button behaves (research.md §2). %>
-      <%= link_to "Review locker wishes! 🥷", locker_wishes_path, class: "btn btn-primary" %>
-    </div>
+    <%# 021: no .row wrapper. .row is a flex row, so a button inside it hugs its
+        own text; as a direct child of the card's own column it stretches to the
+        card — which is exactly what "Save locker details" does inside its
+        form.stack-tight. The two match because they are laid out the same way,
+        not because a width was pinned to make them agree. %>
+    <%# A link, not a button_to: this navigates and changes nothing, so it is
+        announced as a link and the back button behaves (research.md §2). %>
+    <%= link_to "Review locker wishes! 🥷", locker_wishes_path, class: "btn btn-primary btn-arrow" %>
   <% elsif current_user.saved_locker_number.present? %>
     <%# FR-004: a locker on file and nothing said about it. The heading asks the
         question the button answers, rather than calling this "your locker
@@ -47,9 +50,12 @@
       after and find someone to swap with.
     </p>
 
-    <div class="row">
-      <%= link_to "I want to switch my locker! 👀", locker_wishes_path, class: "btn btn-primary" %>
-    </div>
+    <%# 021: no .row wrapper. .row is a flex row, so a button inside it hugs its
+        own text; as a direct child of the card's own column it stretches to the
+        card — which is exactly what "Save locker details" does inside its
+        form.stack-tight. The two match because they are laid out the same way,
+        not because a width was pinned to make them agree. %>
+    <%= link_to "I want to switch my locker! 👀", locker_wishes_path, class: "btn btn-primary btn-arrow" %>
   <% else %>
     <%# FR-005, FR-011: no locker, and nothing declared. Having nothing to trade
         is the reason to be here, not a reason to be left out.
@@ -64,8 +70,11 @@
       know you're waiting for one.
     </p>
 
-    <div class="row">
-      <%= link_to "I want a locker! 🙏", locker_wishes_path, class: "btn btn-primary" %>
-    </div>
+    <%# 021: no .row wrapper. .row is a flex row, so a button inside it hugs its
+        own text; as a direct child of the card's own column it stretches to the
+        card — which is exactly what "Save locker details" does inside its
+        form.stack-tight. The two match because they are laid out the same way,
+        not because a width was pinned to make them agree. %>
+    <%= link_to "I want a locker! 🙏", locker_wishes_path, class: "btn btn-primary btn-arrow" %>
   <% end %>
 </div>
