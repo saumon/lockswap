@@ -92,6 +92,13 @@
                     the row itself, rather than offering a control that is only
                     going to be refused (FR-002, FR-004, FR-018). %>
                 <td id="<%= row_id %>-swap" role="cell" data-label="Swap">
+                  <%# 018 FR-006/FR-010: a sibling of whatever else this cell shows,
+                      never a replacement — it sits alongside "Proposal pending" or
+                      the "Propose swap" button just as easily as it sits alone.
+                      Never on the viewer's own row, whatever the floors compare as. %>
+                  <% if wish.user_id != current_user.id && wish.reciprocal_match?(@viewer_current_floor, @viewer_wish_floor) %>
+                    <span class="badge badge-success">It's a match!</span>
+                  <% end %>
                   <% if wish.user_id == current_user.id %>
                     <span class="meta">This is you</span>
                   <% elsif @viewer_in_progress %>

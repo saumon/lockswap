@@ -150,6 +150,15 @@ class AccessibilityTest < ApplicationSystemTestCase
     assert_axe_clean
   end
 
+  # 018: bob reciprocates with henry and iris, so this is the one state that
+  # renders the "It's a match!" badge.
+  test "a locker wish list with a match tag is accessible" do
+    log_in_as users(:bob)
+    visit locker_wishes_path
+    assert_text "It's a match!"
+    assert_axe_clean
+  end
+
   test "a locker wish list matching no filter is accessible" do
     log_in_as @user
     visit locker_wishes_path(looking_for: "7", current_floor: "10")

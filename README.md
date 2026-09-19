@@ -113,7 +113,9 @@ registration stays open to everyone exactly as it was. And the list of everyone 
 has stopped being one long read: it narrows by the floor people are after, by the floor they hold
 today, or by both at once — which is the shortlist of people a straight two-way swap would suit. The
 address carries what is being filtered, so a narrowed view can be shared or come back to, and only the
-list moves when it changes.
+list moves when it changes. And the list now points out the one swap guaranteed to work both ways: a
+row is tagged **It's a match!** the moment its person is on the floor you want and wants the floor you
+are on, computed fresh every time the list is shown rather than remembered from before.
 
 | Feature | Status |
 | --- | --- |
@@ -134,6 +136,7 @@ list moves when it changes.
 | **015 — Granting administrator rights** | ✅ Shipped |
 | **016 — Danger Zone: allowed email domains** | ✅ Shipped |
 | **017 — Floor filters on the locker wishes list** | ✅ Shipped |
+| **018 — "It's a match!" tag on locker wishes** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -653,6 +656,26 @@ What feature 017 adds — see
   and does nothing else. Each control is a named landmark of its own, carrying the same words the
   column headings already use, and the choice in force is announced rather than merely coloured.
 
+What feature 018 adds — see
+[`specs/018-wishes-match-tag/spec.md`](specs/018-wishes-match-tag/spec.md):
+
+* **a row is tagged "It's a match!" the moment it reciprocates with you.** Not "this person is on the
+  floor I want" alone, and not "this person wants the floor I'm on" alone — both, at once. That is the
+  one kind of swap guaranteed to be accepted from both sides, and until now nothing on the screen said
+  which rows qualified;
+* **the tag lives where the row's other status text already lives.** It appears in the same *Swap*
+  column as *Proposal pending* or *This is you*, alongside whichever of those already applies rather
+  than in place of it — one more member of a family the screen already had, not a new one;
+* **nothing shows without something of yours to reciprocate.** No wish declared, or no current floor
+  on file, and no row is tagged, however the floors happen to line up. A row whose person has never
+  saved a floor can't be tagged either — "Not set" isn't a floor to match;
+* **your own row is never tagged**, even in the edge case where your current floor and the one you
+  want happen to be the same value;
+* **it's computed fresh, never remembered.** Cancel or change either side of the pair and the tag is
+  gone the next time the list is shown — there is nothing cached to go stale;
+* **it survives the floor filters from 017 unchanged**, adds no query of its own, and reuses the
+  badge the screen already uses for other statuses rather than a new visual language.
+
 ## 🧭 Method: Spec-Driven Development
 
 The project is built with **SDD** using [Spec Kit](https://github.com/github/spec-kit): the
@@ -833,7 +856,12 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   out of the *Their floor* filter and coming back when it is cleared, a combination nobody satisfies
   saying so in its own words, a nonsense floor typed into the address, the filters surviving a save
   and a cancel of your own wish, and the two checks a headless browser makes awkwardly: moving across
-  the choices with a keyboard without the list re-filtering, and the filter bar wrapping on a phone.
+  the choices with a keyboard without the list re-filtering, and the filter bar wrapping on a phone;
+* [`specs/018-wishes-match-tag/quickstart.md`](specs/018-wishes-match-tag/quickstart.md) —
+  declaring a wish that reciprocates with someone else's and watching the tag appear on just that row,
+  confirming it stays away with no wish of your own or no saved floor, confirming your own row never
+  carries it, proposing a swap to a tagged row and watching the tag sit next to *Proposal pending*
+  rather than disappear, the tag surviving a floor filter, and cancelling the wish to watch it go.
 
 ## 🚢 Deploy
 
