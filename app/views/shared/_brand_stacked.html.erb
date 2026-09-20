@@ -32,13 +32,22 @@
       image arrives and nothing jumps when it does. %>
   <%# fetchpriority high because this is the hero of the page: it should be
       fetched ahead of anything else the browser finds. %>
-  <%= image_tag "brand-mark.png",
-        alt: "",
-        width: 800,
-        height: 600,
-        fetchpriority: "high",
-        data: { brand_mark: true },
-        class: "brand-mark brand-mark-flourish brand-mark-loop" %>
+  <%# 024: the same clockwise spin as the header mark, on a wrapping span
+      rather than the image itself — the image already owns the entrance's
+      scale(), and a second transform animation on the same element would
+      replace it outright rather than combine with it (see the header
+      lockup's own comment on this). The delay before it starts is added in
+      the stylesheet, scoped to this screen, so the spin waits out the
+      entrance the same way the pulse already does. %>
+  <span class="brand-mark-spin">
+    <%= image_tag "brand-mark.png",
+          alt: "",
+          width: 800,
+          height: 600,
+          fetchpriority: "high",
+          data: { brand_mark: true },
+          class: "brand-mark brand-mark-flourish brand-mark-loop" %>
+  </span>
 
   <p class="brand-wordmark brand-wordmark-display"><span class="brand-wordmark-lock">Lock</span><span class="brand-wordmark-swap">Swap</span></p>
 

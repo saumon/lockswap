@@ -306,14 +306,14 @@ class MotionTest < ApplicationSystemTestCase
       JS
     end
 
-    # Blocks until the brand entrance has finished. The pulse is excluded because
-    # it never finishes by design — waiting on "every animation" would wait out
-    # the timeout on every call.
+    # Blocks until the brand entrance has finished. The pulse and the 024 spin
+    # are excluded because neither ever finishes by design — waiting on "every
+    # animation" would wait out the timeout on every call.
     def wait_for_brand_entrance(timeout: 5)
       Timeout.timeout(timeout) do
         sleep 0.05 until page.evaluate_script(<<~JS)
           document.getAnimations()
-            .filter(a => a.animationName !== 'brand-fade-pulse')
+            .filter(a => a.animationName !== 'brand-fade-pulse' && a.animationName !== 'brand-spin')
             .every(a => a.playState !== 'running')
         JS
       end
