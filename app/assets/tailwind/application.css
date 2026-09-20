@@ -969,18 +969,26 @@
      That leaves the <details> itself an empty box until it is opened, which is
      why the rule that separates the form from the values below sits on the body
      and not on the box — a closed editor would otherwise draw a line across the
-     card for no reason. */
+     card for no reason.
+
+     022: a rail rather than a card now — the same structural treatment
+     .page-head uses (a coloured edge plus matching inset) rather than a
+     gradient, because this block is unambiguously the reader's own, not a
+     page belonging to neither side. */
   .locker-profile {
     position: relative;
+    padding-inline-start: var(--spacing-4);
+    border-inline-start: 3px solid var(--color-rail-you);
   }
 
   .locker-profile-editor-summary {
     position: absolute;
-    /* Centred against the card title's line box, and pulled out by its own
-       padding so the drawing lines up with the card's content edge rather than
-       the hit area's. */
-    top: calc(var(--spacing-6) - 0.125rem);
-    right: var(--spacing-5);
+    /* Centred against the title's line box. 022: recalculated for a container
+       with no padding of its own (the block is plain content, not a card) —
+       these used to be measured from the card's padding box, so both values
+       drop by exactly the padding that stopped applying (--spacing-5). */
+    top: calc(var(--spacing-6) - var(--spacing-5) - 0.125rem);
+    right: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -998,9 +1006,15 @@
     display: none;
   }
 
-  .locker-profile-editor-summary:hover {
-    background-color: var(--color-canvas);
-    color: var(--color-ink);
+  /* 022: gated to real pointer devices. Without this, tapping the control to
+     open the editor applies :hover with nothing to move away from afterwards
+     — a touchscreen has no hover to leave — so the control was left looking
+     permanently filled instead of transparent again once tapped. */
+  @media (hover: hover) {
+    .locker-profile-editor-summary:hover {
+      background-color: var(--color-canvas);
+      color: var(--color-ink);
+    }
   }
 
   .locker-profile-editor-body {
@@ -1587,6 +1601,17 @@
     gap: var(--spacing-4);
   }
 
+  /* 022: below the breakpoint, each field's label and value share one
+     compact line ("Floor 3") instead of the label stacking above the value —
+     four lines of Floor/Locker number becomes two. Reverted inside the
+     min-width query below, so the desktop side-by-side column layout keeps
+     showing label-above-value exactly as before. */
+  .detail-grid > div {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-2);
+  }
+
   /* 012 FR-018a: this was the site's only width-based media query, at 40rem.
      It moves to the one breakpoint so that a single value governs everywhere. */
   @media (min-width: 48rem) {
@@ -1594,6 +1619,10 @@
       grid-template-columns: repeat(2, minmax(0, 15rem));
       justify-content: start;
       gap: var(--spacing-6);
+    }
+
+    .detail-grid > div {
+      display: block;
     }
   }
 
@@ -1614,6 +1643,17 @@
     font-weight: 600;
     letter-spacing: -0.02em;
     margin-top: var(--spacing-1);
+  }
+
+  /* 022: a single term/value pair reading as one sentence — "Looking for a
+     locker on floor 7" — rather than the value stacked on its own line below.
+     Only the display changes: .detail-term/.detail-value keep their type
+     styling, and margin-top has no effect once the box is inline, so nothing
+     needs to override it. The space before the number comes from the
+     whitespace already between the tags in markup. */
+  .detail-inline .detail-term,
+  .detail-inline .detail-value {
+    display: inline;
   }
 
   /* Never having a value set is an ordinary state, not a warning. 021: and

@@ -159,6 +159,7 @@ something else tasteful.
 | **019 — "Their floor" pre-filled from your wish** | ✅ Shipped |
 | **020 — Locker/floor/wish and filters on the admin users screen** | ✅ Shipped |
 | **021 — Design system rebuilt around the swap axis** | ✅ Shipped |
+| **022 — Compact floor/locker label alignment** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -814,6 +815,23 @@ produced is written down in [`CLAUDE.md`](CLAUDE.md):
   is still asserted one level lower — the control's presence, its target, and its uniqueness — and the
   suite went from 288 system tests to 255.
 
+What feature 022 adds — see
+[`specs/022-align-floor-widgets/spec.md`](specs/022-align-floor-widgets/spec.md):
+
+* **the floor sought reads as one sentence.** "Your locker search" used to put the floor number on a
+  line of its own, under "Looking for a locker on floor"; the two now read together, on the homepage
+  and on the dedicated locker wishes page alike;
+* **"Your locker" is two compact lines on a phone, not four.** Floor and its number, then Locker
+  number and its value (or "No locker assigned"), each now share one line below the breakpoint instead
+  of stacking the label above the value — the existing side-by-side desktop layout is untouched;
+* **"Your locker" left its card on the homepage, but kept its colour.** It reads as plain content on
+  the canvas now, carrying a solid blue rail rather than a full card — the same inset the page title
+  uses, coloured to say "yours" rather than the title's neutral gradient — while "Your locker search"
+  right above it keeps its card exactly as before;
+* **the edit pencil no longer sticks.** Its hover fill is now scoped to devices that actually hover;
+  a tap has no pointer-leave to end it, so on a touchscreen the control used to stay filled in after
+  being tapped open instead of settling back to transparent.
+
 ## 🧭 Method: Spec-Driven Development
 
 The project is built with **SDD** using [Spec Kit](https://github.com/github/spec-kit): the
@@ -1025,7 +1043,12 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   typing stops, moving across the floor and role choices with a keyboard without the list re-filtering,
   a combination nobody satisfies showing its own message with every filter still visible, clearing a
   filter to watch the list widen back out, and granting administrator rights from a filtered list to
-  find the same filters still applied on the way back.
+  find the same filters still applied on the way back;
+* [`specs/022-align-floor-widgets/quickstart.md`](specs/022-align-floor-widgets/quickstart.md) —
+  reading the floor sought as one sentence on the homepage and on the locker wishes page, checking
+  "Your locker" on a phone for one line per field against the desktop layout staying side by side,
+  and confirming "Your locker" has no card border or background on the homepage while "Your locker
+  search" above it keeps its own.
 
 ## 🚢 Deploy
 

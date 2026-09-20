@@ -51,6 +51,22 @@ class HomepageLockerWishTest < ApplicationSystemTestCase
     end
   end
 
+  # 022: the floor sought reads as one sentence — "Looking for a locker on
+  # floor 7" — rather than the number sitting on a line of its own below it.
+  test "the floor sought sits on the same line as the sentence introducing it" do
+    log_in_as users(:bob)
+
+    assert_same_line "#{BLOCK} .detail-term", WISH_FLOOR
+  end
+
+  # 022 FR-006: "Your locker" loses its card treatment on the homepage, but
+  # every other homepage card — starting with this one — is unaffected.
+  test "the block keeps its card treatment when Your locker loses its own" do
+    log_in_as users(:bob)
+
+    assert_selector "#{BLOCK}.card.card--you"
+  end
+
   # FR-002: the locker card sits directly below this block and already says what
   # bob has. Repeating it here would be a second copy of the same two values,
   # free to drift from the first.

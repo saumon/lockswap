@@ -43,6 +43,18 @@ class LockerWishTest < ApplicationSystemTestCase
     assert_equal "4", users(:alice).reload.locker_wish.floor
   end
 
+  # 022: the same inline treatment as the homepage's copy of this panel —
+  # "Looking for a locker on floor 4" reads as one sentence here too.
+  test "the floor sought sits on the same line as the sentence introducing it" do
+    log_in_as users(:alice)
+    visit locker_wishes_path
+    open_wish_form "I'm looking for a locker"
+    submit_wish "4"
+    assert_selector "#locker-wish-floor", text: "4"
+
+    assert_same_line "#locker-wish-panel .detail-term", "#locker-wish-floor"
+  end
+
   # Acceptance Scenario 4 — wanting a different floor while already holding a
   # locker — is covered in test/controllers/locker_wishes_controller_test.rb
   # instead. Through the browser it was the one scenario that would not hold
