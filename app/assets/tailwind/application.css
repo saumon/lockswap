@@ -261,6 +261,11 @@
      entrance: it repeats for as long as the mark is on screen, so it is paced
      to read as breathing rather than as something waiting to finish. */
   --motion-brand-loop: 3000ms;
+  /* 024: the header mark's clockwise spin. One full turn takes the first 45%
+     of this, so the turn itself reads as a brisk ~1.8s and the remaining time
+     is the pause at rest — a loop that reads as an occasional flourish, not a
+     spinner. */
+  --motion-brand-spin: 4000ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   /* Gentle and near-even across its length, so a fade reads as a fade. */
@@ -475,6 +480,26 @@
 .brand-lockup:hover .brand-mark,
 .brand-lockup:focus-visible .brand-mark {
   transform: scale(1.03);
+}
+
+/* 024: the header mark's perpetual clockwise turn. A wrapping span, not
+   .brand-mark itself, carries it — see the render call's comment for why —
+   so the hover lift above keeps animating cleanly underneath it. */
+.brand-mark-spin {
+  display: inline-flex;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .brand-mark-spin {
+    animation: brand-spin var(--motion-brand-spin) var(--ease-in-out) infinite;
+  }
+
+  /* 024: on the full-brand screens the spin sits behind the same entrance the
+     pulse already waits out (FR-006 above), so the mark isn't turning while
+     it's still fading and scaling up out of a blur. */
+  .brand-stacked .brand-mark-spin {
+    animation-delay: var(--motion-brand);
+  }
 }
 
 /* FR-022: the mark's one-off flourish on the full-brand screens is a fade.
@@ -2450,6 +2475,22 @@ form[aria-busy="true"] .btn {
   }
   50% {
     opacity: 0.6;
+  }
+}
+
+/* 024: one clockwise turn, then a hold at rest until the loop repeats.
+   Ending the held frame at rotate(360deg) rather than 0deg means the jump
+   back to 0% next cycle is a no-op visually — 360deg and 0deg paint
+   identically — so the loop has no seam. */
+@keyframes brand-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  45% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(360deg);
   }
 }
 
