@@ -59,6 +59,60 @@ class LockerProfileTest < ApplicationSystemTestCase
     assert_no_selector "[role=alert]"
   end
 
+  # 022: on mobile, each field's label and value read as one compact line
+  # ("Floor 3", "Locker number B12") instead of the label stacking above the
+  # value. `.detail-grid > div:has(...)` reaches each field's own <dt> from
+  # its <dd> id — scoped to a direct child of .detail-grid, since neither
+  # <dt> carries an id of its own and the outer .stack-tight wrapper also
+  # "has" both ids as descendants.
+  test "on mobile, each field's label and value share one line" do
+    log_in_as users(:bob)
+
+    with_viewport(:phone) do
+      assert_same_line ".detail-grid > div:has(#locker-profile-floor) dt", "#locker-profile-floor"
+      assert_same_line ".detail-grid > div:has(#locker-profile-locker-number) dt", "#locker-profile-locker-number"
+    end
+  end
+
+  # Same compaction applies to the "No locker assigned" placeholder — it is an
+  # ordinary value for this purpose, not a special case.
+  test "on mobile, the label and the no-locker placeholder share one line" do
+    log_in_as users(:carol)
+
+    with_viewport(:phone) do
+      assert_same_line ".detail-grid > div:has(#locker-profile-floor) dt", "#locker-profile-floor"
+      assert_same_line ".detail-grid > div:has(#locker-profile-locker-number) dt", "#locker-profile-locker-number"
+    end
+  end
+
+  # FR-003: the existing desktop layout — label above value, the two fields
+  # side by side — must be exactly what it was before the mobile change above.
+  test "at desktop width, floor and locker number keep their existing side-by-side layout" do
+    log_in_as users(:bob)
+
+    assert_stacked ".detail-grid > div:has(#locker-profile-floor) dt", "#locker-profile-floor", "desktop"
+    assert_stacked ".detail-grid > div:has(#locker-profile-locker-number) dt", "#locker-profile-locker-number", "desktop"
+
+    floor_rect = element_rect("#locker-profile-floor")
+    locker_number_rect = element_rect("#locker-profile-locker-number")
+    assert_operator floor_rect["left"], :<, locker_number_rect["left"],
+      "expected Floor and Locker number to remain side by side at desktop width"
+  end
+
+  # 022 FR-004/FR-005: on the homepage, "Your locker" is plain content, not a
+  # boxed card — but it still says whose locker this is and what is on file.
+  test "on the homepage, Your locker has no card container but keeps its content" do
+    log_in_as users(:bob)
+
+    assert_no_selector ".card#locker-profile"
+    assert_no_selector "#locker-profile.card"
+    within "#locker-profile" do
+      assert_selector "h2", text: "Your locker"
+      assert_selector "#locker-profile-floor", text: "3"
+      assert_selector "#locker-profile-locker-number", text: "B12"
+    end
+  end
+
   # User Story 2 (FR-005..FR-008, FR-010, FR-011).
 
   # Acceptance Scenario 1: two fields, never one combined input.

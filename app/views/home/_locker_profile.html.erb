@@ -2,10 +2,16 @@
     Reads the saved values rather than the attributes, so a rejected edit shows
     the error next to what is still on file instead of next to itself.
 
-    009 FR-007: the way in to editing is the pencil in the card's corner. The
-    caller passes editable: false while a swap proposal holds these values, where
-    005's explanation takes the control's place. %>
-<div id="locker-profile" class="card card--you locker-profile">
+    009 FR-007: the way in to editing is the pencil in the corner. The caller
+    passes editable: false while a swap proposal holds these values, where
+    005's explanation takes the control's place.
+
+    022: plain content on the homepage rather than a card — this partial's
+    only call site is home/index.html.erb, so the card classes are dropped
+    here directly instead of behind a flag with a single value everywhere it
+    would be checked (research.md §3). "Your locker search" above it keeps
+    its own card unchanged. %>
+<div id="locker-profile" class="locker-profile">
   <div class="stack-tight">
     <h2 class="card-title">Your locker</h2>
 

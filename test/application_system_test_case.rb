@@ -249,6 +249,28 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
         undersized.map { |t| "#{t["name"].inspect} #{t["w"]}x#{t["h"]}" }.join(", ")
   end
 
+  # 022: a label and its value read as one line when their vertical centers
+  # coincide — measured rather than assumed, the same way keyboard_tab_rects
+  # measures reading order instead of trusting DOM position alone.
+  def assert_same_line(a, b, context = nil)
+    rect_a = element_rect(a)
+    rect_b = element_rect(b)
+
+    assert_in_delta (rect_a["top"] + rect_a["bottom"]) / 2.0,
+      (rect_b["top"] + rect_b["bottom"]) / 2.0, 4,
+      "expected #{a.inspect} and #{b.inspect} to sit on the same line#{" (#{context})" if context}"
+  end
+
+  # The inverse of assert_same_line: top_selector's box ends at or above
+  # bottom_selector's box starts, i.e. label-above-value rather than inline.
+  def assert_stacked(top_selector, bottom_selector, context = nil)
+    top_rect = element_rect(top_selector)
+    bottom_rect = element_rect(bottom_selector)
+
+    assert_operator top_rect["bottom"], :<=, bottom_rect["top"] + 1,
+      "expected #{top_selector.inspect} to sit above #{bottom_selector.inspect}#{" (#{context})" if context}"
+  end
+
   teardown do
     if @emulated_media
       page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", features: [])
@@ -309,6 +331,16 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
 
         sleep 0.05
       end
+    end
+
+    def element_rect(selector)
+      page.evaluate_script(<<~JS)
+        (() => {
+          const el = document.querySelector(#{selector.to_json});
+          const r = el.getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
+        })()
+      JS
     end
 
     def audit_page(within: nil, excluding: nil, skipping: nil)
