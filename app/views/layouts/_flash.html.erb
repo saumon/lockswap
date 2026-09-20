@@ -13,29 +13,44 @@
   <%# data-turbo-temporary keeps a spent message out of Turbo's page cache, so
       going back to an earlier page does not replay a notification the visitor
       has already read and dismissed. %>
-  <%# Top right, below the header: near where the eye already is after clicking
-      something, clear of the navigation — which an overlay across the top would
-      both hide and take the clicks for — and over the empty margin beside the
-      content rather than over the content itself. The container stays full
-      width so a narrow screen shrinks the message instead of pushing it off
-      the left edge.
+  <%# Bottom right, fixed to the viewport (023, resolved in the 2026-09-20
+      clarification — spec.md): clear of the navigation at every width without
+      needing to know the header's height, and over the empty margin beside
+      the content rather than over the content itself. The container's own
+      max-width keeps it inside the viewport on a narrow screen rather than
+      pushing it off an edge.
 
-      008: the layer is sticky at the top of <main> with zero height rather than
-      fixed at a hard-coded offset. A fixed offset assumed a one-line header; at
-      360px the navigation wraps and the message landed on top of it. Anchoring
-      to <main> keeps it clear of the header at every width with no magic number,
-      and zero height means it still takes no layout space — notification_test
+      `position: fixed` in application.css's .toast-layer rule takes the layer
+      out of the page's flow entirely, on its own — notification_test still
       asserts <main>'s rectangle is identical with and without a message. %>
-  <div data-turbo-temporary class="toast-layer">
+  <div data-turbo-temporary class="toast-layer" data-controller="toast-layer">
     <% notifications.each do |message, role, palette| %>
       <div class="toast pointer-events-auto <%= palette %>"
            role="<%= role %>"
            data-controller="notification"
+           data-toast-layer-target="toast"
            data-notification-duration-value="<%= Rails.configuration.x.notification_auto_dismiss_ms %>"
            data-action="mouseenter->notification#pause
                         mouseleave->notification#resume
                         focusin->notification#pause
                         focusout->notification#resume">
+        <%# Decorative only — role="status"/"alert" plus the message text already
+            carry the meaning to assistive technology; an aria-label here would
+            announce the type twice. Color is never the only signal (CLAUDE.md),
+            so this is the icon half of that pair, not the whole of it. %>
+        <% if palette == "toast-success" %>
+          <svg class="toast-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5" />
+            <path d="M6 10.5l2.5 2.5L14 7.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        <% else %>
+          <svg class="toast-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5" />
+            <path d="M10 6v5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+            <circle cx="10" cy="13.5" r="0.9" fill="currentColor" />
+          </svg>
+        <% end %>
+
         <span class="min-w-0 flex-1 break-words"><%= message %></span>
 
         <%# Tabbing to this button also holds the message open, so a keyboard

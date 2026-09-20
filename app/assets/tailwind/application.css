@@ -1059,27 +1059,72 @@
     margin-bottom: var(--spacing-2);
   }
 
-  /* --- Toast (007's behaviour, 008's appearance) --------------------------
+  /* --- Toast (007's behaviour, 023's redesign) -----------------------------
      Stays in a fixed overlay: notification_test.rb asserts <main>'s rectangle
-     is identical with and without a notification present. */
+     is identical with and without a notification present.
+
+     023: the left edge keeps the same status-color mechanism 008 shipped
+     (research.md §3) — only the finish around it changes: --radius-lg instead
+     of --radius-md (12px is the largest this app uses, CLAUDE.md's Layout
+     section). --shadow-lg stays as the base — the token's own definition
+     (above, "Spacing, radius, shadow") names the toast as one of exactly two
+     things on the whole site it exists for, the other being the menu panel —
+     plus a second, tighter layer on top of it: --shadow-lg alone is a wide,
+     soft diffusion tuned for a panel that shares the screen with the page
+     behind it; the toast sits over the page instead, so it gets a closer,
+     more opaque shadow as well, for a sharper lift rather than a wider one.
+     Scoped to .toast rather than raising --shadow-lg itself, since that
+     token also draws the menu panel, which was not asked to get heavier.
+
+     Sized up a step from the first pass: --text-sm to --text-body (the same
+     size the page's own prose runs at, rather than a smaller secondary
+     size), padding from --spacing-4/5 to --spacing-5/6, and max-width from
+     26rem to 30rem so the roomier text still has space to breathe. The icon
+     and dismiss glyph scale with it (both below) so nothing in the card
+     looks left behind by the larger message. */
   .toast {
     display: flex;
     align-items: flex-start;
     gap: var(--spacing-3);
     width: 100%;
-    max-width: 28rem;
-    padding: var(--spacing-4) var(--spacing-5);
+    max-width: 30rem;
+    padding: var(--spacing-5) var(--spacing-6);
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     border-left: 4px solid var(--color-ink-muted);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 16px -4px rgb(10 31 56 / 0.3), var(--shadow-lg);
     color: var(--color-ink);
-    font-size: var(--text-sm);
+    font-size: var(--text-body);
   }
 
   .toast-success { border-left-color: var(--color-status-success); }
   .toast-error   { border-left-color: var(--color-status-error); }
+
+  /* 023/FR-002: the icon doubles the color signal — CLAUDE.md's "colour is
+     never the only signal" rule, now applied with a third channel alongside
+     the existing left edge and the message text itself. Sized to sit close to
+     the message's cap-height rather than its full line-height, so a short
+     one-line message reads as icon-and-text-together rather than icon-above-
+     text. */
+  .toast-icon {
+    flex: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: 0.125rem;
+  }
+
+  .toast-success .toast-icon { color: var(--color-status-success); }
+  .toast-error   .toast-icon { color: var(--color-status-error); }
+
+  /* FR-010/toast_layer_controller.js: a queued toast is marked [hidden]
+     rather than removed, so it still exists (and can still be found by
+     getControllerForElementAndIdentifier) while it waits its turn. Stated
+     explicitly rather than left to the UA default, since this component
+     already overrides enough of the browser's defaults elsewhere. */
+  .toast[hidden] {
+    display: none;
+  }
 
   .toast-dismiss {
     flex: none;
@@ -1088,7 +1133,7 @@
     background: none;
     border: 0;
     color: var(--color-ink-muted);
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     line-height: 1;
     cursor: pointer;
   }
@@ -2254,6 +2299,23 @@
   to   { transform: scaleY(1); }
 }
 
+/* 023/FR-004: the toast settles the same way the rest of the page does — fade
+   plus a small rise — rather than snapping into view. One keyframe rather
+   than block-rise's split pair, because a toast is a single element with no
+   children of its own to stagger. */
+@keyframes toast-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Its reverse, played by notification_controller.js before the element is
+   removed rather than on removal itself, so a dismissal reads as deliberate —
+   FR-004's "departure" half. */
+@keyframes toast-leave {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(8px); }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .page-enter {
     animation: page-enter var(--motion-entrance) var(--ease-out) 1 both;
@@ -2272,6 +2334,22 @@
   .page-enter .disclosure::before {
     animation: hinge-draw var(--motion-base) var(--ease-out) 1 both;
     animation-delay: var(--motion-entrance);
+  }
+
+  /* 023: unconditional on .toast itself — a toast has no separate wrapper to
+     hold the class the way a page's blocks do, so the element plays its own
+     entrance the moment it is painted. `both` fill-mode holds the `from` state
+     until the animation starts, so there is no stalled frame at full opacity
+     first (CLAUDE.md's Motion section). */
+  .toast {
+    animation: toast-enter var(--motion-entrance) var(--ease-out) 1 both;
+  }
+
+  /* JS-driven exit: notification_controller.js adds this class and waits for
+     the animation (or a fallback timeout, for anything that keeps it from
+     firing) before removing the element. */
+  .toast.is-leaving {
+    animation: toast-leave var(--motion-entrance) var(--ease-in) 1 both;
   }
 }
 
@@ -2295,21 +2373,24 @@ form[aria-busy="true"] .btn {
   cursor: progress;
 }
 
-/* The notification layer: sticky at the top of the content, zero height so it
-   occupies no space, and clear of the header at every width. */
+/* The notification layer (023: fixed bottom-right, resolved in the
+   2026-09-20 clarification — research.md §1). `position: fixed` removes it
+   from the page's normal flow outright, the same guarantee `height: 0` used
+   to buy the old `position: sticky` layer by a narrower route — so this no
+   longer needs that trick, or --size-bar, at all. Unset `top` plus a `bottom`
+   offset pins the box's bottom edge and lets it grow upward as toasts stack,
+   closest one nearest the corner. */
 @layer components {
   .toast-layer {
-    position: sticky;
-    /* Clear of the glass, which is sticky now and would otherwise be what a
-       pinned toast slides behind. --size-bar is the bar's published height;
-       the two are a pair. */
-    top: calc(var(--size-bar) + var(--spacing-4));
+    position: fixed;
+    right: var(--spacing-4);
+    bottom: var(--spacing-4);
     z-index: 50;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: var(--spacing-3);
-    height: 0;
+    max-width: calc(100vw - (2 * var(--spacing-4)));
     pointer-events: none;
   }
 }

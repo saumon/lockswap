@@ -128,11 +128,13 @@ holding prose or a control is not a measurement. Buttons are `--font-mono` at
    own backdrop-filters stop seeing the page. With the filter on `.site-header`,
    the menu panel declared a blur and rendered a flat tint. Moving it "back to
    where it belongs" reintroduces that bug.
-2. **`--size-bar` is the bar's published height**, and three rules depend on it
+2. **`--size-bar` is the bar's published height**, and two rules depend on it
    agreeing: `.site-nav { min-height }` fixes the bar to it rather than letting
-   the tallest control decide, and both `html { scroll-padding-top }` and
-   `.toast-layer { top }` clear it. Change one without the others and a toast,
-   or anything the keyboard scrolls into view, lands behind the glass.
+   the tallest control decide, and `html { scroll-padding-top }` clears it so
+   anything the keyboard scrolls into view doesn't land behind the glass.
+   (023: `.toast-layer` used to be a third — sticky, offset by `--size-bar` to
+   clear the header — until its placement moved to fixed bottom-right, which
+   clears the header by construction and dropped the dependency entirely.)
 3. **The menu panel sits at `z-index: 60`, above the toast layer's 50.** A toast
    may cover the closed chrome; it may not land in the middle of an open menu.
 
