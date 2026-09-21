@@ -1,13 +1,42 @@
-<% content_for :title, "Danger Zone" %>
+<% content_for :title, t(".title") %>
 
 <%# 016 User Story 1: the settings whose reach is the whole site rather than one
-    account. Today that is one setting — which email domains may register — and
-    the screen is named for the class of setting rather than for this one, because
-    what belongs here is anything with the same blast radius. %>
+    account. Today that is two settings — the site language (025) and which
+    email domains may register — and the screen is named for the class of
+    setting rather than for either one, because what belongs here is anything
+    with the same blast radius. %>
 <div class="stack">
   <%# 021: the title leaves the card, like every other screen's. %>
   <div class="page-head">
-    <h1 class="page-title">Danger Zone</h1>
+    <h1 class="page-title"><%= t(".title") %></h1>
+  </div>
+
+  <%# 025 User Story 1: the site-wide language, above the domains section —
+      the newer setting leads, and this is the only place it can be changed
+      (FR-002, FR-011). %>
+  <div id="danger-zone-language" class="card card--alert stack-tight">
+    <p class="meta">
+      <%= t(".language_explanation") %>
+    </p>
+
+    <%= render "devise/shared/error_messages", resource: @site_language_setting %>
+
+    <%# FR-003: exactly two choices, offered as a closed select rather than free
+        text — there is no third option for an administrator to type. %>
+    <%= form_with model: @site_language_setting, url: admin_danger_zone_path, method: :patch,
+                  html: { class: "stack-tight", novalidate: true } do |f| %>
+      <div class="field">
+        <%= f.label :language, class: "field-label" %>
+        <%= f.select :language,
+              options_for_select(
+                [ [ t(".languages.fr"), "fr" ], [ t(".languages.en"), "en" ] ],
+                @site_language_setting.language
+              ),
+              {}, class: "field-input" %>
+      </div>
+
+      <%= f.submit t(".save_language_button"), class: "btn btn-primary" %>
+    <% end %>
   </div>
 
   <div id="danger-zone-allowed-domains" class="card card--alert stack-tight">
@@ -16,8 +45,7 @@
         are the same fact, and an administrator should not have to know that to
         read the screen — so the consequence is stated, not the row count. %>
     <p class="meta">
-      Only email addresses on the domains listed here may create an account.
-      With no domain listed, registration is open to any email domain.
+      <%= t(".domains_explanation") %>
     </p>
 
     <%# The rejected entry's reason, in the site's existing form-error component.
@@ -36,20 +64,20 @@
         <table class="data-table" role="table">
           <thead>
             <tr role="row">
-              <th scope="col" role="columnheader">Domain</th>
-              <th scope="col" role="columnheader">Added</th>
-              <th scope="col" role="columnheader">Actions</th>
+              <th scope="col" role="columnheader"><%= t(".domain_header") %></th>
+              <th scope="col" role="columnheader"><%= t(".added_header") %></th>
+              <th scope="col" role="columnheader"><%= t(".actions_header") %></th>
             </tr>
           </thead>
 
           <tbody>
             <% @allowed_email_domains.each do |allowed_email_domain| %>
               <tr id="allowed-email-domain-row-<%= allowed_email_domain.id %>" role="row">
-                <td class="strong" role="cell" data-label="Domain"><%= allowed_email_domain.domain %></td>
-                <td class="meta" role="cell" data-label="Added">
+                <td class="strong" role="cell" data-label="<%= t(".domain_header") %>"><%= allowed_email_domain.domain %></td>
+                <td class="meta" role="cell" data-label="<%= t(".added_header") %>">
                   <%= l allowed_email_domain.created_at, format: :long %>
                 </td>
-                <td role="cell" data-label="Actions">
+                <td role="cell" data-label="<%= t(".actions_header") %>">
                   <%# 016 User Story 2: the way back. Guarded by the same
                       confirmation construction as "Grant admin rights" — both
                       `confirm` and `turbo_confirm`, the first being the fallback
@@ -62,17 +90,15 @@
                       too: a column of buttons all reading "Remove" tells a screen
                       reader which row it is on only by position. %>
                   <% message = if @allowed_email_domains.one?
-                       "Remove #{allowed_email_domain.domain}? " \
-                       "Registration will be open to any email domain again."
+                       t(".remove_confirm_last", domain: allowed_email_domain.domain)
                      else
-                       "Remove #{allowed_email_domain.domain}? " \
-                       "Nobody on that domain will be able to register."
+                       t(".remove_confirm", domain: allowed_email_domain.domain)
                      end %>
-                  <%= button_to "Remove",
+                  <%= button_to t(".remove_button"),
                         admin_allowed_email_domain_path(allowed_email_domain),
                         method: :delete,
                         class: "btn btn-secondary btn-sm",
-                        aria: { label: "Remove #{allowed_email_domain.domain}" },
+                        aria: { label: t(".remove_aria_label", domain: allowed_email_domain.domain) },
                         data: { confirm: message, turbo_confirm: message } %>
                 </td>
               </tr>
@@ -84,7 +110,7 @@
       <%# The empty state is a statement, not a blank table: FR-004 is in force
           right now, and this is the screen that has to say so. %>
       <p id="danger-zone-allowed-domains-empty" class="detail-value-empty">
-        No domains are listed, so registration is currently open to any email domain.
+        <%= t(".domains_empty") %>
       </p>
     <% end %>
 
@@ -102,12 +128,11 @@
         <%= f.text_field :domain, autocomplete: "off", inputmode: "url",
               aria: { describedby: "allowed_email_domain_hint" }, class: "field-input" %>
         <p id="allowed_email_domain_hint" class="field-hint">
-          The domain only, without the @ — for example, company.com. Subdomains are
-          not included: add mail.company.com separately if it should be allowed.
+          <%= t(".domain_hint") %>
         </p>
       </div>
 
-      <%= f.submit "Add domain", class: "btn btn-primary" %>
+      <%= f.submit t(".add_domain_button"), class: "btn btn-primary" %>
     <% end %>
   </div>
 </div>

@@ -16,13 +16,17 @@ class Admin::AllowedEmailDomainsController < ApplicationController
   # administrator can have removed the same domain. The outcome asked for already
   # holds, so this is a notice and not an alert — the same reading 015 took for
   # granting rights to an account somebody else had just promoted.
+  #
+  # 025: kept as a plain frozen string for existing tests that assert against it
+  # by name; #destroy calls t(".domain_gone") instead of this constant, for the
+  # same locale-reactivity reason as User::LOCKER_NUMBER_TAKEN_MESSAGE.
   DOMAIN_GONE_MESSAGE = "That domain had already been removed.".freeze
 
   def create
     @allowed_email_domain = AllowedEmailDomain.new(allowed_email_domain_params)
 
     if @allowed_email_domain.save
-      redirect_to admin_danger_zone_path, notice: "#{@allowed_email_domain.domain} may now register."
+      redirect_to admin_danger_zone_path, notice: t(".created", domain: @allowed_email_domain.domain)
     else
       # Re-render the screen the administrator was on, with the rejected entry
       # still in the field and the reason above it (FR-008) — the same shape
@@ -31,6 +35,7 @@ class Admin::AllowedEmailDomainsController < ApplicationController
       # would come back with its existing configuration missing, which reads as
       # the failed addition having wiped it.
       @allowed_email_domains = AllowedEmailDomain.order(:domain)
+      @site_language_setting = SiteLanguageSetting.current
       render "admin/danger_zone/show", status: :unprocessable_entity
     end
   end
@@ -43,7 +48,7 @@ class Admin::AllowedEmailDomainsController < ApplicationController
     # find_by and not find, so a domain someone else removed a moment ago is a
     # message rather than a 404: the administrator did nothing wrong and belongs
     # back on the screen either way.
-    return redirect_to admin_danger_zone_path, notice: DOMAIN_GONE_MESSAGE if domain.nil?
+    return redirect_to admin_danger_zone_path, notice: t(".domain_gone") if domain.nil?
 
     domain.destroy
 
@@ -62,9 +67,9 @@ class Admin::AllowedEmailDomainsController < ApplicationController
     # empty table (FR-004).
     def removal_notice_for(domain)
       if AllowedEmailDomain.exists?
-        "#{domain.domain} may no longer register."
+        t(".removed", domain: domain.domain)
       else
-        "#{domain.domain} removed. Registration is open to any email domain again."
+        t(".removed_last", domain: domain.domain)
       end
     end
 end

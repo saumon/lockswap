@@ -13,20 +13,20 @@
     its own card unchanged. %>
 <div id="locker-profile" class="locker-profile">
   <div class="stack-tight">
-    <h2 class="card-title">Your locker</h2>
+    <h2 class="card-title"><%= t(".title") %></h2>
 
     <dl class="detail-grid">
       <div>
-        <dt class="detail-term">Floor</dt>
+        <dt class="detail-term"><%= t(".floor") %></dt>
         <dd id="locker-profile-floor" class="detail-value"><%= current_user.saved_floor %></dd>
       </div>
 
       <div>
-        <dt class="detail-term">Locker number</dt>
+        <dt class="detail-term"><%= t(".locker_number") %></dt>
         <%# FR-004: having no locker is an ordinary state, so it is styled as plain
             content rather than as a warning or an error. %>
         <dd id="locker-profile-locker-number" class="detail-value <%= "detail-value-empty" if current_user.saved_locker_number.blank? %>">
-          <%= current_user.saved_locker_number.presence || "No locker assigned" %>
+          <%= current_user.saved_locker_number.presence || t(".no_locker_assigned") %>
         </dd>
       </div>
     </dl>
@@ -45,7 +45,7 @@
         be read out a second time, under whatever name the reader invents for
         it. %>
     <details class="locker-profile-editor" <%= "open" if current_user.errors.any? %>>
-      <summary class="locker-profile-editor-summary" aria-label="Edit locker details">
+      <summary class="locker-profile-editor-summary" aria-label="<%= t(".edit_locker_details") %>">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
              aria-hidden="true" focusable="false">

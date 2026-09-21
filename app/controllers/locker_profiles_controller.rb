@@ -14,7 +14,7 @@ class LockerProfilesController < ApplicationController
     current_user.assign_attributes(locker_profile_params)
 
     if save_locker_profile
-      redirect_to root_path, notice: "Locker details saved."
+      redirect_to root_path, notice: t(".saved")
     else
       load_homepage_proposals
       render "home/index", status: :unprocessable_entity
@@ -34,7 +34,7 @@ class LockerProfilesController < ApplicationController
     def save_locker_profile
       current_user.save(context: :locker_profile_update)
     rescue ActiveRecord::RecordNotUnique
-      current_user.errors.add(:locker_number, User::LOCKER_NUMBER_TAKEN_MESSAGE)
+      current_user.errors.add(:locker_number, I18n.t("user.messages.locker_number_taken"))
       false
     end
 end

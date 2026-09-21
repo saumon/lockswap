@@ -1,4 +1,4 @@
-<% content_for :title, "Locker wishes" %>
+<% content_for :title, t(".title") %>
 
 <%# 017 FR-018: Back and Forward must bring back the filter state they left, and
     on this screen Turbo's snapshot cache cannot be trusted to do that. A filter
@@ -19,7 +19,7 @@
       this is the screen the product is actually for. Outside the panel and
       outside the list, on the canvas, like the titles on the other screens. %>
   <div class="page-head">
-    <h1 class="page-title">Locker wishes</h1>
+    <h1 class="page-title"><%= t(".title") %></h1>
   </div>
 
   <%= render "locker_wishes/locker_wish_panel" %>

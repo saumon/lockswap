@@ -54,6 +54,25 @@ Modified sections:
 
 Raised by /speckit-analyze on feature 010 as finding C1 (CRITICAL): the feature's
 tasks targeted `dev` while this document required `master`.
+
+Amendment 2026-09-21
+====================
+Version change: 1.0.1 → 1.1.0 (MINOR)
+Reason: Feature 025 shipped a site-wide French/English language setting, which
+makes "every new user-facing string is added to Rails I18n, in both locale
+files" a permanent, ongoing obligation for every future feature that touches
+UI text — not a one-off fact about feature 025. This is new, materially
+expanded guidance under an existing principle rather than a new principle, so
+MINOR rather than MAJOR; no prior obligation is removed or redefined.
+
+Modified sections:
+  - III. User Experience Consistency — added the i18n-coverage bullet
+  - Quality Gates — added the "i18n coverage" gate, naming
+    test/i18n_completeness_test.rb as its automated enforcement
+
+Raised by the user directly (not by /speckit-analyze) while feature 025 was
+mid-implementation, asking whether the constitution should describe the new
+French/English capability.
 -->
 
 # LockSwap Constitution
@@ -112,6 +131,13 @@ Users MUST experience one coherent product, not a patchwork of components.
 - Breaking changes to user-facing behavior (flows, terminology, shortcuts)
   MUST be called out explicitly in the pull request and, where applicable,
   documented for users.
+- Every user-facing string MUST be added through Rails I18n — a `t()`/
+  `t(".…")` lookup, never a hardcoded literal in a view, controller, or
+  model — with a matching entry in both `config/locales/en.yml` and
+  `config/locales/fr.yml` (or the corresponding framework-message locale
+  file pair, e.g. `devise.en.yml`/`devise.fr.yml`). The site's language is a
+  single administrator-controlled setting that every visitor shares (025);
+  a hardcoded string is a screen that silently stops following it.
 
 **Rationale**: Inconsistency compounds cognitive load and erodes trust,
 especially in a product handling asset locks/swaps where user confidence in
@@ -156,6 +182,11 @@ diligence alone:
   why a new one was necessary (User Experience Consistency).
 - **Performance evidence**: required in the PR description for any change to
   a performance-sensitive path, per Principle IV (Performance Requirements).
+- **i18n coverage gate**: blocks merge if any user-facing string lacks a
+  French translation; enforced by `test/i18n_completeness_test.rb`, which
+  diffs `config/locales/en.yml`/`fr.yml` (and the Devise locale pair)
+  directly rather than relying on incidental view coverage from other tests
+  (User Experience Consistency).
 
 A gate MAY only be bypassed with an explicit, written exception approved by
 a maintainer and recorded in the pull request; silent bypasses are a
@@ -202,4 +233,4 @@ compliance or amending the constitution with a documented rationale. There
 is no grandfathering of non-compliant code beyond the pull request in which
 the non-compliance is identified.
 
-**Version**: 1.0.1 | **Ratified**: 2026-09-12 | **Last Amended**: 2026-09-15
+**Version**: 1.1.0 | **Ratified**: 2026-09-12 | **Last Amended**: 2026-09-21

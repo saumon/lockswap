@@ -1,4 +1,4 @@
-<% content_for :title, "Log in" %>
+<% content_for :title, t(".title") %>
 <% content_for :hide_site_header, true %>
 
 <div class="auth-page">
@@ -6,7 +6,7 @@
   <%= render "shared/brand_stacked" %>
 
   <div class="card stack">
-    <h1 class="page-title">Log in</h1>
+    <h1 class="page-title"><%= t(".title") %></h1>
 
     <%# novalidate: a failed login is always answered by the same generic
         server-side message (FR-006), never by a browser-specific one. %>
@@ -24,12 +24,12 @@
 
       <%# 008 FR-018: Turbo swaps the label while the form is in flight, so the
           control says it is working rather than appearing frozen. %>
-      <%= f.submit "Log in", class: "btn btn-primary w-full", data: { turbo_submits_with: "Logging in…" } %>
+      <%= f.submit t(".submit"), class: "btn btn-primary w-full", data: { turbo_submits_with: t(".submitting") } %>
     <% end %>
 
     <p class="meta">
-      Don't have an account?
-      <%= link_to "Sign up", new_user_registration_path, class: "auth-link" %>
+      <%= t(".no_account") %>
+      <%= link_to t(".sign_up"), new_user_registration_path, class: "auth-link" %>
     </p>
   </div>
 </div>

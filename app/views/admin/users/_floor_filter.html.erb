@@ -15,7 +15,13 @@
         aria: { current: ("true" unless filter.filtering?) } %>
 
   <% filter.choices.each do |choice| %>
-    <%= link_to choice,
+    <%# 025: the "role" axis's choices are "Admin"/"Standard" — invariant,
+        English query-param values `with_role` matches on and that a bookmarked
+        filtered link keeps working under either language (research R6-adjacent
+        reasoning: the value is not the label). Only the displayed text is
+        translated, and only for this one axis; a floor number is already its
+        own label in every language. %>
+    <%= link_to (axis == :role ? t("admin.users.index.role_choices.#{choice.downcase}") : choice),
           admin_user_filter_path(axis: axis, value: choice),
           class: "filter-choice",
           aria: { current: ("true" if filter.current?(choice)) } %>

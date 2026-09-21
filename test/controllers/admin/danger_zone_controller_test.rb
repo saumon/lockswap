@@ -132,4 +132,68 @@ class Admin::DangerZoneControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_match(/secret\.example/, response.body)
   end
+
+  # --- 025 User Story 1: #update — the language setting -----------------------
+
+  test "the screen shows the current language, defaulting to English" do
+    sign_in users(:frank)
+
+    get admin_danger_zone_path
+
+    assert_select "select#site_language_setting_language option[selected]", text: "English"
+  end
+
+  # FR-011: a saved change is reflected the next time the screen is opened.
+  test "an administrator changes the language and it persists" do
+    sign_in users(:frank)
+
+    patch admin_danger_zone_path, params: { site_language_setting: { language: "fr" } }
+
+    assert_redirected_to admin_danger_zone_path
+    assert_equal "fr", SiteLanguageSetting.current.language
+  end
+
+  # Edge Case: saving without changing the field is a no-op, not an error.
+  test "saving the already-selected language is accepted and changes nothing" do
+    sign_in users(:frank)
+
+    patch admin_danger_zone_path, params: { site_language_setting: { language: "en" } }
+
+    assert_redirected_to admin_danger_zone_path
+    assert_equal "en", SiteLanguageSetting.current.language
+  end
+
+  # FR-003: the setting is a closed choice; a value outside it is refused rather
+  # than silently accepted or coerced.
+  test "an invalid language is refused and the setting is unchanged" do
+    sign_in users(:frank)
+
+    patch admin_danger_zone_path, params: { site_language_setting: { language: "de" } }
+
+    assert_response :unprocessable_entity
+    assert_equal "en", SiteLanguageSetting.current.language
+  end
+
+  # FR-002: the same admin-only guard #show already has, on the write too.
+  test "an anonymous visitor cannot change the language" do
+    patch admin_danger_zone_path, params: { site_language_setting: { language: "fr" } }
+
+    assert_redirected_to new_user_session_path
+    assert_equal "en", SiteLanguageSetting.current.language
+  end
+
+  # --- 025 User Story 3: only administrators may change the language ----------
+
+  # Distinct from the anonymous case above: a signed-in standard user is
+  # refused with the site's standing "administrators only" message, the same
+  # as any other admin-only destination (013 FR-008).
+  test "a signed-in non-administrator cannot change the language" do
+    sign_in users(:carol)
+
+    patch admin_danger_zone_path, params: { site_language_setting: { language: "fr" } }
+
+    assert_redirected_to root_path
+    assert_equal ApplicationController::ADMINISTRATORS_ONLY_MESSAGE, flash[:alert]
+    assert_equal "en", SiteLanguageSetting.current.language
+  end
 end

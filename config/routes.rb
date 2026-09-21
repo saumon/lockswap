@@ -47,15 +47,18 @@ Rails.application.routes.draw do
       end
     end
 
-    # 016 FR-001: the Danger Zone screen. Singular and read-only — it is a screen
-    # that shows one thing, not a resource anybody edits. What it manages has its
-    # own identity and its own validations, so it is routed separately below
-    # rather than as writes hung off this one (research.md R3).
+    # 016 FR-001: the Danger Zone screen. Singular — a screen that shows (and, as
+    # of 025, edits one setting of its own) rather than a resource anybody lists.
+    # What the allowed-domains section manages has its own identity and its own
+    # validations, so it is routed separately below rather than as writes hung
+    # off this one (research.md R3). 025 FR-011: the language setting IS this
+    # screen's own state, unlike the domains, so it gets #update here directly
+    # rather than a sibling controller (research.md R6).
     #
     # controller: names it explicitly because a singular `resource` otherwise
     # routes to a pluralized controller ("DangerZonesController"), and there is
     # only ever one danger zone.
-    resource :danger_zone, only: :show, controller: "danger_zone"
+    resource :danger_zone, only: [ :show, :update ], controller: "danger_zone"
 
     # 016 FR-003: the domains themselves. No :update — changing a domain is
     # remove-then-add, which leaves the resource with exactly the two operations

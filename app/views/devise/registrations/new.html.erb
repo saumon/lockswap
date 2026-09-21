@@ -1,4 +1,4 @@
-<% content_for :title, "Create your account" %>
+<% content_for :title, t(".title") %>
 <% content_for :hide_site_header, true %>
 
 <div class="auth-page">
@@ -6,7 +6,7 @@
   <%= render "shared/brand_stacked" %>
 
   <div class="card stack">
-    <h1 class="page-title">Create your account</h1>
+    <h1 class="page-title"><%= t(".title") %></h1>
 
     <%= render "devise/shared/error_messages", resource: resource %>
 
@@ -30,13 +30,13 @@
       <div class="field">
         <%= f.label :password, class: "field-label" %>
         <%= render "devise/shared/password_field", f: f, attribute: :password,
-              subject: "password",
+              subject: t(".password_subject"),
               aria: { describedby: "password_hint" },
               data: { password_confirmation_target: "password",
                       action: "input->password-confirmation#recheck" } %>
         <%# FR-002: state the 8-character minimum up front rather than only on failure. %>
         <p id="password_hint" class="field-hint">
-          <%= @minimum_password_length %> characters minimum
+          <%= t("devise.shared.password_hint", count: @minimum_password_length) %>
         </p>
       </div>
 
@@ -45,7 +45,7 @@
       <div class="field">
         <%= f.label :password_confirmation, class: "field-label" %>
         <%= render "devise/shared/password_field", f: f, attribute: :password_confirmation,
-              subject: "confirm password",
+              subject: t(".password_confirmation_subject"),
               aria: { describedby: "password_confirmation_hint" },
               data: { password_confirmation_target: "confirmation",
                       action: "blur->password-confirmation#confirm " \
@@ -62,12 +62,12 @@
         </p>
       </div>
 
-      <%= f.submit "Create account", class: "btn btn-primary w-full", data: { turbo_submits_with: "Creating…" } %>
+      <%= f.submit t(".submit"), class: "btn btn-primary w-full", data: { turbo_submits_with: t(".submitting") } %>
     <% end %>
 
     <p class="meta">
-      Already have an account?
-      <%= link_to "Log in", new_user_session_path, class: "auth-link" %>
+      <%= t(".already_have_account") %>
+      <%= link_to t(".log_in"), new_user_session_path, class: "auth-link" %>
     </p>
   </div>
 </div>

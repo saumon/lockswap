@@ -1,4 +1,4 @@
-<% content_for :title, "Proposal history" %>
+<% content_for :title, t(".title") %>
 
 <%# 004 FR-015: every proposal this user sent or received, with its date, where
     it ended up, and why if somebody said. Read-only by design — the homepage is
@@ -6,7 +6,7 @@
 <div class="stack">
   <%# 021: the title leaves the card, like every other screen's. %>
   <div class="page-head">
-    <h1 class="page-title">Your swap proposals</h1>
+    <h1 class="page-title"><%= t(".heading") %></h1>
   </div>
 
   <div id="swap-proposal-history" class="card stack-tight">
@@ -24,15 +24,15 @@
         <table class="data-table" role="table">
           <thead>
             <tr role="row">
-              <th scope="col" role="columnheader">Direction</th>
-              <th scope="col" role="columnheader">Person</th>
-              <th scope="col" role="columnheader">Sent</th>
-              <th scope="col" role="columnheader">Status</th>
-              <th scope="col" role="columnheader">Comment</th>
+              <th scope="col" role="columnheader"><%= t(".direction_header") %></th>
+              <th scope="col" role="columnheader"><%= t(".person_header") %></th>
+              <th scope="col" role="columnheader"><%= t(".sent_header") %></th>
+              <th scope="col" role="columnheader"><%= t(".status_header") %></th>
+              <th scope="col" role="columnheader"><%= t(".comment_header") %></th>
               <%# 005 FR-005: its own column, not folded into the one above — one
                   says why a person answered as they did, the other what was on
                   the table, and a row can have both (FR-008). %>
-              <th scope="col" role="columnheader">Locker details</th>
+              <th scope="col" role="columnheader"><%= t(".locker_details_header") %></th>
             </tr>
           </thead>
 
@@ -45,28 +45,28 @@
                   they received — the same two colours the cards are hung on,
                   and the Direction column says it in words beside them. %>
               <tr id="<%= row_id %>" role="row" data-rail="<%= sent ? "you" : "them" %>">
-                <td class="strong" role="cell" data-label="Direction"><%= sent ? "Sent" : "Received" %></td>
-                <td class="data-value" role="cell" data-label="Person"><%= sent ? proposal.recipient.email : proposal.requester.email %></td>
-                <td class="meta data-value" role="cell" data-label="Sent"><%= l proposal.created_at, format: :long %></td>
+                <td class="strong" role="cell" data-label="<%= t(".direction_header") %>"><%= sent ? t(".sent") : t(".received") %></td>
+                <td class="data-value" role="cell" data-label="<%= t(".person_header") %>"><%= sent ? proposal.recipient.email : proposal.requester.email %></td>
+                <td class="meta data-value" role="cell" data-label="<%= t(".sent_header") %>"><%= l proposal.created_at, format: :long %></td>
 
                 <%# "accepted" is the spec's "exchange in progress"; the column
                     says what a reader would call it, not what the column stores. %>
                 <%# 008 FR-025: the badge tint is decoration on top of the label —
                     the status word itself is what carries the meaning. %>
-                <td id="<%= row_id %>-status" role="cell" data-label="Status">
+                <td id="<%= row_id %>-status" role="cell" data-label="<%= t(".status_header") %>">
                   <span class="badge <%= history_status_badge_class(proposal) %>">
-                    <%= proposal.accepted? ? "Exchange in progress" : proposal.status.capitalize %>
+                    <%= proposal.accepted? ? t(".exchange_in_progress") : t(".status.#{proposal.status}") %>
                   </span>
                 </td>
 
-                <td id="<%= row_id %>-comment" role="cell" data-label="Comment"
+                <td id="<%= row_id %>-comment" role="cell" data-label="<%= t(".comment_header") %>"
                     class="<%= "detail-value-empty" if proposal.decline_comment.blank? %>">
                   <%= proposal.decline_comment.presence || "—" %>
                 </td>
 
                 <%# FR-005: filled in for every row, whatever became of it, so
                     the history never depends on anyone having written it down. %>
-                <td id="<%= row_id %>-locker-details" class="meta" role="cell" data-label="Locker details">
+                <td id="<%= row_id %>-locker-details" class="meta" role="cell" data-label="<%= t(".locker_details_header") %>">
                   <%= proposal.floor_and_locker_summary %>
                 </td>
               </tr>
@@ -78,7 +78,7 @@
       <%# Acceptance Scenario 4: never having proposed anything is an ordinary
           state to report, not an error. %>
       <p id="swap-proposal-history-empty" class="empty-state">
-        You have not sent or received any swap proposals yet.
+        <%= t(".empty") %>
       </p>
     <% end %>
   </div>

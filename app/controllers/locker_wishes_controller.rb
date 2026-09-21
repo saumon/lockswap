@@ -35,7 +35,7 @@ class LockerWishesController < ApplicationController
       # (research R3) — not left to current_floor_selection's general
       # absent-key fallback to produce the right answer a request later.
       redirect_to locker_wishes_path(filter_selections.merge(current_floor: @locker_wish.saved_floor)),
-        notice: "Locker search saved."
+        notice: t(".saved")
     else
       load_wish_list
       render :index, status: :unprocessable_entity
@@ -54,7 +54,7 @@ class LockerWishesController < ApplicationController
     # "All floors" (research R3); dropping it (rather than setting it to "")
     # keeps this redirect identical to 017's when no wish existed to begin with.
     redirect_to locker_wishes_path(filter_selections.except(:current_floor)),
-      notice: "Locker search cancelled."
+      notice: t(".cancelled")
   end
 
   private

@@ -3,7 +3,7 @@
     comment, the same no-JavaScript pattern 002 and 003 use for deliberate
     actions. %>
 <div id="swap-proposals-received" class="card card--them stack-tight">
-  <h2 class="card-title">Swap proposals for you</h2>
+  <h2 class="card-title"><%= t(".title") %></h2>
 
   <ul class="stack-tight">
     <% @received_pending_proposals.each do |proposal| %>
@@ -11,21 +11,21 @@
         <div class="tile-head">
           <div>
             <p>
-              <span class="strong data-value"><%= proposal.requester.email %></span> would like to swap lockers with you
+              <%= t(".wants_to_swap_html", email: content_tag(:span, proposal.requester.email, class: "strong data-value")) %>
             </p>
             <p class="meta">
-              Floor <%= proposal.requester.saved_floor.presence || "not set" %> ·
-              Locker <%= proposal.requester.saved_locker_number.presence || "none assigned" %> ·
-              Sent <%= l proposal.created_at, format: :long %>
+              <%= t(".proposal_details", floor: proposal.requester.saved_floor.presence || t(".not_set"),
+                    locker: proposal.requester.saved_locker_number.presence || t(".none_assigned"),
+                    sent_at: l(proposal.created_at, format: :long)) %>
             </p>
           </div>
 
-          <%= button_to "Accept", accept_locker_swap_proposal_path(proposal), method: :patch,
-                class: "btn btn-primary btn-sm", form: { data: { turbo_submits_with: "Accepting…" } } %>
+          <%= button_to t(".accept"), accept_locker_swap_proposal_path(proposal), method: :patch,
+                class: "btn btn-primary btn-sm", form: { data: { turbo_submits_with: t(".accepting") } } %>
         </div>
 
         <details class="tile-disclosure">
-          <summary class="tile-disclosure-summary">Decline</summary>
+          <summary class="tile-disclosure-summary"><%= t(".decline") %></summary>
 
           <%= form_with url: decline_locker_swap_proposal_path(proposal), method: :patch,
                         class: "stack-tight tile-disclosure-body" do |f| %>
@@ -34,14 +34,14 @@
                 invalid and would point every label at the first field. %>
             <% comment_field_id = "decline-comment-#{proposal.id}" %>
             <div class="field">
-              <%= f.label :"locker_swap_proposal[decline_comment]", "Why? (optional)",
+              <%= f.label :"locker_swap_proposal[decline_comment]", t(".decline_comment_label"),
                     for: comment_field_id, class: "field-label" %>
               <%= f.text_area :"locker_swap_proposal[decline_comment]", rows: 2,
                     id: comment_field_id, class: "field-input" %>
             </div>
 
-            <%= f.submit "Confirm decline", class: "btn btn-secondary btn-sm",
-                  data: { turbo_submits_with: "Declining…" } %>
+            <%= f.submit t(".confirm_decline"), class: "btn btn-secondary btn-sm",
+                  data: { turbo_submits_with: t(".declining") } %>
           <% end %>
         </details>
       </li>

@@ -6,10 +6,10 @@
 <div id="locker-wish-panel" class="disclosure">
   <% if @locker_wish.persisted? %>
     <div class="disclosure-body stack-tight">
-      <h2 class="card-title">Your locker search</h2>
+      <h2 class="card-title"><%= t(".title") %></h2>
 
       <dl class="detail-inline">
-        <dt class="detail-term">Looking for a locker on floor</dt>
+        <dt class="detail-term"><%= t(".looking_on_floor") %></dt>
         <%# The floor on file, not the attribute: while a rejected change is being
             re-displayed the attribute holds the input still being corrected. %>
         <dd id="locker-wish-floor" class="detail-value"><%= @locker_wish.saved_floor %></dd>
@@ -22,15 +22,15 @@
           are inside the frame, and reach this form by its id. See the note on them
           in locker_wishes/_locker_wish_list. %>
       <div class="row">
-        <%= button_to "Cancel wish", locker_wish_path, method: :delete,
+        <%= button_to t(".cancel_wish"), locker_wish_path, method: :delete,
               class: "btn btn-secondary btn-sm",
               form: { id: LockerWishesController::CANCEL_FORM_ID,
-                      data: { turbo_submits_with: "Cancelling…" } } %>
+                      data: { turbo_submits_with: t(".cancelling") } } %>
       </div>
     </div>
 
     <details class="disclosure-nested" <%= "open" if @locker_wish.errors.any? %>>
-      <summary class="disclosure-summary">Change floor</summary>
+      <summary class="disclosure-summary"><%= t(".change_floor") %></summary>
 
       <div class="disclosure-body">
         <%= render "locker_wishes/locker_wish_form" %>
@@ -38,7 +38,7 @@
     </details>
   <% else %>
     <details <%= "open" if @locker_wish.errors.any? %>>
-      <summary class="disclosure-summary">I'm looking for a locker</summary>
+      <summary class="disclosure-summary"><%= t(".looking_for_a_locker") %></summary>
 
       <div class="disclosure-body">
         <%= render "locker_wishes/locker_wish_form" %>

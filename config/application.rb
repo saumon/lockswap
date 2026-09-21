@@ -19,6 +19,15 @@ module Lockswap
 
     config.x.notification_auto_dismiss_ms = NOTIFICATION_AUTO_DISMISS_MS
 
+    # 025 FR-003/FR-005: the two languages the Danger Zone setting may hold, and
+    # the installation default before an administrator ever configures one.
+    # config.i18n.fallbacks is what makes FR-010's "no translation? show English"
+    # requirement true without a rescue anywhere — see research.md R4/R9 for what
+    # it does and does not cover.
+    config.i18n.available_locales = [ :en, :fr ]
+    config.i18n.default_locale = :en
+    config.i18n.fallbacks = true
+
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.

@@ -42,8 +42,13 @@ Rails.application.configure do
   # Print deprecation notices to the stderr.
   config.active_support.deprecation = :stderr
 
-  # Raises error for missing translations.
-  # config.i18n.raise_on_missing_translations = true
+  # 025 T003: catches an entirely unextracted t() call (a key missing from every
+  # locale in the fallback chain) before merge. It does NOT catch a key that
+  # exists in en.yml but was never translated to fr.yml — config.i18n.fallbacks
+  # (config/application.rb) resolves that silently under any locale. See
+  # research.md R4/R9 and test/i18n_completeness_test.rb for what actually
+  # verifies French completeness.
+  config.i18n.raise_on_missing_translations = true
 
   # Annotate rendered view with file names.
   # config.action_view.annotate_rendered_view_with_filenames = true

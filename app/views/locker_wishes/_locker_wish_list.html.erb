@@ -12,7 +12,7 @@
 <turbo-frame id="locker-wish-list" data-turbo-action="advance"
              data-controller="frame-history">
   <div class="card card--them stack-tight">
-    <h2 class="card-title">Everyone looking for a locker</h2>
+    <h2 class="card-title"><%= t(".title") %></h2>
 
     <%# 017 FR-001: the filters sit with the list they narrow, well clear of the
         panel where the viewer declares their own wish, so the two cannot be
@@ -22,7 +22,7 @@
         axes are named on screen the way the rows already name them. The parameter
         is called current_floor; the viewer only ever sees "Their floor". %>
     <div id="locker-wish-filters" class="filter-bar">
-      <% { looking_for: "Looking for floor", current_floor: "Their floor" }.each do |axis, label| %>
+      <% { looking_for: t(".looking_for_floor_label"), current_floor: t(".their_floor_label") }.each do |axis, label| %>
         <%= render "locker_wishes/floor_filter", filters: @floor_filters, axis: axis, label: label %>
       <% end %>
     </div>
@@ -69,13 +69,13 @@
         <table class="data-table" role="table">
           <thead>
             <tr role="row">
-              <th scope="col" role="columnheader">Looking for floor</th>
-              <th scope="col" role="columnheader">Person</th>
-              <th scope="col" role="columnheader">Their floor</th>
-              <th scope="col" role="columnheader">Their locker</th>
+              <th scope="col" role="columnheader"><%= t(".looking_for_floor_label") %></th>
+              <th scope="col" role="columnheader"><%= t(".person_header") %></th>
+              <th scope="col" role="columnheader"><%= t(".their_floor_label") %></th>
+              <th scope="col" role="columnheader"><%= t(".their_locker_header") %></th>
               <%# 004 FR-001: the swap starts here, on the row of the person being
                   asked. %>
-              <th scope="col" role="columnheader">Swap</th>
+              <th scope="col" role="columnheader"><%= t(".swap_header") %></th>
             </tr>
           </thead>
 
@@ -83,36 +83,36 @@
             <% @locker_wishes.each do |wish| %>
               <% row_id = "locker-wish-row-#{wish.user_id}" %>
               <tr id="<%= row_id %>" role="row" data-rail="<%= wish.user_id == current_user.id ? "you" : "them" %>">
-                <td id="<%= row_id %>-floor" class="strong data-value" role="cell" data-label="Looking for floor"><%= wish.floor %></td>
-                <td id="<%= row_id %>-person" class="data-value" role="cell" data-label="Person"><%= wish.user.email %></td>
+                <td id="<%= row_id %>-floor" class="strong data-value" role="cell" data-label="<%= t(".looking_for_floor_label") %>"><%= wish.floor %></td>
+                <td id="<%= row_id %>-person" class="data-value" role="cell" data-label="<%= t(".person_header") %>"><%= wish.user.email %></td>
 
                 <%# Edge Case: never having saved a floor is distinct from having no
                     locker, and neither is an error — both are plain status text. %>
-                <td id="<%= row_id %>-current-floor" role="cell" data-label="Their floor" class="data-value <%= "detail-value-empty" if wish.user.saved_floor.blank? %>">
-                  <%= wish.user.saved_floor.presence || "Not set" %>
+                <td id="<%= row_id %>-current-floor" role="cell" data-label="<%= t(".their_floor_label") %>" class="data-value <%= "detail-value-empty" if wish.user.saved_floor.blank? %>">
+                  <%= wish.user.saved_floor.presence || t("admin.users.index.not_set") %>
                 </td>
 
-                <td id="<%= row_id %>-current-locker" role="cell" data-label="Their locker" class="data-value <%= "detail-value-empty" if wish.user.saved_locker_number.blank? %>">
-                  <%= wish.user.saved_locker_number.presence || "No locker assigned" %>
+                <td id="<%= row_id %>-current-locker" role="cell" data-label="<%= t(".their_locker_header") %>" class="data-value <%= "detail-value-empty" if wish.user.saved_locker_number.blank? %>">
+                  <%= wish.user.saved_locker_number.presence || t("home.locker_profile.no_locker_assigned") %>
                 </td>
 
                 <%# 004: every reason a swap cannot be proposed is said plainly on
                     the row itself, rather than offering a control that is only
                     going to be refused (FR-002, FR-004, FR-018). %>
-                <td id="<%= row_id %>-swap" role="cell" data-label="Swap">
+                <td id="<%= row_id %>-swap" role="cell" data-label="<%= t(".swap_header") %>">
                   <%# 018 FR-006/FR-010: a sibling of whatever else this cell shows,
                       never a replacement — it sits alongside "Proposal pending" or
                       the "Propose swap" button just as easily as it sits alone.
                       Never on the viewer's own row, whatever the floors compare as. %>
                   <% if wish.user_id != current_user.id && wish.reciprocal_match?(@viewer_current_floor, @viewer_wish_floor) %>
-                    <span class="badge badge-success">It's a match!</span>
+                    <span class="badge badge-success"><%= t(".match") %></span>
                   <% end %>
                   <% if wish.user_id == current_user.id %>
-                    <span class="meta">This is you</span>
+                    <span class="meta"><%= t(".this_is_you") %></span>
                   <% elsif @viewer_in_progress %>
-                    <span class="meta">You already have an exchange in progress</span>
+                    <span class="meta"><%= t(".exchange_already_in_progress") %></span>
                   <% elsif @pending_recipient_ids.include?(wish.user_id) %>
-                    <span class="badge badge-info">Proposal pending</span>
+                    <span class="badge badge-info"><%= t(".proposal_pending") %></span>
                   <% else %>
                     <%# 017 FR-014: the one form inside the frame, and the only one
                         that has to break out of it. Its redirect goes to this very
@@ -120,10 +120,10 @@
                         "_top" Turbo would render that redirect into the frame, the
                         "Swap proposal sent." toast would never appear, and the
                         address would lose both filter selections. %>
-                    <%= button_to "Propose swap", locker_swap_proposals_path,
+                    <%= button_to t(".propose_swap"), locker_swap_proposals_path,
                           params: { locker_swap_proposal: { recipient_id: wish.user_id } },
                           class: "btn btn-primary btn-sm",
-                          form: { data: { turbo_submits_with: "Proposing…", turbo_frame: "_top" } } %>
+                          form: { data: { turbo_submits_with: t(".proposing"), turbo_frame: "_top" } } %>
                   <% end %>
                 </td>
               </tr>
@@ -138,12 +138,12 @@
           saying the wrong thing. Both filters stay above, still showing what is in
           force, so either can be relaxed from here (FR-015). %>
       <p id="locker-wish-list-no-match" class="empty-state">
-        No wish matches these filters.
+        <%= t(".no_match") %>
       </p>
     <% else %>
       <%# Acceptance Scenario 2: nobody looking is an ordinary state to report. %>
       <p id="locker-wish-list-empty" class="empty-state">
-        Nobody is looking for a locker right now.
+        <%= t(".empty") %>
       </p>
     <% end %>
   </div>

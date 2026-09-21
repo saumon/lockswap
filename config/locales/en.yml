@@ -1,31 +1,282 @@
-# Files in the config/locales directory are used for internationalization and
-# are automatically loaded by Rails. If you want to use locales other than
-# English, add the necessary files in this directory.
-#
-# To use the locales, use `I18n.t`:
-#
-#     I18n.t "hello"
-#
-# In views, this is aliased to just `t`:
-#
-#     <%= t("hello") %>
-#
-# To use a different locale, set it with `I18n.locale`:
-#
-#     I18n.locale = :es
-#
-# This would use the information in config/locales/es.yml.
-#
-# To learn more about the API, please read the Rails Internationalization guide
-# at https://guides.rubyonrails.org/i18n.html.
-#
-# Be aware that YAML interprets the following case-insensitive strings as
-# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
-# must be quoted to be interpreted as strings. For example:
-#
-#     en:
-#       "yes": yup
-#       enabled: "ON"
-
 en:
-  hello: "Hello world"
+  admin:
+    danger_zone:
+      show:
+        title: "Danger Zone"
+        language_explanation: "This sets the language every visitor sees across the whole site — it is not a personal preference."
+        languages:
+          fr: "French"
+          en: "English"
+        save_language_button: "Save language"
+        language_updated: "Language updated to %{language}."
+        domains_explanation: "Only email addresses on the domains listed here may create an account. With no domain listed, registration is open to any email domain."
+        domain_header: "Domain"
+        added_header: "Added"
+        actions_header: "Actions"
+        remove_button: "Remove"
+        remove_aria_label: "Remove %{domain}"
+        remove_confirm_last: "Remove %{domain}? Registration will be open to any email domain again."
+        remove_confirm: "Remove %{domain}? Nobody on that domain will be able to register."
+        domains_empty: "No domains are listed, so registration is currently open to any email domain."
+        domain_hint: "The domain only, without the @ — for example, company.com. Subdomains are not included: add mail.company.com separately if it should be allowed."
+        add_domain_button: "Add domain"
+    users:
+      index:
+        title: "Users"
+        heading: "Registered users"
+        current_floor_label: "Current floor"
+        all_floors: "All floors"
+        role_label: "Role"
+        all_roles: "All roles"
+        current_locker_label: "Current locker"
+        email_label: "Email"
+        email_header: "Email"
+        joined_header: "Joined"
+        floor_header: "Floor"
+        locker_header: "Locker"
+        wish_header: "Wish"
+        role_header: "Role"
+        actions_header: "Actions"
+        not_set: "Not set"
+        looking_for_floor: "Looking for floor %{floor}"
+        not_looking_for_a_locker: "Not looking for a locker"
+        role_choices:
+          admin: "Admin"
+          standard: "Standard"
+        granted_by: "Granted by %{email} on %{date}"
+        granted_account_removed: "Granted on %{date} (account removed)"
+        first_registration: "First registration"
+        grant_confirm: "Grant administrator rights to %{email}? This cannot be undone."
+        grant_button: "Grant admin rights"
+        grant_aria_label: "Grant administrator rights to %{email}"
+        no_match: "No account matches the current filters."
+      grant_admin:
+        account_gone: "That account no longer exists."
+        granted: "%{email} has been granted administrator rights."
+    allowed_email_domains:
+      create:
+        created: "%{domain} may now register."
+      destroy:
+        domain_gone: "That domain had already been removed."
+        removed: "%{domain} may no longer register."
+        removed_last: "%{domain} removed. Registration is open to any email domain again."
+  application:
+    administrators_only: "That page is for administrators only."
+  devise:
+    sessions:
+      new:
+        title: "Log in"
+        submit: "Log in"
+        submitting: "Logging in…"
+        no_account: "Don't have an account?"
+        sign_up: "Sign up"
+    registrations:
+      new:
+        title: "Create your account"
+        password_subject: "password"
+        password_confirmation_subject: "confirm password"
+        submit: "Create account"
+        submitting: "Creating…"
+        already_have_account: "Already have an account?"
+        log_in: "Log in"
+      edit:
+        title: "Account settings"
+        heading: "Edit user"
+        waiting_confirmation_for: "Currently waiting confirmation for: %{email}"
+        leave_blank: "(leave blank if you don't want to change it)"
+        current_password_hint: "(we need your current password to confirm your changes)"
+        submit: "Update"
+        submitting: "Updating…"
+        cancel_account_title: "Cancel my account"
+        unhappy: "Unhappy?"
+        cancel_account_button: "Cancel my account"
+        cancel_account_confirm: "Are you sure?"
+        back: "Back"
+    shared:
+      password_hint:
+        one: "%{count} character minimum"
+        other: "%{count} characters minimum"
+      password_field:
+        show: "Show %{subject}"
+        hide: "Hide %{subject}"
+      links:
+        log_in: "Log in"
+        sign_up: "Sign up"
+        forgot_password: "Forgot your password?"
+        no_confirmation_instructions: "Didn't receive confirmation instructions?"
+        no_unlock_instructions: "Didn't receive unlock instructions?"
+        sign_in_with: "Sign in with %{provider}"
+  allowed_email_domain:
+    messages:
+      invalid_domain: "must look like company.com"
+  home:
+    index:
+      title: "Home"
+      welcome_to: "Welcome to"
+      logged_in_as_html: "You are logged in as %{email}."
+      locker_locked_by_swap: "Your floor and locker number cannot be changed while you have an active swap proposal. They can be edited again once it is declined, withdrawn, or completed."
+      add_locker_details: "Add your locker details"
+    locker_profile_form:
+      locker_number_hint: "Leave empty if you have no locker assigned."
+      no_locker: "I don't have a locker 😔"
+      has_locker_after_all: "Actually, I have a locker"
+      submit: "Save locker details"
+    locker_profile:
+      title: "Your locker"
+      floor: "Floor"
+      locker_number: "Locker number"
+      no_locker_assigned: "No locker assigned"
+      edit_locker_details: "Edit locker details"
+    locker_wish:
+      title: "Your locker search"
+      looking_on_floor: "Looking for a locker on floor"
+      review_wishes: "Review locker wishes! 🥷"
+      different_locker_title: "Looking for a different locker?"
+      different_locker_lead: "You haven't said where you'd rather be. Tell people which floor you're after and find someone to swap with."
+      switch_locker: "I want to switch my locker! 👀"
+      no_locker_title: "Looking for a locker?"
+      no_locker_lead: "You don't have a locker yet. Say which floor you're looking on so people know you're waiting for one."
+      want_a_locker: "I want a locker! 🙏"
+    swap_exchange_in_progress:
+      title: "Exchange in progress"
+      accepted: "Accepted"
+      swapping_with_html: "You are swapping lockers with %{email}."
+      not_set: "not set"
+      none_assigned: "none assigned"
+      counterpart_details: "They have floor %{floor}, locker %{locker}."
+      confirm_instructions: "Once you have actually exchanged lockers, confirm it here and both sets of details will be swapped."
+      confirm_button: "Confirm exchange completed"
+      confirming: "Confirming…"
+      waiting_for_their_confirmation: "%{email} will confirm once the exchange has taken place."
+    swap_proposals_declined:
+      title: "Proposals that were declined"
+      declined: "Declined"
+      declined_your_proposal_html: "%{email} declined your swap proposal"
+    swap_proposals_received:
+      title: "Swap proposals for you"
+      wants_to_swap_html: "%{email} would like to swap lockers with you"
+      not_set: "not set"
+      none_assigned: "none assigned"
+      proposal_details: "Floor %{floor} · Locker %{locker} · Sent %{sent_at}"
+      accept: "Accept"
+      accepting: "Accepting…"
+      decline: "Decline"
+      decline_comment_label: "Why? (optional)"
+      confirm_decline: "Confirm decline"
+      declining: "Declining…"
+    swap_proposals_sent:
+      title: "Proposals you sent"
+      waiting_on_html: "Waiting on %{email}"
+      sent_at: "Sent %{sent_at}"
+      withdraw: "Withdraw"
+      withdrawing: "Withdrawing…"
+  locker_profiles:
+    update:
+      saved: "Locker details saved."
+  locker_swap_proposal:
+    floor_and_locker_summary:
+      exchanged: "Exchanged"
+      proposed: "Proposed"
+      for: "for"
+      floor: "Floor %{floor}"
+      no_floor: "No floor"
+      locker: "locker %{locker_number}"
+      no_locker_assigned: "no locker assigned"
+    messages:
+      auto_decline_comment: "Automatically declined — one of you started another exchange."
+      cannot_be_yourself: "cannot be yourself"
+      recipient_not_looking: "is not looking for a locker right now"
+      requester_already_in_exchange: "You already have an exchange in progress."
+      recipient_already_in_exchange: "already has an exchange in progress"
+      pending_proposal_already_stands: "already has a pending proposal from you"
+  locker_swap_proposals:
+    create:
+      sent: "Swap proposal sent."
+      that_person: "That person %{message}."
+    destroy:
+      withdrawn: "Swap proposal withdrawn."
+    accept:
+      accepted: "Swap proposal accepted."
+      cannot_accept: "That proposal can no longer be accepted — someone involved already has an exchange in progress."
+    decline:
+      declined: "Swap proposal declined."
+    confirm:
+      confirmed: "Exchange confirmed — your locker details have been swapped."
+    index:
+      title: "Proposal history"
+      heading: "Your swap proposals"
+      direction_header: "Direction"
+      person_header: "Person"
+      sent_header: "Sent"
+      status_header: "Status"
+      comment_header: "Comment"
+      locker_details_header: "Locker details"
+      sent: "Sent"
+      received: "Received"
+      exchange_in_progress: "Exchange in progress"
+      status:
+        pending: "Pending"
+        declined: "Declined"
+        withdrawn: "Withdrawn"
+        completed: "Completed"
+      empty: "You have not sent or received any swap proposals yet."
+  locker_wishes:
+    create:
+      saved: "Locker search saved."
+    destroy:
+      cancelled: "Locker search cancelled."
+    index:
+      title: "Locker wishes"
+    floor_filter:
+      all_floors: "All floors"
+    locker_wish_form:
+      floor_hint: "The floor you would like a locker on."
+      submit: "Save my wish"
+    locker_wish_list:
+      title: "Everyone looking for a locker"
+      looking_for_floor_label: "Looking for floor"
+      their_floor_label: "Their floor"
+      person_header: "Person"
+      their_locker_header: "Their locker"
+      swap_header: "Swap"
+      match: "It's a match!"
+      this_is_you: "This is you"
+      exchange_already_in_progress: "You already have an exchange in progress"
+      proposal_pending: "Proposal pending"
+      propose_swap: "Propose swap"
+      proposing: "Proposing…"
+      no_match: "No wish matches these filters."
+      empty: "Nobody is looking for a locker right now."
+    locker_wish_panel:
+      title: "Your locker search"
+      looking_on_floor: "Looking for a locker on floor"
+      cancel_wish: "Cancel wish"
+      cancelling: "Cancelling…"
+      change_floor: "Change floor"
+      looking_for_a_locker: "I'm looking for a locker"
+  layouts:
+    application:
+      main_nav: "Main"
+    flash:
+      dismiss: "Dismiss notification"
+  pwa:
+    manifest:
+      description: "Find the locker that suits you, and swap with someone who wants yours."
+  shared:
+    brand_stacked:
+      tagline: "Find the locker that suits you"
+    site_menu:
+      menu: "Menu"
+    site_menu_items:
+      locker_wishes: "Locker wishes"
+      proposal_history: "Proposal history"
+      admin: "Admin"
+      users: "Users"
+      danger_zone: "Danger Zone"
+      log_out: "Log out"
+  user:
+    messages:
+      locker_number_taken: "is not available on that floor — another account already has this locker"
+      locked_by_swap: "cannot be changed while you have an active swap proposal"
+      last_administrator: "You are the only administrator. Grant administrator rights to another account before cancelling this one."
+      email_domain_not_allowed: "Your email address domain is not allowed"

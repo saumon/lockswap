@@ -2,18 +2,18 @@
     withdrawable right up until that answer lands. Rendered only when there is
     something here, so a user with no swap activity sees no swap section at all. %>
 <div id="swap-proposals-sent" class="card card--them stack-tight">
-  <h2 class="card-title">Proposals you sent</h2>
+  <h2 class="card-title"><%= t(".title") %></h2>
 
   <ul class="stack-tight">
     <% @sent_pending_proposals.each do |proposal| %>
       <li id="swap-proposal-sent-<%= proposal.id %>" class="tile tile--you tile-head">
         <div>
-          <p>Waiting on <span class="strong"><%= proposal.recipient.email %></span></p>
-          <p class="meta">Sent <%= l proposal.created_at, format: :long %></p>
+          <p><%= t(".waiting_on_html", email: content_tag(:span, proposal.recipient.email, class: "strong")) %></p>
+          <p class="meta"><%= t(".sent_at", sent_at: l(proposal.created_at, format: :long)) %></p>
         </div>
 
-        <%= button_to "Withdraw", locker_swap_proposal_path(proposal), method: :delete,
-              class: "btn btn-secondary btn-sm", form: { data: { turbo_submits_with: "Withdrawing…" } } %>
+        <%= button_to t(".withdraw"), locker_swap_proposal_path(proposal), method: :delete,
+              class: "btn btn-secondary btn-sm", form: { data: { turbo_submits_with: t(".withdrawing") } } %>
       </li>
     <% end %>
   </ul>

@@ -152,6 +152,15 @@ class User < ApplicationRecord
   # Names the floor, because that is the whole scope of the refusal: the same
   # number is free to take one floor up (006 FR-003).
   # The controller reuses it for the same conflict caught by the unique index.
+  #
+  # 025: kept as a plain frozen string — English, matching config/locales/en.yml
+  # byte for byte — purely so existing tests that assert against this constant
+  # by name keep working. The *live* validation message below is a lambda
+  # calling I18n.t fresh at validation time, not this constant: a validates
+  # `message:` option is evaluated once, at class-load time, so referencing this
+  # constant directly there would freeze the message to whatever locale was
+  # active when Rails booted, never reacting to the site language (research.md
+  # R2's same reasoning, applied to a validation message instead of I18n.locale).
   LOCKER_NUMBER_TAKEN_MESSAGE =
     "is not available on that floor — another account already has this locker".freeze
 
@@ -159,16 +168,19 @@ class User < ApplicationRecord
   # know the floor it is on, so the same one on two floors is two lockers.
   # allow_nil is load-bearing: the uniqueness validator does not skip nil on its
   # own, so without it the second user with no locker is rejected as a duplicate.
-  validates :locker_number, uniqueness: { scope: :floor, message: LOCKER_NUMBER_TAKEN_MESSAGE },
+  validates :locker_number,
+            uniqueness: { scope: :floor, message: ->(_record, _data) { I18n.t("user.messages.locker_number_taken") } },
             allow_nil: true, on: :locker_profile_update
 
   # 005 FR-003: says why the field is refused, so the restriction reads as a
   # state the account is in rather than as something wrong with the input.
+  # 025: kept for tests; see LOCKER_NUMBER_TAKEN_MESSAGE's comment.
   LOCKED_BY_SWAP_MESSAGE = "cannot be changed while you have an active swap proposal".freeze
 
   # 015 FR-016: names the way out, because a refusal that only refuses leaves the
   # administrator stuck with no idea what to do next. The remedy is a capability
   # they already have on the screen they were just on.
+  # 025: kept for tests; see LOCKER_NUMBER_TAKEN_MESSAGE's comment.
   LAST_ADMINISTRATOR_MESSAGE =
     "You are the only administrator. Grant administrator rights to another " \
     "account before cancelling this one.".freeze
@@ -228,7 +240,7 @@ class User < ApplicationRecord
       return if allowed_domains.empty?
       return if allowed_domains.include?(email.to_s.split("@").last.to_s.downcase)
 
-      errors.add(:base, EMAIL_DOMAIN_NOT_ALLOWED_MESSAGE)
+      errors.add(:base, I18n.t("user.messages.email_domain_not_allowed"))
     end
 
     # FR-016. Two conditions, and the second is the one that is easy to leave out:
@@ -245,7 +257,7 @@ class User < ApplicationRecord
       return unless others.exists?
       return if others.exists?(admin: true)
 
-      errors.add(:base, LAST_ADMINISTRATOR_MESSAGE)
+      errors.add(:base, I18n.t("user.messages.last_administrator"))
       throw :abort
     end
 
@@ -282,6 +294,6 @@ class User < ApplicationRecord
       return if changing.values.none?
       return unless LockerSwapProposal.active_for?(self)
 
-      changing.each { |attribute, changed| errors.add(attribute, LOCKED_BY_SWAP_MESSAGE) if changed }
+      changing.each { |attribute, changed| errors.add(attribute, I18n.t("user.messages.locked_by_swap")) if changed }
     end
 end

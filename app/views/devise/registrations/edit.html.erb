@@ -1,8 +1,8 @@
-<% content_for :title, "Account settings" %>
+<% content_for :title, t(".title") %>
 
 <div class="auth-page">
   <div class="card stack">
-    <h1 class="page-title">Edit <%= resource_name.to_s.humanize %></h1>
+    <h1 class="page-title"><%= t(".heading") %></h1>
 
     <%= render "devise/shared/error_messages", resource: resource %>
 
@@ -14,7 +14,7 @@
       </div>
 
       <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-        <p class="field-hint">Currently waiting confirmation for: <%= resource.unconfirmed_email %></p>
+        <p class="field-hint"><%= t(".waiting_confirmation_for", email: resource.unconfirmed_email) %></p>
       <% end %>
 
       <div class="field">
@@ -22,7 +22,7 @@
         <%= f.password_field :password, autocomplete: "new-password",
               aria: { describedby: "edit_password_hint" }, class: "field-input" %>
         <p id="edit_password_hint" class="field-hint">
-          (leave blank if you don't want to change it)<% if @minimum_password_length %> — <%= @minimum_password_length %> characters minimum<% end %>
+          <%= t(".leave_blank") %><% if @minimum_password_length %> — <%= t("devise.shared.password_hint", count: @minimum_password_length) %><% end %>
         </p>
       </div>
 
@@ -36,22 +36,22 @@
         <%= f.password_field :current_password, autocomplete: "current-password",
               aria: { describedby: "current_password_hint" }, class: "field-input" %>
         <p id="current_password_hint" class="field-hint">
-          (we need your current password to confirm your changes)
+          <%= t(".current_password_hint") %>
         </p>
       </div>
 
-      <%= f.submit "Update", class: "btn btn-primary", data: { turbo_submits_with: "Updating…" } %>
+      <%= f.submit t(".submit"), class: "btn btn-primary", data: { turbo_submits_with: t(".submitting") } %>
     <% end %>
   </div>
 
   <div class="card stack-tight">
-    <h2 class="card-title">Cancel my account</h2>
-    <p class="card-lead">Unhappy?</p>
+    <h2 class="card-title"><%= t(".cancel_account_title") %></h2>
+    <p class="card-lead"><%= t(".unhappy") %></p>
     <div class="row">
-      <%= button_to "Cancel my account", registration_path(resource_name),
-            data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" },
+      <%= button_to t(".cancel_account_button"), registration_path(resource_name),
+            data: { confirm: t(".cancel_account_confirm"), turbo_confirm: t(".cancel_account_confirm") },
             method: :delete, class: "btn btn-destructive" %>
-      <%= link_to "Back", :back, class: "btn btn-secondary" %>
+      <%= link_to t(".back"), :back, class: "btn btn-secondary" %>
     </div>
   </div>
 </div>

@@ -427,6 +427,13 @@ class LockerWishesControllerTest < ActionDispatch::IntegrationTest
   # `.each` evaluation taking a different path for an empty relation). Pinning
   # both to unfiltered isolates the one thing 018 is actually asserting here.
   test "rendering the list issues the same number of queries whether or not a match is present" do
+    # 025: SiteLanguageSetting.current (read on every request, ApplicationController's
+    # around_action) costs a SELECT+INSERT the first time it is ever called and a
+    # plain SELECT thereafter — an asymmetry orthogonal to what this test measures.
+    # Pre-warming it here means both requests below see an existing row and pay
+    # the same, smaller cost, isolating the one thing 018 is actually asserting.
+    SiteLanguageSetting.current
+
     sign_in users(:bob) # reciprocates with henry and iris
     with_matches = count_queries { get locker_wishes_path(current_floor: "") }
 

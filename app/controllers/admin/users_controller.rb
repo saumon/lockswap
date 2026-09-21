@@ -16,6 +16,10 @@ class Admin::UsersController < ApplicationController
 
   # 015 FR-011: said plainly. Between a list being drawn and a button on it being
   # pressed, the account can have cancelled itself; that is not an error to hide.
+  #
+  # 025: kept as a plain frozen string for existing tests that assert against it
+  # by name; #grant_admin calls t(".account_gone") instead of this constant, for
+  # the same locale-reactivity reason as User::LOCKER_NUMBER_TAKEN_MESSAGE.
   ACCOUNT_GONE_MESSAGE = "That account no longer exists.".freeze
 
   # 020: the four filters, and where each one's value arrives from. The keys are
@@ -69,7 +73,7 @@ class Admin::UsersController < ApplicationController
 
     # FR-011: find_by and not find, so a vanished account is a message rather than
     # a 404 — the administrator did nothing wrong and should land back on the list.
-    return redirect_to admin_users_path(filter_selections), alert: ACCOUNT_GONE_MESSAGE if user.nil?
+    return redirect_to admin_users_path(filter_selections), alert: t(".account_gone") if user.nil?
 
     # FR-012: grant_admin_rights! is a no-op when the account already has them, so
     # arriving second at the same destination reports success. A stale list is a
@@ -80,7 +84,7 @@ class Admin::UsersController < ApplicationController
     # submitted travel with it (as hidden fields — see the view) and are put back
     # on the redirect, the same way 017's declare/cancel writes carry theirs.
     redirect_to admin_users_path(filter_selections),
-      notice: "#{user.email} has been granted administrator rights."
+      notice: t(".granted", email: user.email)
   end
 
   private
