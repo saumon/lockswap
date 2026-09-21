@@ -22,7 +22,7 @@ class LockerSwapProposalsController < ApplicationController
     proposal = current_user.sent_swap_proposals.build(recipient_id: proposal_params[:recipient_id])
 
     if save_proposal(proposal)
-      redirect_to locker_wishes_path, notice: "Swap proposal sent."
+      redirect_to locker_wishes_path, notice: t(".sent")
     else
       redirect_to locker_wishes_path, alert: refusal_for(proposal)
     end
@@ -34,19 +34,18 @@ class LockerSwapProposalsController < ApplicationController
   def destroy
     current_user.sent_swap_proposals.pending.find(params[:id]).withdraw!
 
-    redirect_to root_path, notice: "Swap proposal withdrawn."
+    redirect_to root_path, notice: t(".withdrawn")
   end
 
   # FR-005, FR-006: the recipient's decision, and only theirs — the same scoping
   # as above, through the other side of the association (FR-010).
   def accept
     if pending_received_proposal.accept!
-      redirect_to root_path, notice: "Swap proposal accepted."
+      redirect_to root_path, notice: t(".accepted")
     else
       # The eligibility re-check inside accept! lost a race: somebody involved
       # entered another exchange first (FR-003, FR-004).
-      redirect_to root_path,
-                  alert: "That proposal can no longer be accepted — someone involved already has an exchange in progress."
+      redirect_to root_path, alert: t(".cannot_accept")
     end
   end
 
@@ -55,7 +54,7 @@ class LockerSwapProposalsController < ApplicationController
   def decline
     pending_received_proposal.decline!(params.dig(:locker_swap_proposal, :decline_comment))
 
-    redirect_to root_path, notice: "Swap proposal declined."
+    redirect_to root_path, notice: t(".declined")
   end
 
   # FR-012, FR-013: only the recipient who accepted can say the swap actually
@@ -64,7 +63,7 @@ class LockerSwapProposalsController < ApplicationController
   def confirm
     current_user.received_swap_proposals.accepted.find(params[:id]).confirm!
 
-    redirect_to root_path, notice: "Exchange confirmed — your locker details have been swapped."
+    redirect_to root_path, notice: t(".confirmed")
   end
 
   private
@@ -83,7 +82,7 @@ class LockerSwapProposalsController < ApplicationController
     def save_proposal(proposal)
       proposal.save
     rescue ActiveRecord::RecordNotUnique
-      proposal.errors.add(:recipient, "already has a pending proposal from you")
+      proposal.errors.add(:recipient, I18n.t("locker_swap_proposal.messages.pending_proposal_already_stands"))
       false
     end
 
@@ -94,6 +93,6 @@ class LockerSwapProposalsController < ApplicationController
 
       return error.message if error.attribute == :base
 
-      "That person #{error.message}."
+      t(".that_person", message: error.message)
     end
 end

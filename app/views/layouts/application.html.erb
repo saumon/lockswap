@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= I18n.locale %>">
   <head>
     <title><%= content_for(:title) || "LockSwap" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -31,7 +31,7 @@
         so a future public page still gets a header unless it asks not to. %>
     <% unless content_for?(:hide_site_header) %>
       <header class="site-header">
-        <nav class="site-nav" aria-label="Main">
+        <nav class="site-nav" aria-label="<%= t(".main_nav") %>">
           <%# The brand is the way back to the homepage, as it is on most sites.
               A visitor who is not logged in lands on the login page instead, the
               same as any other attempt to reach the homepage. %>

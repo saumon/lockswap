@@ -22,6 +22,14 @@ class LockerSwapProposal < ApplicationRecord
 
   # Said on every proposal this one settles on its parties' behalf, so the people
   # affected are told why rather than finding it simply gone (FR-011).
+  #
+  # 025: kept as a plain frozen string for existing tests that assert against it
+  # by name; #decline_competing_proposals below calls I18n.t fresh instead of
+  # referencing this constant, so the persisted comment follows the site
+  # language at the moment the auto-decline actually happens — see
+  # User::LOCKER_NUMBER_TAKEN_MESSAGE's comment for why a frozen constant alone
+  # would not be locale-reactive. Like any other decline_comment, once saved it
+  # does not retroactively change if the site language changes afterward.
   AUTO_DECLINE_COMMENT =
     "Automatically declined — one of you started another exchange.".freeze
 
@@ -112,7 +120,12 @@ class LockerSwapProposal < ApplicationRecord
     # Joined by a word rather than a ↔: read aloud, a screen reader set to low
     # punctuation verbosity drops the symbol entirely and runs the two sides
     # together (Principle III).
-    "#{completed? ? "Exchanged" : "Proposed"}: #{sides.map { |side| locker_details(*side) }.join(" for ")}"
+    #
+    # 025: I18n.t rather than a frozen constant, since this method's output must
+    # follow the site language in effect at call time, not at class-load time.
+    verb = completed? ? I18n.t("locker_swap_proposal.floor_and_locker_summary.exchanged") :
+                         I18n.t("locker_swap_proposal.floor_and_locker_summary.proposed")
+    "#{verb}: #{sides.map { |side| locker_details(*side) }.join(" #{I18n.t('locker_swap_proposal.floor_and_locker_summary.for')} ")}"
   end
 
   # Whether this user has anything outstanding at all — waiting for an answer as
@@ -139,8 +152,11 @@ class LockerSwapProposal < ApplicationRecord
     # One side of the summary, in the same words the homepage uses for the same
     # two states (002 FR-004) — having no locker is ordinary, and reads that way.
     def locker_details(floor, locker_number)
-      "#{floor.present? ? "Floor #{floor}" : "No floor"}, " \
-        "#{locker_number.present? ? "locker #{locker_number}" : "no locker assigned"}"
+      floor_part = floor.present? ? I18n.t("locker_swap_proposal.floor_and_locker_summary.floor", floor: floor) :
+                                     I18n.t("locker_swap_proposal.floor_and_locker_summary.no_floor")
+      locker_part = locker_number.present? ? I18n.t("locker_swap_proposal.floor_and_locker_summary.locker", locker_number: locker_number) :
+                                              I18n.t("locker_swap_proposal.floor_and_locker_summary.no_locker_assigned")
+      "#{floor_part}, #{locker_part}"
     end
 
     # What both sides' lockers look like right now, ready to be written onto the
@@ -186,7 +202,7 @@ class LockerSwapProposal < ApplicationRecord
       self.class.where(id: competing_ids).update_all(
         status: self.class.statuses[:declined],
         decided_at: Time.current,
-        decline_comment: AUTO_DECLINE_COMMENT,
+        decline_comment: I18n.t("locker_swap_proposal.messages.auto_decline_comment"),
         requester_acknowledged_at: nil,
         updated_at: Time.current,
         # Each of these rows has its own two parties, so their details cannot be
@@ -214,7 +230,7 @@ class LockerSwapProposal < ApplicationRecord
 
     # FR-002.
     def recipient_is_not_the_requester
-      errors.add(:recipient, "cannot be yourself") if recipient_id == requester_id
+      errors.add(:recipient, I18n.t("locker_swap_proposal.messages.cannot_be_yourself")) if recipient_id == requester_id
     end
 
     # FR-017: a wish is what makes someone an eligible recipient, so one
@@ -222,7 +238,7 @@ class LockerSwapProposal < ApplicationRecord
     def recipient_is_looking_for_a_locker
       return if recipient.blank? || recipient.locker_wish.present?
 
-      errors.add(:recipient, "is not looking for a locker right now")
+      errors.add(:recipient, I18n.t("locker_swap_proposal.messages.recipient_not_looking"))
     end
 
     # FR-003 and FR-004: one locker cannot be promised to two swaps at once, so
@@ -230,12 +246,12 @@ class LockerSwapProposal < ApplicationRecord
     # exchange.
     def neither_party_is_already_in_an_exchange
       if requester.present? && self.class.in_progress_for?(requester)
-        errors.add(:base, "You already have an exchange in progress.")
+        errors.add(:base, I18n.t("locker_swap_proposal.messages.requester_already_in_exchange"))
       end
 
       return if recipient.blank? || !self.class.in_progress_for?(recipient)
 
-      errors.add(:recipient, "already has an exchange in progress")
+      errors.add(:recipient, I18n.t("locker_swap_proposal.messages.recipient_already_in_exchange"))
     end
 
     # FR-018: only while the earlier one is still undecided. Once it is declined
@@ -244,6 +260,6 @@ class LockerSwapProposal < ApplicationRecord
       return if requester.blank? || recipient.blank?
       return unless self.class.pending.exists?(requester_id: requester_id, recipient_id: recipient_id)
 
-      errors.add(:recipient, "already has a pending proposal from you")
+      errors.add(:recipient, I18n.t("locker_swap_proposal.messages.pending_proposal_already_stands"))
     end
 end

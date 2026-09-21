@@ -1,4 +1,4 @@
-<% content_for :title, "Users" %>
+<% content_for :title, t(".title") %>
 
 <%# 020 research.md R1: an advancing frame navigation caches the page snapshot
     for the address being left, taken after the frame has already been
@@ -18,7 +18,7 @@
 <div class="stack">
   <%# 021: the title leaves the card, like every other screen's. %>
   <div class="page-head">
-    <h1 class="page-title">Registered users</h1>
+    <h1 class="page-title"><%= t(".heading") %></h1>
   </div>
 
   <div id="admin-user-directory" class="card stack-tight">
@@ -34,11 +34,11 @@
       <%# FR-004: the four filters sit with the list they narrow. %>
       <div id="admin-user-directory-filters" class="filter-bar">
         <%= render "admin/users/floor_filter", filter: @current_floor_filter, axis: :current_floor,
-              label: "Current floor", all_label: "All floors" %>
+              label: t(".current_floor_label"), all_label: t(".all_floors") %>
         <%= render "admin/users/floor_filter", filter: @role_filter, axis: :role,
-              label: "Role", all_label: "All roles" %>
-        <%= render "admin/users/text_filter", axis: :current_locker, label: "Current locker" %>
-        <%= render "admin/users/text_filter", axis: :email, label: "Email" %>
+              label: t(".role_label"), all_label: t(".all_roles") %>
+        <%= render "admin/users/text_filter", axis: :current_locker, label: t(".current_locker_label") %>
+        <%= render "admin/users/text_filter", axis: :email, label: t(".email_label") %>
       </div>
 
       <%# 012 FR-005: a table above the breakpoint, one labelled card per account
@@ -57,59 +57,59 @@
       <table class="data-table" role="table">
         <thead>
           <tr role="row">
-            <th scope="col" role="columnheader">Email</th>
-            <th scope="col" role="columnheader">Joined</th>
+            <th scope="col" role="columnheader"><%= t(".email_header") %></th>
+            <th scope="col" role="columnheader"><%= t(".joined_header") %></th>
             <%# 020 FR-001/FR-002/FR-003: the same three facts the account's own
                 homepage and the locker wishes screen already show, so the
                 administrator no longer has to leave this screen to see them. %>
-            <th scope="col" role="columnheader">Floor</th>
-            <th scope="col" role="columnheader">Locker</th>
-            <th scope="col" role="columnheader">Wish</th>
+            <th scope="col" role="columnheader"><%= t(".floor_header") %></th>
+            <th scope="col" role="columnheader"><%= t(".locker_header") %></th>
+            <th scope="col" role="columnheader"><%= t(".wish_header") %></th>
             <%# FR-012: its own column rather than a mark tacked onto the email,
                 so the one row that differs says how it differs. %>
-            <th scope="col" role="columnheader">Role</th>
-            <th scope="col" role="columnheader">Actions</th>
+            <th scope="col" role="columnheader"><%= t(".role_header") %></th>
+            <th scope="col" role="columnheader"><%= t(".actions_header") %></th>
           </tr>
         </thead>
 
         <tbody>
           <% @users.each do |user| %>
             <tr id="admin-user-row-<%= user.id %>" role="row">
-              <td class="strong data-value" role="cell" data-label="Email"><%= user.email %></td>
-              <td class="meta data-value" role="cell" data-label="Joined"><%= l user.created_at, format: :long %></td>
+              <td class="strong data-value" role="cell" data-label="<%= t(".email_header") %>"><%= user.email %></td>
+              <td class="meta data-value" role="cell" data-label="<%= t(".joined_header") %>"><%= l user.created_at, format: :long %></td>
 
               <%# 020 FR-001: the same floor the account's own homepage shows.
                   saved_floor, not floor: while a rejected edit elsewhere is being
                   re-displayed the attribute holds unsaved input, and this screen
                   must only ever report what is actually on file. %>
-              <td id="admin-user-row-<%= user.id %>-floor" role="cell" data-label="Floor"
+              <td id="admin-user-row-<%= user.id %>-floor" role="cell" data-label="<%= t(".floor_header") %>"
                   class="data-value <%= "detail-value-empty" if user.saved_floor.blank? %>">
-                <%= user.saved_floor.presence || "Not set" %>
+                <%= user.saved_floor.presence || t(".not_set") %>
               </td>
 
               <%# 020 FR-002: "No locker assigned" reuses the exact wording the
                   homepage and locker wishes screen already use for the same
                   state, rather than a third way of saying it. %>
-              <td id="admin-user-row-<%= user.id %>-locker" role="cell" data-label="Locker"
+              <td id="admin-user-row-<%= user.id %>-locker" role="cell" data-label="<%= t(".locker_header") %>"
                   class="data-value <%= "detail-value-empty" if user.saved_locker_number.blank? %>">
-                <%= user.saved_locker_number.presence || "No locker assigned" %>
+                <%= user.saved_locker_number.presence || t("home.locker_profile.no_locker_assigned") %>
               </td>
 
               <%# 020 FR-003: user.locker_wish is eager-loaded on the index query
                   (Admin::UsersController#index), so this costs no per-row query. %>
-              <td id="admin-user-row-<%= user.id %>-wish" role="cell" data-label="Wish"
+              <td id="admin-user-row-<%= user.id %>-wish" role="cell" data-label="<%= t(".wish_header") %>"
                   class="data-value <%= "detail-value-empty" unless user.locker_wish %>">
                 <% if user.locker_wish %>
-                  Looking for floor <%= user.locker_wish.saved_floor %>
+                  <%= t(".looking_for_floor", floor: user.locker_wish.saved_floor) %>
                 <% else %>
-                  Not looking for a locker
+                  <%= t(".not_looking_for_a_locker") %>
                 <% end %>
               </td>
 
               <%# 008 FR-025: the tint decorates the word, it does not replace it —
                   "Admin" is what carries the meaning, for a reader who cannot
                   tell the badge's colour from any other. %>
-              <td role="cell" data-label="Role" class="<%= "detail-value-empty" unless user.admin? %>">
+              <td role="cell" data-label="<%= t(".role_header") %>" class="<%= "detail-value-empty" unless user.admin? %>">
                 <% if user.admin? %>
                   <%# The badge and the line below it are one value, so they are
                       wrapped as one: below the breakpoint each child of a cell
@@ -119,7 +119,7 @@
                     <%# 015 FR-008: the badge is identical on every administrator
                         row. Rights obtained by grant are not lesser rights, and
                         nothing here may suggest they are. %>
-                    <span class="badge badge-info">Admin</span>
+                    <span class="badge badge-info"><%= t(".role_choices.admin") %></span>
 
                     <%# 015 FR-018: where the rights came from, beneath the badge
                         rather than beside it — one fact about the account, not a
@@ -127,17 +127,15 @@
                     <p class="meta">
                       <% if user.admin_rights_granted? %>
                         <% if user.admin_granted_by %>
-                          Granted by <%= user.admin_granted_by.email %>
-                          on <%= l user.admin_granted_at, format: :long %>
+                          <%= t(".granted_by", email: user.admin_granted_by.email, date: l(user.admin_granted_at, format: :long)) %>
                         <% else %>
                           <%# FR-019: the grantor's account is gone, the grant is
                               not. Saying so beats showing a blank where a name
                               was. %>
-                          Granted on <%= l user.admin_granted_at, format: :long %>
-                          (account removed)
+                          <%= t(".granted_account_removed", date: l(user.admin_granted_at, format: :long)) %>
                         <% end %>
                       <% else %>
-                        First registration
+                        <%= t(".first_registration") %>
                       <% end %>
                     </p>
                   </div>
@@ -149,7 +147,7 @@
               <%# The em dash matches the Role cell's own empty state: below the
                   breakpoint every cell shows its label, so a cell left truly
                   empty reads as a field the page forgot to fill in. %>
-              <td role="cell" data-label="Actions" class="<%= "detail-value-empty" if user.admin? %>">
+              <td role="cell" data-label="<%= t(".actions_header") %>" class="<%= "detail-value-empty" if user.admin? %>">
                 <% if user.admin? %>
                   —
                 <% else %>
@@ -177,15 +175,15 @@
                       this frame, which is what makes the flash notice (rendered
                       outside the frame, in the layout) visible afterwards —
                       mirrors 017's "Propose swap" button. %>
-                  <% message = "Grant administrator rights to #{user.email}? This cannot be undone." %>
-                  <%= button_to "Grant admin rights",
+                  <% message = t(".grant_confirm", email: user.email) %>
+                  <%= button_to t(".grant_button"),
                         grant_admin_admin_user_path(user),
                         method: :patch,
                         params: Admin::UsersController::FILTER_AXES.index_with { |axis|
                           admin_user_filter_current_value(axis)
                         }.compact_blank,
                         class: "btn btn-secondary btn-sm",
-                        aria: { label: "Grant administrator rights to #{user.email}" },
+                        aria: { label: t(".grant_aria_label", email: user.email) },
                         data: { confirm: message, turbo_confirm: message },
                         form: { data: { turbo_frame: "_top" } } %>
                 <% end %>
@@ -199,7 +197,7 @@
       <%# Distinct id from any per-row content, so a regression cannot satisfy
           this selector while showing the wrong message. %>
       <p id="admin-user-directory-no-match" class="empty-state">
-        No account matches the current filters.
+        <%= t(".no_match") %>
       </p>
     <% end %>
     </turbo-frame>

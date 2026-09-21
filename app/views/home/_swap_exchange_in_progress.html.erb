@@ -6,30 +6,29 @@
 
 <div id="swap-exchange-in-progress" class="card card--them stack-tight">
   <div class="row">
-    <h2 class="card-title">Exchange in progress</h2>
-    <span class="badge badge-success">Accepted</span>
+    <h2 class="card-title"><%= t(".title") %></h2>
+    <span class="badge badge-success"><%= t(".accepted") %></span>
   </div>
 
   <div>
-    <p>You are swapping lockers with <span class="strong"><%= counterpart.email %></span>.</p>
+    <p><%= t(".swapping_with_html", email: content_tag(:span, counterpart.email, class: "strong")) %></p>
     <p class="meta">
-      They have floor <%= counterpart.saved_floor.presence || "not set" %>,
-      locker <%= counterpart.saved_locker_number.presence || "none assigned" %>.
+      <%= t(".counterpart_details", floor: counterpart.saved_floor.presence || t(".not_set"),
+            locker: counterpart.saved_locker_number.presence || t(".none_assigned")) %>
     </p>
   </div>
 
   <% if viewer_is_recipient %>
     <p class="card-lead">
-      Once you have actually exchanged lockers, confirm it here and both sets of
-      details will be swapped.
+      <%= t(".confirm_instructions") %>
     </p>
 
-    <%= button_to "Confirm exchange completed",
+    <%= button_to t(".confirm_button"),
           confirm_locker_swap_proposal_path(@exchange_in_progress), method: :patch,
-          class: "btn btn-primary", form: { data: { turbo_submits_with: "Confirming…" } } %>
+          class: "btn btn-primary", form: { data: { turbo_submits_with: t(".confirming") } } %>
   <% else %>
     <p class="card-lead">
-      <%= counterpart.email %> will confirm once the exchange has taken place.
+      <%= t(".waiting_for_their_confirmation", email: counterpart.email) %>
     </p>
   <% end %>
 </div>

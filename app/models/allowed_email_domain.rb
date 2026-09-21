@@ -23,9 +23,14 @@ class AllowedEmailDomain < ApplicationRecord
   # Shows the shape rather than describing it: an administrator who typed their
   # own email address here needs to see what was wanted, not a restatement of the
   # rule they just broke.
+  #
+  # 025: kept as a plain frozen string, for existing tests that assert against it
+  # by name — see User::LOCKER_NUMBER_TAKEN_MESSAGE's comment for why the live
+  # validation message below is a lambda calling I18n.t instead of this constant.
   INVALID_DOMAIN_MESSAGE = "must look like company.com".freeze
 
   validates :domain, presence: true,
-            format: { with: DOMAIN_FORMAT, message: INVALID_DOMAIN_MESSAGE, allow_blank: true },
+            format: { with: DOMAIN_FORMAT, allow_blank: true,
+                      message: ->(_record, _data) { I18n.t("allowed_email_domain.messages.invalid_domain") } },
             uniqueness: true
 end

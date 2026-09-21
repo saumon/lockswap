@@ -77,6 +77,14 @@ end
 
 gem "devise", "~> 5.0"
 
+# 025: French translations for Devise's own strings (failures, confirmations,
+# mailer subjects) and for Rails/ActiveModel's own bundled messages (validation
+# defaults, "N errors prohibited this record from being saved"). See
+# research.md R5/R8 for why both are needed and why rails-i18n's date/time/number
+# sections are pinned back to English in config/locales/fr.yml.
+gem "devise-i18n"
+gem "rails-i18n"
+
 # json 3.0 made JSON.parse's options keyword-only, but Active Support 8.1.3.1 still
 # passes them positionally (active_support/json/decoding.rb), which breaks every
 # encrypted cookie read. Stay on the 2.x line until Rails ships the fix.

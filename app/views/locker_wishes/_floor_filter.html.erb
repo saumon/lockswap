@@ -18,7 +18,7 @@
   <%# FR-003: always offered, and the state the screen opens in. aria-current is
       what marks the choice in force — the styling hangs off that same attribute,
       so the state cannot be shown without also being announced (FR-015). %>
-  <%= link_to "All floors", locker_wish_filter_path(filters, axis, nil),
+  <%= link_to t("locker_wishes.floor_filter.all_floors"), locker_wish_filter_path(filters, axis, nil),
         class: "filter-choice",
         aria: { current: ("true" unless filter.filtering?) } %>
 

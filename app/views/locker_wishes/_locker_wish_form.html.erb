@@ -15,7 +15,7 @@
     <%= f.text_field :floor, autocomplete: "off",
           aria: { describedby: "locker_wish_floor_hint" }, class: "field-input" %>
     <p id="locker_wish_floor_hint" class="field-hint">
-      The floor you would like a locker on.
+      <%= t(".floor_hint") %>
     </p>
   </div>
 
@@ -23,5 +23,5 @@
       app/views/home/_locker_profile_form.html.erb. Turbo's label swap on an
       <input type="submit"> interacts badly with the page cache, and this
       control's value is asserted on by locker_wish_test.rb. %>
-  <%= f.submit "Save my wish", class: "btn btn-primary" %>
+  <%= f.submit t(".submit"), class: "btn btn-primary" %>
 <% end %>

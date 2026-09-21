@@ -1,0 +1,58 @@
+# 025 research.md R5/T020: French translations of every key this app's own
+# devise.en.yml overrides from Devise's/Rails' generic defaults. Everything
+# devise.en.yml does NOT override (mailer subjects, passwords, registrations,
+# sessions, unlocks, omniauth) is left to the devise-i18n gem's own bundled
+# French file — duplicating those here would only risk drifting from it.
+#
+# Discovered by reading devise.en.yml line by line rather than assuming the
+# original task's 11-key list was complete: it also overrides
+# errors.messages.not_saved and four activerecord keys (password_confirmation's
+# label, and the User model's email/password/password_confirmation error
+# messages), none of which devise-i18n or rails-i18n can supply for us since
+# they are LockSwap-specific wording.
+fr:
+  devise:
+    confirmations:
+      confirmed: "Votre adresse e-mail a été confirmée avec succès."
+      send_instructions: "Vous allez recevoir un e-mail avec les instructions pour confirmer votre adresse e-mail dans quelques minutes."
+      send_paranoid_instructions: "Si votre adresse e-mail existe dans notre base de données, vous allez recevoir un e-mail avec les instructions pour confirmer votre adresse e-mail dans quelques minutes."
+    failure:
+      already_authenticated: "Vous êtes déjà connecté(e)."
+      inactive: "Votre compte n'est pas encore activé."
+      # FR-006 (007): chaque connexion refusée — e-mail inconnu, mot de passe
+      # incorrect, ou compte verrouillé — dit exactement la même chose, pour
+      # qu'un échec ne révèle jamais si le compte existe ou lequel des deux
+      # identifiants était en cause.
+      invalid: "E-mail ou mot de passe invalide."
+      not_found_in_database: "E-mail ou mot de passe invalide."
+      locked: "E-mail ou mot de passe invalide."
+      last_attempt: "E-mail ou mot de passe invalide."
+      timeout: "Votre session a expiré. Veuillez vous reconnecter pour continuer."
+      unauthenticated: "Vous devez vous connecter ou vous inscrire avant de continuer."
+      unconfirmed: "Vous devez confirmer votre adresse e-mail avant de continuer."
+  errors:
+    messages:
+      not_saved:
+        one: "1 erreur a empêché ce·tte %{resource} d'être enregistré(e) :"
+        other: "%{count} erreurs ont empêché ce·tte %{resource} d'être enregistré(e) :"
+
+  # 025: pendants français des messages de validation à l'inscription (016
+  # FR-002/FR-003), qui restent la source de vérité en anglais dans devise.en.yml.
+  activerecord:
+    attributes:
+      user:
+        # Pendant de l'anglais "Confirm password" : cette app préfère l'étiquette
+        # impérative du formulaire à l'humanisation générique de devise-i18n
+        # ("Confirmation du mot de passe"), pour rester cohérente avec le champ.
+        password_confirmation: "Confirmer le mot de passe"
+    errors:
+      models:
+        user:
+          attributes:
+            email:
+              taken: "est déjà utilisé. Connectez-vous plutôt, ou inscrivez-vous avec une autre adresse."
+              invalid: "doit ressembler à une adresse e-mail, par exemple nom@exemple.com."
+            password:
+              too_short: "doit contenir au moins %{count} caractères."
+            password_confirmation:
+              confirmation: "ne correspond pas au mot de passe ci-dessus."

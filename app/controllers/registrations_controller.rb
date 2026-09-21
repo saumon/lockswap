@@ -26,6 +26,6 @@ class RegistrationsController < Devise::RegistrationsController
       return super if resource.destroy
 
       redirect_to after_inactive_sign_up_path_for(resource),
-                  alert: resource.errors[:base].first || User::LAST_ADMINISTRATOR_MESSAGE
+                  alert: resource.errors[:base].first || I18n.t("user.messages.last_administrator")
     end
 end

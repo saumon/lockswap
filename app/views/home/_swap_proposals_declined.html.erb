@@ -2,17 +2,17 @@
     whatever the decliner said about it. Shown once — the controller marks them
     acknowledged as it hands them over — and kept afterwards in the history. %>
 <div id="swap-proposals-declined" class="card card--alert stack-tight">
-  <h2 class="card-title">Proposals that were declined</h2>
+  <h2 class="card-title"><%= t(".title") %></h2>
 
   <ul class="stack-tight">
     <% @recently_declined_sent.each do |proposal| %>
       <li id="swap-proposal-declined-<%= proposal.id %>" class="tile tile--you">
         <div class="row">
-          <span class="badge badge-error">Declined</span>
+          <span class="badge badge-error"><%= t(".declined") %></span>
         </div>
 
         <p class="tile-line">
-          <span class="strong"><%= proposal.recipient.email %></span> declined your swap proposal
+          <%= t(".declined_your_proposal_html", email: content_tag(:span, proposal.recipient.email, class: "strong")) %>
         </p>
 
         <%# The comment is optional, so its absence is simply nothing to show. %>

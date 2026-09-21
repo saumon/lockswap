@@ -875,6 +875,39 @@ A conventional Rails monolith, server-rendered, with no separate frontend.
 | Quality | RuboCop (`rubocop-rails-omakase`), Brakeman |
 | Deployment | Docker + Kamal |
 
+## 🌐 Localization
+
+LockSwap is multilingual: **English** and **French** are both fully supported, with English as the
+default on a fresh install. The language is a single, site-wide setting — not a per-user preference —
+configured by an administrator from the **Danger Zone** screen
+([`specs/025-multilingual-support/`](specs/025-multilingual-support/spec.md)) and applied to every
+visitor, signed in or not, on their very next page load.
+
+* every user-facing string goes through Rails' own **I18n**, via `t()` in views — mostly the lazy
+  `t(".…")` form, scoped to each view's own path — and `I18n.t()` in controllers and models; there is
+  no hardcoded English literal left in a template, a flash message, or a validation error;
+* two locale files, [`config/locales/en.yml`](config/locales/en.yml) and
+  [`config/locales/fr.yml`](config/locales/fr.yml), are kept in lockstep, key for key. Devise's own
+  strings (sign-in, sign-up, validation messages) are translated through the
+  [`devise-i18n`](https://github.com/devise-i18n/devise-i18n) gem, and Rails/ActiveModel's own bundled
+  messages through [`rails-i18n`](https://github.com/svenfuchs/rails-i18n) — this app's own
+  `devise.en.yml`/`devise.fr.yml` carry only the handful of messages it deliberately overrides from
+  either gem's defaults, such as the uniform sign-in failure message from feature 007;
+* the active language is read **fresh on every request**, in an `ApplicationController` `around_action`
+  that wraps the request in `I18n.with_locale(...)` rather than assigning `I18n.locale` directly — the
+  block form is what keeps one request's language from leaking into the next request a reused Puma
+  thread picks up. There is no caching layer: a language change saved from the Danger Zone is visible
+  to every visitor on their very next request, and nobody has to sign out to see it;
+* dates, times, and numbers deliberately **do not** change with the language: `fr.yml` pins
+  `date`/`time`/`number` formatting back to the exact English values, overriding what `rails-i18n`
+  would otherwise contribute for French, so a timestamp reads identically whichever language is
+  selected;
+* a dedicated test, [`test/i18n_completeness_test.rb`](test/i18n_completeness_test.rb), diffs the two
+  locale-file pairs directly and fails the suite if a key exists in English but has no French
+  counterpart. That direct diff is the actual enforcement behind "every screen is fully translated" —
+  `config.i18n.raise_on_missing_translations` alone only catches a string that was never extracted to
+  a translation key in the first place, not one translated to English and left there.
+
 ## ⚙️ Requirements
 
 * Ruby 3.4.6 (see [`.ruby-version`](.ruby-version))

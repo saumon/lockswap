@@ -16,10 +16,10 @@
   <% if current_user.locker_wish&.persisted? %>
     <%# The heading the wish page's own panel carries, deliberately: the same card
         title for the same thing on both screens is continuity, not repetition. %>
-    <h2 class="card-title">Your locker search</h2>
+    <h2 class="card-title"><%= t(".title") %></h2>
 
     <dl class="detail-inline">
-      <dt class="detail-term">Looking for a locker on floor</dt>
+      <dt class="detail-term"><%= t(".looking_on_floor") %></dt>
       <%# FR-002: the floor sought, and nothing else. What this user already has
           is on the card immediately below — saying it twice would be two copies
           of one fact, free to disagree. The value on file rather than the
@@ -34,7 +34,7 @@
         not because a width was pinned to make them agree. %>
     <%# A link, not a button_to: this navigates and changes nothing, so it is
         announced as a link and the back button behaves (research.md §2). %>
-    <%= link_to "Review locker wishes! 🥷", locker_wishes_path, class: "btn btn-primary btn-arrow" %>
+    <%= link_to t(".review_wishes"), locker_wishes_path, class: "btn btn-primary btn-arrow" %>
   <% elsif current_user.saved_locker_number.present? %>
     <%# FR-004: a locker on file and nothing said about it. The heading asks the
         question the button answers, rather than calling this "your locker
@@ -43,11 +43,10 @@
         FR-013: nothing here consults the swap proposals. An accepted one freezes
         the card below — those values are what the other side agreed to — but a
         wish says what someone wants, which no proposal has any claim on. %>
-    <h2 class="card-title">Looking for a different locker?</h2>
+    <h2 class="card-title"><%= t(".different_locker_title") %></h2>
 
     <p class="card-lead">
-      You haven't said where you'd rather be. Tell people which floor you're
-      after and find someone to swap with.
+      <%= t(".different_locker_lead") %>
     </p>
 
     <%# 021: no .row wrapper. .row is a flex row, so a button inside it hugs its
@@ -55,7 +54,7 @@
         card — which is exactly what "Save locker details" does inside its
         form.stack-tight. The two match because they are laid out the same way,
         not because a width was pinned to make them agree. %>
-    <%= link_to "I want to switch my locker! 👀", locker_wishes_path, class: "btn btn-primary btn-arrow" %>
+    <%= link_to t(".switch_locker"), locker_wishes_path, class: "btn btn-primary btn-arrow" %>
   <% else %>
     <%# FR-005, FR-011: no locker, and nothing declared. Having nothing to trade
         is the reason to be here, not a reason to be left out.
@@ -63,11 +62,10 @@
         This state is a button like the other two, deliberately. Stated as a bare
         line of text it would leave the person with the least to lose by swapping
         with no way off this page — so the invitation is the control. %>
-    <h2 class="card-title">Looking for a locker?</h2>
+    <h2 class="card-title"><%= t(".no_locker_title") %></h2>
 
     <p class="card-lead">
-      You don't have a locker yet. Say which floor you're looking on so people
-      know you're waiting for one.
+      <%= t(".no_locker_lead") %>
     </p>
 
     <%# 021: no .row wrapper. .row is a flex row, so a button inside it hugs its
@@ -75,6 +73,6 @@
         card — which is exactly what "Save locker details" does inside its
         form.stack-tight. The two match because they are laid out the same way,
         not because a width was pinned to make them agree. %>
-    <%= link_to "I want a locker! 🙏", locker_wishes_path, class: "btn btn-primary btn-arrow" %>
+    <%= link_to t(".want_a_locker"), locker_wishes_path, class: "btn btn-primary btn-arrow" %>
   <% end %>
 </div>

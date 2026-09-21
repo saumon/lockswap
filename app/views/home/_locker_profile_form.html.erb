@@ -28,7 +28,7 @@
           aria: { describedby: "locker_number_hint" }, class: "field-input" %>
     <%# FR-002/FR-008: say up front that this one is optional. %>
     <p id="locker_number_hint" class="field-hint">
-      Leave empty if you have no locker assigned.
+      <%= t(".locker_number_hint") %>
     </p>
   <% end %>
 
@@ -38,10 +38,10 @@
         so the choice can be taken back before it is ever submitted. Both sit
         outside the field above — that is what lets one of them survive the
         field being hidden. %>
-    <%= tag.button "I don't have a locker 😔", type: "button", class: "field-link-action",
+    <%= tag.button t(".no_locker"), type: "button", class: "field-link-action",
           data: { locker_entry_choice_target: "declareNoLockerTrigger",
                   action: "locker-entry-choice#declareNoLocker" } %>
-    <%= tag.button "Actually, I have a locker", type: "button", class: "field-link-action", hidden: true,
+    <%= tag.button t(".has_locker_after_all"), type: "button", class: "field-link-action", hidden: true,
           data: { locker_entry_choice_target: "declareHasLockerTrigger",
                   action: "locker-entry-choice#declareHasLocker" } %>
   <% end %>
@@ -55,5 +55,5 @@
       edit saved in isolation and did nothing once other tests had populated the
       cache. The in-progress cue for this form is the disabled/progress cursor
       rule in the stylesheet, which needs no attribute swap. %>
-  <%= f.submit "Save locker details", class: "btn btn-primary" %>
+  <%= f.submit t(".submit"), class: "btn btn-primary" %>
 <% end %>

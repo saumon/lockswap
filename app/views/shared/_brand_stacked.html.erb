@@ -10,9 +10,14 @@
   500KB. The vector trace in shared/_brand_mark is what the header and the icons
   use, where the mark is small and has to recolour.
 
-  FR-003a: the tagline is rendered in English so it matches the interface. The
-  French original from the source artwork stays in the brand files and must not
-  appear on any page.
+  008 FR-003a (superseded by 025): the tagline used to be hardcoded in English
+  "so it matches the interface", with the source artwork's own French original
+  ("Trouvez le casier qui vous convient") deliberately kept off every page. 025
+  made the interface itself bilingual, which is exactly the premise FR-003a's
+  rule rested on — so the tagline now follows the site language like every
+  other string (t(".tagline")) instead of being pinned to English, and the
+  artwork's own French phrase is what fr.yml uses. This is a text change only;
+  FR-015's "no new control or behaviour" still holds.
 
   008 FR-022: the logo fades up out of a blur once.
 
@@ -51,5 +56,5 @@
 
   <p class="brand-wordmark brand-wordmark-display"><span class="brand-wordmark-lock">Lock</span><span class="brand-wordmark-swap">Swap</span></p>
 
-  <p class="brand-tagline">Find the locker that suits you</p>
+  <p class="brand-tagline"><%= t(".tagline") %></p>
 </div>

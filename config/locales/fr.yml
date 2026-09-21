@@ -1,0 +1,340 @@
+# 025 research.md R8: rails-i18n ships French date/time/number formats that
+# would silently reformat this app's `l(record.created_at, format: :long)`
+# call sites the moment the site language switched to French. FR-012 (and the
+# Clarifications session, 2026-09-21) requires dates and numbers to keep one
+# fixed format regardless of language, so this app's own fr.yml — which loads
+# after any gem's locale file for the same key — pins these three sections back
+# to the exact values ActiveSupport's bundled en.yml uses, rather than the
+# French conventions rails-i18n would otherwise contribute.
+fr:
+  # 025 T021: model/attribute names no gem can know, since they are unique to
+  # this application. rails-i18n and devise-i18n both ship generic
+  # activerecord.attributes coverage (created_at, updated_at, and Devise's own
+  # User attributes), but "floor", "domain" and "language" are LockSwap's own
+  # columns — there is nothing in en.yml to pair these with, because English
+  # needs no override: Rails' plain humanization of the column name already
+  # produces "Floor"/"Domain"/"Language" correctly on its own.
+  activerecord:
+    models:
+      allowed_email_domain: "domaine e-mail autorisé"
+      locker_wish: "recherche de casier"
+      site_language_setting: "réglage de langue du site"
+    attributes:
+      user:
+        floor: "Étage"
+        locker_number: "Numéro de casier"
+      allowed_email_domain:
+        domain: "Domaine"
+      locker_wish:
+        floor: "Étage"
+      site_language_setting:
+        language: "Langue"
+
+  date:
+    formats:
+      default: "%Y-%m-%d"
+      short: "%b %d"
+      long: "%B %d, %Y"
+    # %B/%A/%b/%a in the formats above pull from these arrays, not from the
+    # format string alone — pinned for the same FR-012 reason as the formats.
+    day_names: [Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday]
+    abbr_day_names: [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
+    month_names: [~, January, February, March, April, May, June, July, August, September, October, November, December]
+    abbr_month_names: [~, Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]
+  time:
+    formats:
+      default: "%a, %d %b %Y %H:%M:%S %z"
+      short: "%d %b %H:%M"
+      long: "%B %d, %Y %H:%M"
+    am: "am"
+    pm: "pm"
+  number:
+    format:
+      separator: "."
+      delimiter: ","
+      precision: 3
+      round_mode: default
+      significant: false
+      strip_insignificant_zeros: false
+
+  admin:
+    danger_zone:
+      show:
+        title: "Zone de danger"
+        language_explanation: "Ce réglage définit la langue vue par chaque visiteur sur tout le site — ce n'est pas une préférence personnelle."
+        languages:
+          fr: "Français"
+          en: "Anglais"
+        save_language_button: "Enregistrer la langue"
+        language_updated: "Langue mise à jour : %{language}."
+        domains_explanation: "Seules les adresses e-mail sur les domaines listés ici peuvent créer un compte. Si aucun domaine n'est listé, l'inscription est ouverte à tout domaine e-mail."
+        domain_header: "Domaine"
+        added_header: "Ajouté"
+        actions_header: "Actions"
+        remove_button: "Retirer"
+        remove_aria_label: "Retirer %{domain}"
+        remove_confirm_last: "Retirer %{domain} ? L'inscription sera à nouveau ouverte à tout domaine e-mail."
+        remove_confirm: "Retirer %{domain} ? Personne sur ce domaine ne pourra plus s'inscrire."
+        domains_empty: "Aucun domaine n'est listé, l'inscription est donc actuellement ouverte à tout domaine e-mail."
+        domain_hint: "Le domaine seul, sans le @ — par exemple, company.com. Les sous-domaines ne sont pas inclus : ajoutez mail.company.com séparément si besoin."
+        add_domain_button: "Ajouter un domaine"
+    users:
+      index:
+        title: "Utilisateurs"
+        heading: "Utilisateurs enregistrés"
+        current_floor_label: "Étage actuel"
+        all_floors: "Tous les étages"
+        role_label: "Rôle"
+        all_roles: "Tous les rôles"
+        current_locker_label: "Casier actuel"
+        email_label: "E-mail"
+        email_header: "E-mail"
+        joined_header: "Inscrit le"
+        floor_header: "Étage"
+        locker_header: "Casier"
+        wish_header: "Recherche"
+        role_header: "Rôle"
+        actions_header: "Actions"
+        not_set: "Non défini"
+        looking_for_floor: "Recherche l'étage %{floor}"
+        not_looking_for_a_locker: "Ne recherche pas de casier"
+        role_choices:
+          admin: "Administrateur"
+          standard: "Standard"
+        granted_by: "Accordé par %{email} le %{date}"
+        granted_account_removed: "Accordé le %{date} (compte supprimé)"
+        first_registration: "Première inscription"
+        grant_confirm: "Accorder les droits d'administrateur à %{email} ? Cette action est irréversible."
+        grant_button: "Accorder les droits admin"
+        grant_aria_label: "Accorder les droits d'administrateur à %{email}"
+        no_match: "Aucun compte ne correspond aux filtres actuels."
+      grant_admin:
+        account_gone: "Ce compte n'existe plus."
+        granted: "%{email} a reçu les droits d'administrateur."
+    allowed_email_domains:
+      create:
+        created: "%{domain} peut désormais s'inscrire."
+      destroy:
+        domain_gone: "Ce domaine avait déjà été retiré."
+        removed: "%{domain} ne peut plus s'inscrire."
+        removed_last: "%{domain} retiré. L'inscription est de nouveau ouverte à tout domaine e-mail."
+  application:
+    administrators_only: "Cette page est réservée aux administrateurs."
+  devise:
+    sessions:
+      new:
+        title: "Connexion"
+        submit: "Se connecter"
+        submitting: "Connexion en cours…"
+        no_account: "Vous n'avez pas de compte ?"
+        sign_up: "S'inscrire"
+    registrations:
+      new:
+        title: "Créer votre compte"
+        password_subject: "mot de passe"
+        password_confirmation_subject: "confirmation du mot de passe"
+        submit: "Créer le compte"
+        submitting: "Création en cours…"
+        already_have_account: "Vous avez déjà un compte ?"
+        log_in: "Se connecter"
+      edit:
+        title: "Paramètres du compte"
+        heading: "Modifier l'utilisateur"
+        waiting_confirmation_for: "Confirmation en attente pour : %{email}"
+        leave_blank: "(laissez vide si vous ne voulez pas le changer)"
+        current_password_hint: "(nous avons besoin de votre mot de passe actuel pour confirmer vos modifications)"
+        submit: "Mettre à jour"
+        submitting: "Mise à jour en cours…"
+        cancel_account_title: "Annuler mon compte"
+        unhappy: "Mécontent(e) ?"
+        cancel_account_button: "Annuler mon compte"
+        cancel_account_confirm: "Êtes-vous sûr(e) ?"
+        back: "Retour"
+    shared:
+      password_hint:
+        one: "%{count} caractère minimum"
+        other: "%{count} caractères minimum"
+      password_field:
+        show: "Afficher %{subject}"
+        hide: "Masquer %{subject}"
+      links:
+        log_in: "Se connecter"
+        sign_up: "S'inscrire"
+        forgot_password: "Mot de passe oublié ?"
+        no_confirmation_instructions: "Vous n'avez pas reçu les instructions de confirmation ?"
+        no_unlock_instructions: "Vous n'avez pas reçu les instructions de déverrouillage ?"
+        sign_in_with: "Se connecter avec %{provider}"
+  allowed_email_domain:
+    messages:
+      invalid_domain: "doit ressembler à company.com"
+  home:
+    index:
+      title: "Accueil"
+      welcome_to: "Bienvenue sur"
+      logged_in_as_html: "Vous êtes connecté(e) en tant que %{email}."
+      locker_locked_by_swap: "Votre étage et votre numéro de casier ne peuvent pas être modifiés tant qu'une proposition d'échange est active. Ils pourront de nouveau être modifiés une fois qu'elle sera refusée, retirée ou terminée."
+      add_locker_details: "Ajouter les détails de votre casier"
+    locker_profile_form:
+      locker_number_hint: "Laissez vide si vous n'avez pas de casier attribué."
+      no_locker: "Je n'ai pas de casier 😔"
+      has_locker_after_all: "En fait, j'ai un casier"
+      submit: "Enregistrer les détails du casier"
+    locker_profile:
+      title: "Votre casier"
+      floor: "Étage"
+      locker_number: "Numéro de casier"
+      no_locker_assigned: "Aucun casier attribué"
+      edit_locker_details: "Modifier les détails du casier"
+    locker_wish:
+      title: "Votre recherche de casier"
+      looking_on_floor: "Recherche d'un casier à l'étage"
+      review_wishes: "Voir mes recherches de casier ! 🥷"
+      different_locker_title: "Vous cherchez un autre casier ?"
+      different_locker_lead: "Vous n'avez pas encore dit où vous préféreriez être. Indiquez l'étage que vous visez pour trouver quelqu'un avec qui échanger."
+      switch_locker: "Je veux changer de casier ! 👀"
+      no_locker_title: "Vous cherchez un casier ?"
+      no_locker_lead: "Vous n'avez pas encore de casier. Indiquez l'étage recherché pour que les autres sachent que vous en attendez un."
+      want_a_locker: "Je veux un casier ! 🙏"
+    swap_exchange_in_progress:
+      title: "Échange en cours"
+      accepted: "Accepté"
+      swapping_with_html: "Vous échangez votre casier avec %{email}."
+      not_set: "non défini"
+      none_assigned: "aucun attribué"
+      counterpart_details: "Cette personne a l'étage %{floor}, casier %{locker}."
+      confirm_instructions: "Une fois que vous avez réellement échangé vos casiers, confirmez-le ici et les deux jeux de détails seront échangés."
+      confirm_button: "Confirmer l'échange terminé"
+      confirming: "Confirmation en cours…"
+      waiting_for_their_confirmation: "%{email} confirmera une fois l'échange effectué."
+    swap_proposals_declined:
+      title: "Propositions refusées"
+      declined: "Refusée"
+      declined_your_proposal_html: "%{email} a refusé votre proposition d'échange"
+    swap_proposals_received:
+      title: "Propositions d'échange pour vous"
+      wants_to_swap_html: "%{email} souhaite échanger son casier avec vous"
+      not_set: "non défini"
+      none_assigned: "aucun attribué"
+      proposal_details: "Étage %{floor} · Casier %{locker} · Envoyée le %{sent_at}"
+      accept: "Accepter"
+      accepting: "Acceptation en cours…"
+      decline: "Refuser"
+      decline_comment_label: "Pourquoi ? (facultatif)"
+      confirm_decline: "Confirmer le refus"
+      declining: "Refus en cours…"
+    swap_proposals_sent:
+      title: "Propositions envoyées"
+      waiting_on_html: "En attente de %{email}"
+      sent_at: "Envoyée le %{sent_at}"
+      withdraw: "Retirer"
+      withdrawing: "Retrait en cours…"
+  locker_profiles:
+    update:
+      saved: "Détails du casier enregistrés."
+  locker_swap_proposal:
+    floor_and_locker_summary:
+      exchanged: "Échangé"
+      proposed: "Proposé"
+      for: "contre"
+      floor: "Étage %{floor}"
+      no_floor: "Aucun étage"
+      locker: "casier %{locker_number}"
+      no_locker_assigned: "aucun casier attribué"
+    messages:
+      auto_decline_comment: "Refusée automatiquement — l'un de vous a démarré un autre échange."
+      cannot_be_yourself: "ne peut pas être vous-même"
+      recipient_not_looking: "ne recherche pas de casier pour le moment"
+      requester_already_in_exchange: "Vous avez déjà un échange en cours."
+      recipient_already_in_exchange: "a déjà un échange en cours"
+      pending_proposal_already_stands: "a déjà une proposition en attente de votre part"
+  locker_swap_proposals:
+    create:
+      sent: "Proposition d'échange envoyée."
+      that_person: "Cette personne %{message}."
+    destroy:
+      withdrawn: "Proposition d'échange retirée."
+    accept:
+      accepted: "Proposition d'échange acceptée."
+      cannot_accept: "Cette proposition ne peut plus être acceptée — une des personnes concernées a déjà un échange en cours."
+    decline:
+      declined: "Proposition d'échange refusée."
+    confirm:
+      confirmed: "Échange confirmé — vos détails de casier ont été échangés."
+    index:
+      title: "Historique des propositions"
+      heading: "Vos propositions d'échange"
+      direction_header: "Direction"
+      person_header: "Personne"
+      sent_header: "Envoyée"
+      status_header: "Statut"
+      comment_header: "Commentaire"
+      locker_details_header: "Détails du casier"
+      sent: "Envoyée"
+      received: "Reçue"
+      exchange_in_progress: "Échange en cours"
+      status:
+        pending: "En attente"
+        declined: "Refusée"
+        withdrawn: "Retirée"
+        completed: "Terminée"
+      empty: "Vous n'avez envoyé ni reçu aucune proposition d'échange pour l'instant."
+  locker_wishes:
+    create:
+      saved: "Recherche de casier enregistrée."
+    destroy:
+      cancelled: "Recherche de casier annulée."
+    index:
+      title: "Recherches de casier"
+    floor_filter:
+      all_floors: "Tous les étages"
+    locker_wish_form:
+      floor_hint: "L'étage où vous souhaiteriez un casier."
+      submit: "Enregistrer ma recherche"
+    locker_wish_list:
+      title: "Tout le monde à la recherche d'un casier"
+      looking_for_floor_label: "Recherche l'étage"
+      their_floor_label: "Son étage"
+      person_header: "Personne"
+      their_locker_header: "Son casier"
+      swap_header: "Échange"
+      match: "Ça matche !"
+      this_is_you: "C'est vous"
+      exchange_already_in_progress: "Vous avez déjà un échange en cours"
+      proposal_pending: "Proposition en attente"
+      propose_swap: "Proposer un échange"
+      proposing: "Proposition en cours…"
+      no_match: "Aucune recherche ne correspond à ces filtres."
+      empty: "Personne ne recherche de casier pour le moment."
+    locker_wish_panel:
+      title: "Votre recherche de casier"
+      looking_on_floor: "Recherche d'un casier à l'étage"
+      cancel_wish: "Annuler la recherche"
+      cancelling: "Annulation en cours…"
+      change_floor: "Changer d'étage"
+      looking_for_a_locker: "Je recherche un casier"
+  layouts:
+    application:
+      main_nav: "Principal"
+    flash:
+      dismiss: "Rejeter la notification"
+  pwa:
+    manifest:
+      description: "Trouvez le casier qui vous convient, et échangez-le avec quelqu'un qui veut le vôtre."
+  shared:
+    brand_stacked:
+      tagline: "Trouvez le casier qui vous convient"
+    site_menu:
+      menu: "Menu"
+    site_menu_items:
+      locker_wishes: "Recherches de casier"
+      proposal_history: "Historique des propositions"
+      admin: "Admin"
+      users: "Utilisateurs"
+      danger_zone: "Zone de danger"
+      log_out: "Se déconnecter"
+  user:
+    messages:
+      locker_number_taken: "n'est pas disponible à cet étage — un autre compte a déjà ce casier"
+      locked_by_swap: "ne peut pas être modifié tant que vous avez une proposition d'échange active"
+      last_administrator: "Vous êtes le seul administrateur. Accordez les droits d'administrateur à un autre compte avant d'annuler celui-ci."
+      email_domain_not_allowed: "Votre domaine d'adresse e-mail n'est pas autorisé"

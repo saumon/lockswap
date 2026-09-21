@@ -1315,6 +1315,23 @@
     gap: var(--spacing-3);
   }
 
+  /* A .btn placed directly in a .stack/.stack-tight column (no .row wrapper)
+     stretches to the card's own width, per the flex column's default
+     align-items: stretch — see the "no .row wrapper" comment on
+     home/_locker_wish.html.erb's buttons. button_to wraps its <button> in a
+     <form class="button_to">, and that form is the actual flex item: the
+     form itself stretches, but a block-level form does not pass that width
+     down to its own child, so the button inside was left sized to its own
+     text instead of matching a sibling button's width the way an <a class="btn">
+     already does. display: contents removes the form's own box from layout
+     so its <button> becomes the flex item directly, in exactly the same
+     position an anchor button would occupy — the two match because they are
+     laid out the same way, not because either one's width was pinned. */
+  .stack > form.button_to,
+  .stack-tight > form.button_to {
+    display: contents;
+  }
+
   .meta {
     color: var(--color-ink-muted);
     font-size: var(--text-sm);

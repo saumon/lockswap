@@ -1,4 +1,4 @@
-<% content_for :title, "Home" %>
+<% content_for :title, t(".title") %>
 
 <div class="stack">
   <%# 021: the page title is no longer inside a card. It was the same white
@@ -13,9 +13,9 @@
         green is 2.66:1 and is allowed on a brand name and nowhere else. No
         whitespace between the two halves: "LockSwap" has to keep reading as one
         word, which is what every log-in assertion in the suite looks for. %>
-    <h1 class="page-title">Welcome to <span class="brand-wordmark brand-wordmark-inline"><span class="brand-wordmark-lock">Lock</span><span class="brand-wordmark-swap">Swap</span></span></h1>
+    <h1 class="page-title"><%= t(".welcome_to") %> <span class="brand-wordmark brand-wordmark-inline"><span class="brand-wordmark-lock">Lock</span><span class="brand-wordmark-swap">Swap</span></span></h1>
     <p class="card-lead">
-      You are logged in as <span class="strong data-value"><%= current_user.email %></span>.
+      <%= t(".logged_in_as_html", email: content_tag(:span, current_user.email, class: "strong data-value")) %>
     </p>
   </div>
 
@@ -55,14 +55,13 @@
     <% if locked %>
       <div id="locker-profile-locked" class="card card--you">
         <p class="card-lead">
-          Your floor and locker number cannot be changed while you have an active swap
-          proposal. They can be edited again once it is declined, withdrawn, or completed.
+          <%= t(".locker_locked_by_swap") %>
         </p>
       </div>
     <% end %>
   <% else %>
     <div class="card card--you stack-tight">
-      <h2 class="card-title">Add your locker details</h2>
+      <h2 class="card-title"><%= t(".add_locker_details") %></h2>
       <%# 009 FR-001: only here is the choice offered — a first answer is the one
           place where "no locker" is still an open question. %>
       <%= render "home/locker_profile_form", show_no_locker_choice: true %>
