@@ -16,8 +16,16 @@ Rails.application.routes.draw do
   # 003: the page listing everyone's active wishes (FR-011), and declaring one
   # (FR-001). Singular for the write: a user only ever acts on their own single
   # wish, so there is no :id to put in the path.
+  #
+  # 026: :new carries no form of its own — a singular resource has nowhere else
+  # to put it. It exists so the homepage's two invitations can hand the wish
+  # page an intention to open its declare form without that intention ever
+  # appearing in the address (FR-001/FR-003); the action sets a flash entry and
+  # redirects straight to locker_wishes_path. The class's own
+  # before_action :authenticate_user! already covers it, since a singular
+  # `resource` still routes to the plural LockerWishesController.
   resources :locker_wishes, only: :index
-  resource :locker_wish, only: [ :create, :destroy ]
+  resource :locker_wish, only: [ :new, :create, :destroy ]
 
   # 004: proposing a swap (:create), withdrawing one still pending (:destroy),
   # and the read-only history screen (:index). The three decisions are member
