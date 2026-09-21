@@ -40,6 +40,11 @@ class HomepageLockerWishTest < ApplicationSystemTestCase
 
   # FR-002, FR-003: bob is looking on floor 7. That floor, and the way back to
   # the page he declared it on, are the whole content of the state.
+  #
+  # 026 FR-008: this state's link stays on locker_wishes_path rather than
+  # new_locker_wish_path — it does not carry the declare intention, because bob
+  # has already declared and there is no declare zone on the page for it to
+  # open.
   test "a declared wish is shown with the way back to the wish page" do
     log_in_as users(:bob)
 
@@ -48,6 +53,8 @@ class HomepageLockerWishTest < ApplicationSystemTestCase
     within BLOCK do
       assert_link "Review locker wishes! 🥷"
       assert_no_text "I want"
+      assert_equal locker_wishes_path,
+        URI.parse(find_link("Review locker wishes! 🥷")[:href]).path
     end
   end
 
@@ -182,7 +189,13 @@ class HomepageLockerWishTest < ApplicationSystemTestCase
       # the header's own "Locker wishes" link, untouched by this feature, is
       # dropped the same way on the same page. Asserting the href keeps this
       # test about the requirement instead of about the driver.
-      assert_equal locker_wishes_path,
+      #
+      # 026: the destination is new_locker_wish_path now, not locker_wishes_path
+      # directly — this link carries the declare intention (FR-001). The two
+      # addresses redirect into one another, but which one a copied or shared
+      # link would carry (FR-003) is exactly what this file's own convention of
+      # asserting hrefs, rather than clicking, is suited to check.
+      assert_equal new_locker_wish_path,
         URI.parse(find_link("I want to switch my locker! 👀")[:href]).path
     end
   end

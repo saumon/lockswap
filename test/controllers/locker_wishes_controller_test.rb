@@ -70,6 +70,126 @@ class LockerWishesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_user_session_path
   end
 
+  # 026: reaches this endpoint at all, unlike the two verbs above, because a
+  # browser can navigate a GET on its own — the homepage invitations that carry
+  # this intention are hidden from an anonymous visitor, but the address itself
+  # is not protected by anything but the same before_action every other action
+  # here has. Filed alongside the other anonymous cases rather than in
+  # test/system/access_control_test.rb: that file covers screens an anonymous
+  # visitor could open, and #new renders nothing — what matters about it is a
+  # redirect chain, which is a server-side fact belonging here.
+  test "an anonymous visitor is sent to sign in rather than reaching the declare intention" do
+    assert_no_difference -> { LockerWish.count } do
+      get new_locker_wish_path
+    end
+
+    assert_redirected_to new_user_session_path
+  end
+
+  # --- 026: the declare intention carried from the homepage -------------------
+
+  # FR-001/FR-003: the address the person ends on is the bare path, byte-
+  # identical to what the menu produces for the same viewer — no query string,
+  # no fragment. Asserting only assert_redirected_to would pass on a redirect
+  # that appended parameters, so the path and its query are checked separately.
+  test "the declare intention redirects to the bare wish list with no query string" do
+    sign_in users(:erin)
+
+    get new_locker_wish_path
+
+    assert_response :redirect
+    location = URI.parse(response.location)
+    assert_equal locker_wishes_path, location.path
+    assert_nil location.query
+  end
+
+  # FR-002/FR-012: the flash is what carries the intention, and nothing about
+  # carrying it writes to the database.
+  test "the declare intention sets the open-wish-form flash and creates nothing" do
+    sign_in users(:erin)
+
+    assert_no_difference -> { LockerWish.count } do
+      get new_locker_wish_path
+    end
+
+    assert_equal true, flash[:open_wish_form]
+  end
+
+  # FR-004/FR-005: following the redirect renders the declare disclosure open,
+  # with the floor field carrying autofocus — the two attributes turbo-rails
+  # requires to ship in the same response (research.md R3).
+  test "following the declare intention opens the disclosure with the floor field focused" do
+    sign_in users(:erin)
+
+    get new_locker_wish_path
+    follow_redirect!
+
+    assert_select "details[open] summary", text: "I'm looking for a locker"
+    assert_select "details[open] input#locker_wish_floor[autofocus]"
+  end
+
+  # FR-006: a plain visit — the menu, a typed address, anything that did not
+  # pass through #new — renders the same disclosure closed, with no field
+  # carrying autofocus. This must pass both before and after the feature: it is
+  # the assertion that would catch an implementation that opened the zone for
+  # everyone rather than only for the intention that asked for it.
+  test "an ordinary visit to the wish list leaves the disclosure closed" do
+    sign_in users(:erin)
+
+    get locker_wishes_path
+
+    assert_select "details[open]", count: 0
+    assert_select "input[autofocus]", count: 0
+  end
+
+  # FR-002: the intention is spent by the single request that reads it. A
+  # second visit — standing in for a reload or a Back navigation, both of which
+  # are fresh requests once the screen refuses the Turbo page cache (017
+  # FR-018) — sees the same folded screen the menu produces.
+  test "a second visit after the declare intention is folded, not the first render again" do
+    sign_in users(:erin)
+
+    get new_locker_wish_path
+    follow_redirect!
+    assert_select "details[open]" # sanity: the first render really was open
+
+    get locker_wishes_path
+
+    assert_select "details[open]", count: 0
+    assert_select "input[autofocus]", count: 0
+  end
+
+  # FR-010: a rejected submission still opens the disclosure to show the error,
+  # exactly as it does today — but it is not the declare intention, so it must
+  # not carry autofocus. Distinguishes "open because of an error" from "open
+  # and focused because of an arrival," which the panel folds into a single
+  # `open` condition but must not fold into a single `autofocus` one.
+  test "a rejected declare reopens the disclosure without autofocus" do
+    sign_in users(:erin)
+
+    post locker_wish_path, params: { locker_wish: { floor: "" } }
+
+    assert_select "details[open]"
+    assert_select "input[autofocus]", count: 0
+  end
+
+  # FR-008: a viewer who already has a wish is unaffected by the intention —
+  # they have no declare disclosure to open, only "Change floor," which stays
+  # closed and unfocused. Also covers spec US3 scenario 2 (declaring in
+  # another tab after the homepage loaded): the intention still exists when
+  # they arrive, and finding a wish on file now must not error or focus
+  # anything that does not exist in this branch.
+  test "the declare intention has nothing to open for a viewer who already has a wish" do
+    sign_in users(:bob) # bob_wish fixture
+
+    get new_locker_wish_path
+    follow_redirect!
+
+    assert_select "#locker-wish-floor", text: "7"
+    assert_select ".disclosure-nested[open]", count: 0
+    assert_select "input[autofocus]", count: 0
+  end
+
   # --- 017: the floor filters -------------------------------------------------
 
   # FR-010: one axis set, the other on all floors.

@@ -33,15 +33,25 @@
       <summary class="disclosure-summary"><%= t(".change_floor") %></summary>
 
       <div class="disclosure-body">
-        <%= render "locker_wishes/locker_wish_form" %>
+        <%# 026 FR-008: a viewer with a wish never sees the declare intention —
+            this disclosure only opens on its own errors.any?, never on
+            @open_wish_form. No controller guard is needed for that: the branch
+            this partial sits in already does not render for anyone the
+            intention would apply to (research.md R6). %>
+        <%= render "locker_wishes/locker_wish_form", autofocus: false %>
       </div>
     </details>
   <% else %>
-    <details <%= "open" if @locker_wish.errors.any? %>>
+    <%# 026 FR-002/FR-004/FR-006: @open_wish_form is the one-arrival intention
+        set by LockerWishesController#new — present only on the request right
+        after it, absent on a reload, Back/Forward, a bookmark, or the menu.
+        Folded into the same `open` condition as a rejected submission,
+        because both are "the person needs to see this form right now." %>
+    <details <%= "open" if @open_wish_form || @locker_wish.errors.any? %>>
       <summary class="disclosure-summary"><%= t(".looking_for_a_locker") %></summary>
 
       <div class="disclosure-body">
-        <%= render "locker_wishes/locker_wish_form" %>
+        <%= render "locker_wishes/locker_wish_form", autofocus: @open_wish_form %>
       </div>
     </details>
   <% end %>

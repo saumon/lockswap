@@ -20,7 +20,38 @@ class LockerWishesController < ApplicationController
 
   def index
     @locker_wish = own_locker_wish
+
+    # 026 FR-002/FR-004: the raw fact that this arrival carried an intention to
+    # declare — read once here, not re-derived in the view — and deliberately
+    # with no persisted?/errors guard folded in. Where the fact applies is the
+    # view's decision, and the view already answers it by branch: the declare
+    # disclosure this opens does not render at all for a viewer who has a wish
+    # (research.md R6), so FR-008 needs no second rule here.
+    #
+    # `flash` is read, not `flash[:open_wish_form]` alone, so this costs nothing
+    # extra: the flash hash is already loaded once per request by the session
+    # middleware, and Rails sweeps whatever key was read after this render.
+    @open_wish_form = flash[:open_wish_form].present?
+
     load_wish_list
+  end
+
+  # 026 FR-001/FR-002/FR-003: the homepage's two invitations land here instead
+  # of on locker_wishes_path directly. Setting the flash and redirecting is the
+  # whole of the feature's "spent by one arrival" and "address unchanged" rules:
+  # the flash is readable by exactly the next request and swept after it, and
+  # the redirect target is the bare path every other entrance produces, so a
+  # reload, a bookmark, or Back never see anything this arrival did not also
+  # produce for the menu.
+  #
+  # Deliberately not registered with add_flash_types: layouts/_flash.html.erb
+  # renders `notice` and `alert` by name rather than iterating the flash hash
+  # (research.md R2), so this key is already invisible to the toast layer, and
+  # add_flash_types exists only to let redirect_to take a key as an option —
+  # which would just invite someone to render it as a message later.
+  def new
+    flash[:open_wish_form] = true
+    redirect_to locker_wishes_path
   end
 
   # FR-001, FR-004: the same action records a first wish and moves an existing

@@ -1,6 +1,15 @@
 <%# 003 FR-006/FR-007: one field — the floor being looked for. The same partial
     serves the first declare and every later change, so both go through the same
     validation and report failures the same way. %>
+<%#
+  locals: (autofocus: false)
+
+  026 FR-005/FR-007: a local rather than an instance variable, because this
+  partial has two call sites — the declare disclosure and the "Change floor"
+  one — and they must not have to know about each other to each say what they
+  mean. Declared with strict locals so the partial's own interface says so,
+  rather than leaving it to a local_assigns lookup (Principle I).
+%>
 <%= render "devise/shared/error_messages", resource: @locker_wish %>
 
 <%# novalidate: the server decides what is valid, so every failure is reported the
@@ -12,7 +21,15 @@
       locker_wishes/_locker_wish_list. %>
   <div class="field">
     <%= f.label :floor, class: "field-label" %>
-    <%= f.text_field :floor, autocomplete: "off",
+    <%# 026 FR-005/FR-014/FR-015: autofocus is only ever true on the render
+        that follows the declare intention (research.md R3 — turbo-rails picks
+        the autofocusable element with a filter that excludes anything inside
+        details:not([open]), so this attribute and the panel's `open` one must
+        ship in the same server response; opening the disclosure from script
+        after render would leave this permanently unfocused with no error
+        anywhere). No viewport branch: the behaviour is identical on a phone
+        and on a desktop. Rails omits the attribute entirely when false. %>
+    <%= f.text_field :floor, autofocus: autofocus, autocomplete: "off",
           aria: { describedby: "locker_wish_floor_hint" }, class: "field-input" %>
     <p id="locker_wish_floor_hint" class="field-hint">
       <%= t(".floor_hint") %>

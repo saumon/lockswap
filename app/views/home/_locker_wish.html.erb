@@ -54,7 +54,12 @@
         card — which is exactly what "Save locker details" does inside its
         form.stack-tight. The two match because they are laid out the same way,
         not because a width was pinned to make them agree. %>
-    <%= link_to t(".switch_locker"), locker_wishes_path, class: "btn btn-primary btn-arrow" %>
+    <%# 026 FR-001: new_locker_wish_path, not locker_wishes_path — this is the
+        invitation to declare, so it carries the intention that opens the
+        declare zone on arrival (FR-004/FR-005). Still a navigation that
+        changes nothing by itself, so link_to is still correct for the same
+        reason it was before: it is announced as a link and Back behaves. %>
+    <%= link_to t(".switch_locker"), new_locker_wish_path, class: "btn btn-primary btn-arrow" %>
   <% else %>
     <%# FR-005, FR-011: no locker, and nothing declared. Having nothing to trade
         is the reason to be here, not a reason to be left out.
@@ -73,6 +78,9 @@
         card — which is exactly what "Save locker details" does inside its
         form.stack-tight. The two match because they are laid out the same way,
         not because a width was pinned to make them agree. %>
-    <%= link_to t(".want_a_locker"), locker_wishes_path, class: "btn btn-primary btn-arrow" %>
+    <%# 026 FR-001: new_locker_wish_path — see the note on the "switch_locker"
+        link above. Both invitations carry the same intention; the homepage
+        only varies which one it shows. %>
+    <%= link_to t(".want_a_locker"), new_locker_wish_path, class: "btn btn-primary btn-arrow" %>
   <% end %>
 </div>
