@@ -525,6 +525,128 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_equal Admin::UsersController::ACCOUNT_GONE_MESSAGE, flash[:alert]
   end
 
+  # --- 027 User Story 1: the detail screen, and who may reach it --------------
+
+  test "an administrator can view another account's detail screen" do
+    sign_in users(:frank)
+
+    get admin_user_path(users(:bob))
+
+    assert_response :success
+    assert_select "body", text: /#{Regexp.escape(users(:bob).email)}/
+  end
+
+  # Edge Case: the same capabilities apply to the administrator's own account as
+  # to any other, since the Users list already permits clicking any row.
+  test "an administrator can view their own detail screen" do
+    sign_in users(:frank)
+
+    get admin_user_path(users(:frank))
+
+    assert_response :success
+  end
+
+  test "an anonymous visitor requesting a user's detail screen is sent to sign in" do
+    get admin_user_path(users(:bob))
+
+    assert_redirected_to new_user_session_path
+  end
+
+  test "a non-administrator requesting a user's detail screen is refused" do
+    sign_in users(:carol)
+
+    get admin_user_path(users(:bob))
+
+    assert_redirected_to root_path
+    assert_equal ApplicationController::ADMINISTRATORS_ONLY_MESSAGE, flash[:alert]
+  end
+
+  # FR-011-equivalent for this screen: a vanished account is a message, not a 404.
+  test "requesting the detail screen for a vanished account says so" do
+    sign_in users(:frank)
+    gone = users(:dave).id
+    users(:dave).destroy
+
+    get admin_user_path(gone)
+
+    assert_redirected_to admin_users_path
+    assert_equal Admin::UsersController::ACCOUNT_GONE_MESSAGE, flash[:alert]
+  end
+
+  # --- 027 User Story 2: search status and proposal history -------------------
+
+  # FR-004: bob's fixture wish (bob_wish, floor "7").
+  test "the detail screen shows the account's standing wish and its floor" do
+    sign_in users(:frank)
+
+    get admin_user_path(users(:bob))
+
+    assert_select "#admin-user-search-status", text: /#{Regexp.escape(users(:bob).locker_wish.saved_floor)}/
+  end
+
+  # FR-005: bob is also the recipient on the pending alice_pending_to_bob fixture
+  # — a wish and an active proposal can coexist (research.md R6), and both must
+  # show.
+  test "the detail screen shows an account's active proposal alongside its wish" do
+    sign_in users(:frank)
+
+    get admin_user_path(users(:bob))
+
+    assert_select "#admin-user-search-status" do
+      assert_select ".detail-value-empty", count: 0
+    end
+  end
+
+  # FR-005: quinn has no wish and no fixture proposal at all.
+  test "the detail screen states plainly when there is no search in progress" do
+    sign_in users(:frank)
+
+    get admin_user_path(users(:quinn))
+
+    assert_select "#admin-user-search-status.detail-value-empty"
+  end
+
+  # FR-006/FR-007: every one of dave's proposals (sent, declined) is in the
+  # history; an account with none shows the empty state instead.
+  test "the detail screen lists every proposal the account sent or received" do
+    sign_in users(:frank)
+
+    get admin_user_path(users(:dave))
+
+    assert_select "#admin-user-detail-history-row-#{locker_swap_proposals(:dave_declined_to_carol).id}"
+  end
+
+  test "the detail screen states plainly when there is no proposal history" do
+    sign_in users(:frank)
+
+    get admin_user_path(users(:quinn))
+
+    assert_select "#admin-user-detail-history-empty"
+    assert_select ".data-table", count: 0
+  end
+
+  # Principle IV, research.md R5/R6: two bounded queries per collection, not one
+  # scaling with every other account's own proposals.
+  test "the detail screen's query cost does not scale with other accounts' proposals" do
+    sign_in users(:frank)
+
+    get admin_user_path(users(:dave))
+    baseline = count_queries { get admin_user_path(users(:dave)) }
+
+    User.insert_all!((1..5).map do |n|
+      {
+        email: "other#{n}@example.com",
+        encrypted_password: Devise::Encryptor.digest(User, VALID_PASSWORD),
+        floor: "9", created_at: Time.current, updated_at: Time.current
+      }
+    end)
+    User.where(email: (1..5).map { |n| "other#{n}@example.com" }).find_each do |other|
+      LockerSwapProposal.new(requester: users(:erin), recipient: other).save(validate: false)
+    end
+
+    assert_equal baseline, count_queries { get admin_user_path(users(:dave)) }
+  end
+
   private
 
     # The id embedded in an admin-user-row form's action, for the read-only check

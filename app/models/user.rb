@@ -30,6 +30,22 @@ class User < ApplicationRecord
   has_many :admin_grants_made, class_name: "User", foreign_key: :admin_granted_by_id,
            dependent: :nullify, inverse_of: :admin_granted_by
 
+  # 027 FR-009a/FR-011a: who (which administrator) last edited this account's
+  # floor/locker, or last cancelled its search, on its behalf from the admin
+  # detail screen — and the has_many inverse each needs so that admin's own
+  # account being later cancelled nullifies the reference instead of raising a
+  # foreign-key violation, the same pairing admin_granted_by/admin_grants_made
+  # already establishes above.
+  belongs_to :locker_edited_by, class_name: "User", optional: true,
+             inverse_of: :locker_edits_made
+  has_many :locker_edits_made, class_name: "User", foreign_key: :locker_edited_by_id,
+           dependent: :nullify, inverse_of: :locker_edited_by
+
+  belongs_to :search_cancelled_by, class_name: "User", optional: true,
+             inverse_of: :search_cancellations_made
+  has_many :search_cancellations_made, class_name: "User", foreign_key: :search_cancelled_by_id,
+           dependent: :nullify, inverse_of: :search_cancelled_by
+
   # "No locker" must reach the database as NULL, never "": a unique index treats
   # NULLs as distinct, but two empty strings would collide (002 FR-002, FR-011).
   normalizes :locker_number, with: ->(value) { value.blank? ? nil : value }

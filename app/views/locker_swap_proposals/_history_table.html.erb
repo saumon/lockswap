@@ -1,0 +1,62 @@
+<%# 004 FR-015, extracted by 027 research.md R4: the six-column proposal history
+    table, shared between the self-service history screen (locker_swap_proposals/
+    index.html.erb, "viewer" is current_user) and the admin user detail screen
+    (admin/users/show.html.erb, "viewer" is the account being looked at) — so the
+    two never drift apart into two copies of the same table.
+
+    Headers and the sent/received words are viewer-agnostic, so they stay on the
+    original locker_swap_proposals.index.* keys (explicit, not lazy — this
+    partial's own path is not that key) rather than being duplicated under a
+    second namespace. The empty-state message is NOT viewer-agnostic ("You have
+    not..." is only true from the self-service screen's own perspective), so the
+    caller supplies empty_message: explicitly instead.
+
+    dom_id_prefix keeps each caller's row/cell/empty-state ids distinct, the same
+    role #admin-user-directory-no-match's own distinct id plays elsewhere (020). %>
+<% if proposals.any? %>
+  <div class="table-scroll">
+    <table class="data-table" role="table">
+      <thead>
+        <tr role="row">
+          <th scope="col" role="columnheader"><%= t("locker_swap_proposals.index.direction_header") %></th>
+          <th scope="col" role="columnheader"><%= t("locker_swap_proposals.index.person_header") %></th>
+          <th scope="col" role="columnheader"><%= t("locker_swap_proposals.index.sent_header") %></th>
+          <th scope="col" role="columnheader"><%= t("locker_swap_proposals.index.status_header") %></th>
+          <th scope="col" role="columnheader"><%= t("locker_swap_proposals.index.comment_header") %></th>
+          <th scope="col" role="columnheader"><%= t("locker_swap_proposals.index.locker_details_header") %></th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% proposals.each do |proposal| %>
+          <% sent = proposal.requester_id == viewer.id %>
+          <% row_id = "#{dom_id_prefix}-row-#{proposal.id}" %>
+          <tr id="<%= row_id %>" role="row" data-rail="<%= sent ? "you" : "them" %>">
+            <td class="strong" role="cell" data-label="<%= t("locker_swap_proposals.index.direction_header") %>"><%= sent ? t("locker_swap_proposals.index.sent") : t("locker_swap_proposals.index.received") %></td>
+            <td class="data-value" role="cell" data-label="<%= t("locker_swap_proposals.index.person_header") %>"><%= sent ? proposal.recipient.email : proposal.requester.email %></td>
+            <td class="meta data-value" role="cell" data-label="<%= t("locker_swap_proposals.index.sent_header") %>"><%= l proposal.created_at, format: :long %></td>
+
+            <td id="<%= row_id %>-status" role="cell" data-label="<%= t("locker_swap_proposals.index.status_header") %>">
+              <span class="badge <%= history_status_badge_class(proposal) %>">
+                <%= proposal.accepted? ? t("locker_swap_proposals.index.exchange_in_progress") : t("locker_swap_proposals.index.status.#{proposal.status}") %>
+              </span>
+            </td>
+
+            <td id="<%= row_id %>-comment" role="cell" data-label="<%= t("locker_swap_proposals.index.comment_header") %>"
+                class="<%= "detail-value-empty" if proposal.decline_comment.blank? %>">
+              <%= proposal.decline_comment.presence || "—" %>
+            </td>
+
+            <td id="<%= row_id %>-locker-details" class="meta" role="cell" data-label="<%= t("locker_swap_proposals.index.locker_details_header") %>">
+              <%= proposal.floor_and_locker_summary %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p id="<%= dom_id_prefix %>-empty" class="empty-state">
+    <%= empty_message %>
+  </p>
+<% end %>

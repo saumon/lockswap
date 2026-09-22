@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_21_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_22_135943) do
   create_table "allowed_email_domains", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "domain", null: false
@@ -63,17 +63,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_120000) do
     t.integer "failed_attempts", default: 0, null: false
     t.string "floor"
     t.datetime "locked_at"
+    t.datetime "locker_edited_at"
+    t.integer "locker_edited_by_id"
     t.string "locker_number"
     t.datetime "remember_created_at"
+    t.datetime "search_cancelled_at"
+    t.integer "search_cancelled_by_id"
     t.datetime "updated_at", null: false
     t.index ["admin"], name: "index_users_on_bootstrap_admin", unique: true, where: "admin = 1 AND admin_granted_at IS NULL"
     t.index ["admin_granted_by_id"], name: "index_users_on_admin_granted_by_id"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["floor", "locker_number"], name: "index_users_on_floor_and_locker_number", unique: true
+    t.index ["locker_edited_by_id"], name: "index_users_on_locker_edited_by_id"
+    t.index ["search_cancelled_by_id"], name: "index_users_on_search_cancelled_by_id"
   end
 
   add_foreign_key "locker_swap_proposals", "users", column: "recipient_id"
   add_foreign_key "locker_swap_proposals", "users", column: "requester_id"
   add_foreign_key "locker_wishes", "users"
   add_foreign_key "users", "users", column: "admin_granted_by_id"
+  add_foreign_key "users", "users", column: "locker_edited_by_id"
+  add_foreign_key "users", "users", column: "search_cancelled_by_id"
 end

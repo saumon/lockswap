@@ -1,0 +1,105 @@
+<% content_for :title, @user.email %>
+
+<%# 027 User Story 1: everything the Users list already shows about this one
+    account (FR-003), reached by an admin-only link on that list's own row. %>
+<div class="stack">
+  <div class="page-head">
+    <h1 class="page-title"><%= @user.email %></h1>
+  </div>
+
+  <div id="admin-user-detail" class="card stack-tight">
+    <dl class="detail-grid">
+      <div>
+        <dt class="detail-term"><%= t(".joined_label") %></dt>
+        <dd class="detail-value"><%= l @user.created_at, format: :long %></dd>
+      </div>
+
+      <%# 027 FR-003: the same role badge + grant-provenance markup
+          admin/users/index.html.erb already carries on this account's row. %>
+      <div>
+        <dt class="detail-term"><%= t(".role_label") %></dt>
+        <dd class="detail-value <%= "detail-value-empty" unless @user.admin? %>">
+          <% if @user.admin? %>
+            <div class="cell-stack">
+              <span class="badge badge-info"><%= t(".role_choices.admin") %></span>
+
+              <p class="meta">
+                <% if @user.admin_rights_granted? %>
+                  <% if @user.admin_granted_by %>
+                    <%= t(".granted_by", email: @user.admin_granted_by.email, date: l(@user.admin_granted_at, format: :long)) %>
+                  <% else %>
+                    <%= t(".granted_account_removed", date: l(@user.admin_granted_at, format: :long)) %>
+                  <% end %>
+                <% else %>
+                  <%= t(".first_registration") %>
+                <% end %>
+              </p>
+            </div>
+          <% else %>
+            <%= t(".role_choices.standard") %>
+          <% end %>
+        </dd>
+      </div>
+
+      <div>
+        <dt class="detail-term"><%= t(".floor_label") %></dt>
+        <dd id="admin-user-detail-floor" class="detail-value <%= "detail-value-empty" if @user.saved_floor.blank? %>">
+          <%= @user.saved_floor.presence || t(".not_set") %>
+        </dd>
+      </div>
+
+      <div>
+        <dt class="detail-term"><%= t(".locker_label") %></dt>
+        <dd id="admin-user-detail-locker" class="detail-value <%= "detail-value-empty" if @user.saved_locker_number.blank? %>">
+          <%= @user.saved_locker_number.presence || t("home.locker_profile.no_locker_assigned") %>
+        </dd>
+      </div>
+    </dl>
+
+    <%= render "admin/users/locker_profile_editor", user: @user %>
+
+    <%# FR-009a: shown only once an admin has actually edited this account's
+        floor/locker from this screen. %>
+    <% if @user.locker_edited_at.present? %>
+      <p id="admin-user-locker-edit-provenance" class="meta">
+        <% if @user.locker_edited_by %>
+          <%= t(".locker_edited_by", email: @user.locker_edited_by.email, date: l(@user.locker_edited_at, format: :long)) %>
+        <% else %>
+          <%= t(".locker_edited_account_removed", date: l(@user.locker_edited_at, format: :long)) %>
+        <% end %>
+      </p>
+    <% end %>
+
+    <%= render "admin/users/search_status", user: @user, active_proposals: @active_proposals %>
+
+    <%# FR-010/FR-010a: only shown when there is a standing wish to cancel.
+        Mirrors the "Grant admin rights" confirm pattern already on this screen
+        family (015) — both confirm and turbo_confirm, turbo_frame: "_top" is
+        not needed here since this screen is not itself inside a turbo-frame. %>
+    <% if @user.locker_wish %>
+      <% cancel_message = t(".cancel_search_confirm", email: @user.email) %>
+      <%= button_to t(".cancel_search_button"), admin_user_locker_wish_path(@user), method: :delete,
+            data: { confirm: cancel_message, turbo_confirm: cancel_message },
+            aria: { label: t(".cancel_search_aria_label", email: @user.email) },
+            class: "btn btn-secondary btn-sm" %>
+    <% end %>
+
+    <%# FR-011a: shown only once an admin has actually cancelled this account's
+        search from this screen. %>
+    <% if @user.search_cancelled_at.present? %>
+      <p id="admin-user-search-cancel-provenance" class="meta">
+        <% if @user.search_cancelled_by %>
+          <%= t(".search_cancelled_by", email: @user.search_cancelled_by.email, date: l(@user.search_cancelled_at, format: :long)) %>
+        <% else %>
+          <%= t(".search_cancelled_account_removed", date: l(@user.search_cancelled_at, format: :long)) %>
+        <% end %>
+      </p>
+    <% end %>
+
+    <div class="stack-tight">
+      <h2 class="card-title"><%= t(".history_title") %></h2>
+      <%= render "locker_swap_proposals/history_table", proposals: @proposal_history, viewer: @user,
+            dom_id_prefix: "admin-user-detail-history", empty_message: t(".no_history") %>
+    </div>
+  </div>
+</div>
