@@ -11,75 +11,22 @@
 
   <div id="swap-proposal-history" class="card stack-tight">
 
-    <% if @proposals.any? %>
-      <%# 012 FR-005: six columns is more than a phone can hold, so below the
-          breakpoint each proposal becomes a stacked card with every field
-          labelled from its data-label. Above it, the table it has always been —
-          .table-scroll stays because at that width a long row is still allowed
-          its own scroll container, and the page still is not.
+    <%# 012 FR-005: six columns is more than a phone can hold, so below the
+        breakpoint each proposal becomes a stacked card with every field
+        labelled from its data-label. Above it, the table it has always been —
+        .table-scroll stays because at that width a long row is still allowed
+        its own scroll container, and the page still is not.
 
-          The explicit roles keep the accessibility tree correct once display
-          changes, which would otherwise drop the implicit table roles (FR-005d). %>
-      <div class="table-scroll">
-        <table class="data-table" role="table">
-          <thead>
-            <tr role="row">
-              <th scope="col" role="columnheader"><%= t(".direction_header") %></th>
-              <th scope="col" role="columnheader"><%= t(".person_header") %></th>
-              <th scope="col" role="columnheader"><%= t(".sent_header") %></th>
-              <th scope="col" role="columnheader"><%= t(".status_header") %></th>
-              <th scope="col" role="columnheader"><%= t(".comment_header") %></th>
-              <%# 005 FR-005: its own column, not folded into the one above — one
-                  says why a person answered as they did, the other what was on
-                  the table, and a row can have both (FR-008). %>
-              <th scope="col" role="columnheader"><%= t(".locker_details_header") %></th>
-            </tr>
-          </thead>
+        The explicit roles are what keep that safe: changing an element's display
+        drops the implicit table roles, and a screen reader has to meet each
+        account as a set of labelled fields either way (012 FR-005d).
 
-          <tbody>
-            <% @proposals.each do |proposal| %>
-              <% sent = proposal.requester_id == current_user.id %>
-              <% row_id = "swap-proposal-history-row-#{proposal.id}" %>
-              <%# 021: the swap axis, on the one table where direction is the
-                  subject. Blue for a proposal this reader sent, green for one
-                  they received — the same two colours the cards are hung on,
-                  and the Direction column says it in words beside them. %>
-              <tr id="<%= row_id %>" role="row" data-rail="<%= sent ? "you" : "them" %>">
-                <td class="strong" role="cell" data-label="<%= t(".direction_header") %>"><%= sent ? t(".sent") : t(".received") %></td>
-                <td class="data-value" role="cell" data-label="<%= t(".person_header") %>"><%= sent ? proposal.recipient.email : proposal.requester.email %></td>
-                <td class="meta data-value" role="cell" data-label="<%= t(".sent_header") %>"><%= l proposal.created_at, format: :long %></td>
+        021: the swap axis, on the one table where direction is the subject.
+        Blue for a proposal this reader sent, green for one they received.
 
-                <%# "accepted" is the spec's "exchange in progress"; the column
-                    says what a reader would call it, not what the column stores. %>
-                <%# 008 FR-025: the badge tint is decoration on top of the label —
-                    the status word itself is what carries the meaning. %>
-                <td id="<%= row_id %>-status" role="cell" data-label="<%= t(".status_header") %>">
-                  <span class="badge <%= history_status_badge_class(proposal) %>">
-                    <%= proposal.accepted? ? t(".exchange_in_progress") : t(".status.#{proposal.status}") %>
-                  </span>
-                </td>
-
-                <td id="<%= row_id %>-comment" role="cell" data-label="<%= t(".comment_header") %>"
-                    class="<%= "detail-value-empty" if proposal.decline_comment.blank? %>">
-                  <%= proposal.decline_comment.presence || "—" %>
-                </td>
-
-                <%# FR-005: filled in for every row, whatever became of it, so
-                    the history never depends on anyone having written it down. %>
-                <td id="<%= row_id %>-locker-details" class="meta" role="cell" data-label="<%= t(".locker_details_header") %>">
-                  <%= proposal.floor_and_locker_summary %>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-    <% else %>
-      <%# Acceptance Scenario 4: never having proposed anything is an ordinary
-          state to report, not an error. %>
-      <p id="swap-proposal-history-empty" class="empty-state">
-        <%= t(".empty") %>
-      </p>
-    <% end %>
+        027 research.md R4: the table body is a shared partial, reused unchanged
+        by the admin user detail screen (admin/users/show.html.erb). %>
+    <%= render "locker_swap_proposals/history_table", proposals: @proposals, viewer: current_user,
+          dom_id_prefix: "swap-proposal-history", empty_message: t(".empty") %>
   </div>
 </div>

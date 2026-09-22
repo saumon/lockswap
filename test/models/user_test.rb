@@ -701,6 +701,52 @@ class UserTest < ActiveSupport::TestCase
     assert_not_includes User.saved_floors, nil
   end
 
+  # --- 027 FR-009a: who last edited this account's floor/locker on its behalf -
+
+  test "locker_edited_by and locker_edited_at persist together" do
+    edited_at = Time.current
+    users(:carol).update!(locker_edited_by: users(:frank), locker_edited_at: edited_at)
+
+    carol = users(:carol).reload
+    assert_equal users(:frank), carol.locker_edited_by
+    assert_in_delta edited_at, carol.locker_edited_at, 1
+  end
+
+  # dependent: :nullify is what holds this — with :destroy, deleting an
+  # administrator would delete every account they had ever edited on behalf of.
+  test "deleting the editor keeps the edit provenance and clears only the editor" do
+    users(:carol).update!(locker_edited_by: users(:frank), locker_edited_at: Time.current)
+    edited_at = users(:carol).reload.locker_edited_at
+
+    users(:frank).destroy
+
+    carol = users(:carol).reload
+    assert_equal edited_at, carol.locker_edited_at
+    assert_nil carol.locker_edited_by
+  end
+
+  # --- 027 FR-011a: who last cancelled this account's search on its behalf ----
+
+  test "search_cancelled_by and search_cancelled_at persist together" do
+    cancelled_at = Time.current
+    users(:carol).update!(search_cancelled_by: users(:frank), search_cancelled_at: cancelled_at)
+
+    carol = users(:carol).reload
+    assert_equal users(:frank), carol.search_cancelled_by
+    assert_in_delta cancelled_at, carol.search_cancelled_at, 1
+  end
+
+  test "deleting the canceller keeps the cancellation provenance and clears only the canceller" do
+    users(:carol).update!(search_cancelled_by: users(:frank), search_cancelled_at: Time.current)
+    cancelled_at = users(:carol).reload.search_cancelled_at
+
+    users(:frank).destroy
+
+    carol = users(:carol).reload
+    assert_equal cancelled_at, carol.search_cancelled_at
+    assert_nil carol.search_cancelled_by
+  end
+
   private
 
     # Stages the state the rescue exists for: another signup has already taken the

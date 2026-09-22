@@ -75,7 +75,19 @@
         <tbody>
           <% @users.each do |user| %>
             <tr id="admin-user-row-<%= user.id %>" role="row">
-              <td class="strong data-value" role="cell" data-label="<%= t(".email_header") %>"><%= user.email %></td>
+              <%# 027 FR-001: a link within the row is the navigable element, not
+                  the row as a whole (Clarifications) — plain link semantics need
+                  no JavaScript and are keyboard-operable by construction.
+                  data-turbo-frame "_top": this row sits inside the
+                  #admin-user-directory-list turbo-frame, so without it Turbo
+                  would look for a matching frame in the detail screen's response
+                  (there is none) and silently do nothing — the same reason the
+                  "Grant admin rights" button_to below carries the same
+                  turbo_frame: "_top". %>
+              <td class="strong data-value" role="cell" data-label="<%= t(".email_header") %>">
+                <%= link_to user.email, admin_user_path(user), id: "admin-user-row-#{user.id}-detail-link",
+                      data: { turbo_frame: "_top" } %>
+              </td>
               <td class="meta data-value" role="cell" data-label="<%= t(".joined_header") %>"><%= l user.created_at, format: :long %></td>
 
               <%# 020 FR-001: the same floor the account's own homepage shows.

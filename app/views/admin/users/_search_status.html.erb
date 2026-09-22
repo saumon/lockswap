@@ -1,0 +1,20 @@
+<%# 027 FR-004/FR-005: the account's standing wish (if any) and every proposal
+    it is currently party to (pending or accepted, either role) — or, when
+    neither exists, saying so plainly rather than leaving the area blank. %>
+<div class="stack-tight">
+  <h2 class="card-title"><%= t(".title") %></h2>
+
+  <% if user.locker_wish || active_proposals.any? %>
+    <div id="admin-user-search-status" class="stack-tight">
+      <% if user.locker_wish %>
+        <p class="detail-value"><%= t(".looking_for_floor", floor: user.locker_wish.saved_floor) %></p>
+      <% end %>
+
+      <% active_proposals.each do |proposal| %>
+        <p class="detail-value"><%= proposal.floor_and_locker_summary %></p>
+      <% end %>
+    </div>
+  <% else %>
+    <p id="admin-user-search-status" class="detail-value-empty"><%= t(".no_search_in_progress") %></p>
+  <% end %>
+</div>

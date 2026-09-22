@@ -1,0 +1,33 @@
+<%# 027 User Story 3, adapted from home/_locker_profile_form.html.erb (009): the
+    same pencil-icon disclosure, editing the viewed account's floor/locker
+    instead of current_user's own — plain two-field form, no "I don't have a
+    locker" shortcut, same choice 009 made for its own pencil editor. %>
+<details id="admin-user-locker-editor" class="locker-profile-editor" <%= "open" if user.errors.any? %>>
+  <summary class="locker-profile-editor-summary" aria-label="<%= t(".edit_locker_details") %>">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         aria-hidden="true" focusable="false">
+      <path d="M4 20h4L19.5 8.5a2.83 2.83 0 0 0-4-4L4 16v4Z"/>
+      <path d="m14.5 5.5 4 4"/>
+    </svg>
+  </summary>
+
+  <div class="locker-profile-editor-body">
+    <%= render "devise/shared/error_messages", resource: user %>
+
+    <%= form_with model: user, url: admin_user_locker_profile_path(user), method: :patch,
+                  html: { class: "stack-tight", novalidate: true } do |f| %>
+      <div class="field">
+        <%= f.label :floor, class: "field-label" %>
+        <%= f.text_field :floor, autocomplete: "off", class: "field-input" %>
+      </div>
+
+      <div class="field">
+        <%= f.label :locker_number, class: "field-label" %>
+        <%= f.text_field :locker_number, autocomplete: "off", class: "field-input" %>
+      </div>
+
+      <%= f.submit t(".submit"), class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</details>

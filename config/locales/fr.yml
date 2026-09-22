@@ -111,6 +111,43 @@ fr:
       grant_admin:
         account_gone: "Ce compte n'existe plus."
         granted: "%{email} a reçu les droits d'administrateur."
+      show:
+        account_gone: "Ce compte n'existe plus."
+        joined_label: "Inscrit le"
+        role_label: "Rôle"
+        floor_label: "Étage"
+        locker_label: "Casier"
+        not_set: "Non défini"
+        role_choices:
+          admin: "Administrateur"
+          standard: "Standard"
+        granted_by: "Accordé par %{email} le %{date}"
+        granted_account_removed: "Accordé le %{date} (compte supprimé)"
+        first_registration: "Première inscription"
+        history_title: "Historique des propositions"
+        no_history: "Ce compte n'a envoyé ni reçu aucune proposition d'échange."
+        locker_edited_by: "Modifié par %{email} le %{date}"
+        locker_edited_account_removed: "Modifié le %{date} (compte supprimé)"
+        cancel_search_button: "Annuler la recherche"
+        cancel_search_confirm: "Annuler la recherche de casier de %{email} ? Cette action est irréversible."
+        cancel_search_aria_label: "Annuler la recherche de casier de %{email}"
+        search_cancelled_by: "Annulée par %{email} le %{date}"
+        search_cancelled_account_removed: "Annulée le %{date} (compte supprimé)"
+      search_status:
+        title: "Recherche de casier"
+        looking_for_floor: "Recherche l'étage %{floor}"
+        no_search_in_progress: "Aucune recherche de casier en cours."
+      locker_profile_editor:
+        edit_locker_details: "Modifier les informations du casier"
+        submit: "Enregistrer"
+    user_locker_profiles:
+      update:
+        account_gone: "Ce compte n'existe plus."
+        saved: "Informations du casier enregistrées."
+    user_locker_wishes:
+      destroy:
+        account_gone: "Ce compte n'existe plus."
+        cancelled: "Recherche de casier annulée."
     allowed_email_domains:
       create:
         created: "%{domain} peut désormais s'inscrire."

@@ -49,10 +49,19 @@ Rails.application.routes.draw do
   # and because a general update action on accounts is precisely what 015 FR-014
   # says must not exist. A named action cannot be widened by accident.
   namespace :admin do
-    resources :users, only: :index do
+    # 027 FR-001/FR-002: the detail screen for one account, admin-only like the
+    # list it is reached from. Two writes made on that account's behalf are
+    # nested singular resources rather than folded into #update, the same
+    # reasoning #grant_admin already follows — each keeps its own authorization
+    # and rules, and a general update on accounts is exactly what 015 FR-014
+    # forbids.
+    resources :users, only: [ :index, :show ] do
       member do
         patch :grant_admin
       end
+
+      resource :locker_profile, only: :update, controller: "user_locker_profiles"
+      resource :locker_wish, only: :destroy, controller: "user_locker_wishes"
     end
 
     # 016 FR-001: the Danger Zone screen. Singular — a screen that shows (and, as

@@ -87,6 +87,37 @@ class Admin::UsersController < ApplicationController
       notice: t(".granted", email: user.email)
   end
 
+  # 027 FR-001/FR-002/FR-003: one account's full detail — everything the list
+  # already shows plus its search status and proposal history (added by
+  # #search_status_data below, as the corresponding user stories land).
+  #
+  # find_by, not find: a vanished account is a message and a redirect back to
+  # the list, the same as #grant_admin already treats one (FR-011-equivalent).
+  def show
+    @user = User.includes(:admin_granted_by, :locker_edited_by, :search_cancelled_by,
+                           :locker_wish).find_by(id: params[:id])
+
+    return redirect_to admin_users_path, alert: t(".account_gone") if @user.nil?
+
+    # 027 FR-005, research.md R6: every proposal this account is party to, in
+    # either role, that is still pending or accepted — zero, one, or more than
+    # one, since nothing in the model caps a requester to a single simultaneous
+    # pending proposal with different recipients. Two bounded queries unioned in
+    # Ruby, not one `OR`, for the same reason #proposal_history below is (R5).
+    @active_proposals =
+      (@user.sent_swap_proposals.where(status: %i[pending accepted]).includes(:recipient).to_a +
+       @user.received_swap_proposals.where(status: %i[pending accepted]).includes(:requester).to_a)
+
+    # 027 FR-006, research.md R5: the exact expression
+    # LockerSwapProposalsController#index already uses for current_user, applied
+    # to the viewed account instead. Never a single `.or(...)` query on this
+    # table — see LockerSwapProposal#in_progress_for?'s comment on the SQLite
+    # planner fault that shape triggers against this table's partial indexes.
+    @proposal_history =
+      (@user.sent_swap_proposals.includes(:recipient).to_a +
+       @user.received_swap_proposals.includes(:requester).to_a).sort_by(&:created_at).reverse
+  end
+
   private
 
     # FR-020-equivalent robustness (research.md R5/data-model.md): a value
