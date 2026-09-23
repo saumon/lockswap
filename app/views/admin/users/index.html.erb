@@ -10,11 +10,11 @@
 <% end %>
 
 <%# 013 User Story 2: who is registered on this site, and who was first.
-    015: and one thing to do about it — grant administrator rights (FR-001).
-    That is the only capability here; nothing on this screen removes rights,
-    edits an account or deletes one (FR-014).
     020: plus their current floor, locker and wish (FR-001–FR-003), and four
-    filters over the list (FR-004). %>
+    filters over the list (FR-004).
+    028 FR-001: this screen is read-only — granting and revoking administrator
+    rights both live on each account's own detail screen now, reached via the
+    email link below. %>
 <div class="stack">
   <%# 021: the title leaves the card, like every other screen's. %>
   <div class="page-head">
@@ -68,7 +68,6 @@
             <%# FR-012: its own column rather than a mark tacked onto the email,
                 so the one row that differs says how it differs. %>
             <th scope="col" role="columnheader"><%= t(".role_header") %></th>
-            <th scope="col" role="columnheader"><%= t(".actions_header") %></th>
           </tr>
         </thead>
 
@@ -81,9 +80,7 @@
                   data-turbo-frame "_top": this row sits inside the
                   #admin-user-directory-list turbo-frame, so without it Turbo
                   would look for a matching frame in the detail screen's response
-                  (there is none) and silently do nothing — the same reason the
-                  "Grant admin rights" button_to below carries the same
-                  turbo_frame: "_top". %>
+                  (there is none) and silently do nothing. %>
               <td class="strong data-value" role="cell" data-label="<%= t(".email_header") %>">
                 <%= link_to user.email, admin_user_path(user), id: "admin-user-row-#{user.id}-detail-link",
                       data: { turbo_frame: "_top" } %>
@@ -153,51 +150,6 @@
                   </div>
                 <% else %>
                   —
-                <% end %>
-              </td>
-
-              <%# The em dash matches the Role cell's own empty state: below the
-                  breakpoint every cell shows its label, so a cell left truly
-                  empty reads as a field the page forgot to fill in. %>
-              <td role="cell" data-label="<%= t(".actions_header") %>" class="<%= "detail-value-empty" if user.admin? %>">
-                <% if user.admin? %>
-                  —
-                <% else %>
-                  <%# 015 FR-001 to FR-005: the grant, and the confirmation that
-                      guards it. Both `confirm` and `turbo_confirm` are emitted,
-                      mirroring the "Cancel my account" button this is modelled on
-                      (devise/registrations/edit) — turbo_confirm is what Turbo
-                      reads, confirm is the fallback where it has not loaded.
-
-                      The message names the account and says the grant is
-                      permanent (FR-004), because since FR-020 asks for no
-                      password this dialog is the only thing between the pointer
-                      and an irreversible change.
-
-                      aria-label names the account too (FR-015): a column of
-                      buttons all reading "Grant admin rights" tells a screen
-                      reader which row it is on only by position, which is exactly
-                      what the requirement forbids relying on.
-
-                      020 FR-016, research.md R5: the filters in force travel with
-                      this form as hidden fields — it is already inside the frame
-                      they filter, so no cross-frame attachment trick is needed,
-                      unlike 017's declare panel. turbo_frame: "_top" makes the
-                      redirect a full-page navigation rather than one confined to
-                      this frame, which is what makes the flash notice (rendered
-                      outside the frame, in the layout) visible afterwards —
-                      mirrors 017's "Propose swap" button. %>
-                  <% message = t(".grant_confirm", email: user.email) %>
-                  <%= button_to t(".grant_button"),
-                        grant_admin_admin_user_path(user),
-                        method: :patch,
-                        params: Admin::UsersController::FILTER_AXES.index_with { |axis|
-                          admin_user_filter_current_value(axis)
-                        }.compact_blank,
-                        class: "btn btn-secondary btn-sm",
-                        aria: { label: t(".grant_aria_label", email: user.email) },
-                        data: { confirm: message, turbo_confirm: message },
-                        form: { data: { turbo_frame: "_top" } } %>
                 <% end %>
               </td>
             </tr>

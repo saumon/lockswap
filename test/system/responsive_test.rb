@@ -248,14 +248,37 @@ class ResponsiveTest < ApplicationSystemTestCase
     end
   end
 
-  test "the users screen still fits a phone with a grant control and provenance" do
+  # 028: the grant control moved to the detail screen; this list screen fits a
+  # phone with just the provenance line to show now.
+  test "the users screen still fits a phone with provenance shown" do
     log_in_as users(:frank)
     visit admin_users_path
 
     with_viewport(:phone) do
-      assert_selector "button", text: "Grant admin rights"
       assert_text "Granted by"
-      assert_no_horizontal_overflow "the users screen with grant controls"
+      assert_no_horizontal_overflow "the users screen"
+      assert_touch_targets_at_least 44
+    end
+  end
+
+  test "the account detail screen still fits a phone with a grant control" do
+    log_in_as users(:frank)
+    visit admin_user_path(users(:carol))
+
+    with_viewport(:phone) do
+      assert_selector "button", text: "Grant admin rights"
+      assert_no_horizontal_overflow "the account detail screen with a grant control"
+      assert_touch_targets_at_least 44
+    end
+  end
+
+  test "the account detail screen still fits a phone with a revoke control" do
+    log_in_as users(:frank)
+    visit admin_user_path(users(:grace))
+
+    with_viewport(:phone) do
+      assert_selector "button", text: "Revoke admin rights"
+      assert_no_horizontal_overflow "the account detail screen with a revoke control"
       assert_touch_targets_at_least 44
     end
   end

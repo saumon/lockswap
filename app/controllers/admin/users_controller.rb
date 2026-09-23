@@ -1,9 +1,10 @@
 # 013: the administrator's view of who is registered on the site (FR-006).
 #
-# 015 gave the screen one write — granting administrator rights — and that is the
-# only one it will ever have. Removing rights, editing an account and deleting one
-# are all out of scope by requirement (015 FR-014), not by omission, which is why
-# this routes to index and a single named action rather than a full resource.
+# 015 gave the screen its first write, granting administrator rights; 028 moved
+# that control (and the confirmation that guards it) onto each account's own
+# detail screen and added its counterpart, revoking. Editing an account or
+# deleting one are still out of scope (015 FR-014, narrowed by 028) — which is
+# why grant/revoke are named member actions rather than a general #update.
 class Admin::UsersController < ApplicationController
   # Both, in this order: signed in at all, then signed in as an administrator.
   # authenticate_user! sends an anonymous visitor to log in, as everywhere else
@@ -68,23 +69,45 @@ class Admin::UsersController < ApplicationController
   # 015 FR-006: the grant. The confirmation that guards it lives in the view — by
   # the time a request arrives here it has been answered, so there is nothing left
   # to ask (FR-020: nothing else is asked either, no password, no second step).
+  #
+  # 028: reached from and redirects to the account's own detail screen now, not
+  # the list — the control moved there (research.md R1). The redirect no longer
+  # carries filter_selections; there is no filtered list state left to return to
+  # (research.md R2).
   def grant_admin
     user = User.find_by(id: params[:id])
 
     # FR-011: find_by and not find, so a vanished account is a message rather than
     # a 404 — the administrator did nothing wrong and should land back on the list.
-    return redirect_to admin_users_path(filter_selections), alert: t(".account_gone") if user.nil?
+    return redirect_to admin_users_path, alert: t(".account_gone") if user.nil?
 
     # FR-012: grant_admin_rights! is a no-op when the account already has them, so
     # arriving second at the same destination reports success. A stale list is a
     # stale list, not a failure.
     user.grant_admin_rights!(by: current_user)
 
-    # 020 FR-016: the filters in force when the grant control's form was
-    # submitted travel with it (as hidden fields — see the view) and are put back
-    # on the redirect, the same way 017's declare/cancel writes carry theirs.
-    redirect_to admin_users_path(filter_selections),
-      notice: t(".granted", email: user.email)
+    redirect_to admin_user_path(user), notice: t(".granted", email: user.email)
+  end
+
+  # 028 FR-009: the revoke, the direct counterpart of #grant_admin above. Same
+  # confirmation-lives-in-the-view shape, same account-gone handling.
+  def revoke_admin
+    user = User.find_by(id: params[:id])
+
+    return redirect_to admin_users_path, alert: t(".account_gone") if user.nil?
+
+    # FR-011, research.md R3: refused here, independent of whether the view ever
+    # rendered a revoke control for this row — visibility of the control is never
+    # what authorises it (015's own reasoning for #grant_admin, applied to the one
+    # account this action must never be allowed to touch: the acting
+    # administrator's own).
+    return redirect_to admin_user_path(user), alert: t(".self_forbidden") if user == current_user
+
+    # FR-014: revoke_admin_rights! is a no-op when the account is already
+    # standard, so arriving second at the same destination reports success.
+    user.revoke_admin_rights!
+
+    redirect_to admin_user_path(user), notice: t(".revoked", email: user.email)
   end
 
   # 027 FR-001/FR-002/FR-003: one account's full detail — everything the list
@@ -127,13 +150,5 @@ class Admin::UsersController < ApplicationController
       value = params[axis]
 
       value.is_a?(String) ? value : nil
-    end
-
-    # What the grant redirect carries, so the screen the administrator lands back
-    # on is still filtered the way they left it. Blank axes are dropped rather
-    # than sent empty, so an unfiltered view redirects to the bare path it always
-    # did.
-    def filter_selections
-      FILTER_AXES.index_with { |axis| filter_selection(axis) }.compact_blank
     end
 end

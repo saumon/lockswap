@@ -276,19 +276,12 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_equal before, after
   end
 
-  # FR-016: the filters in force when the grant control's form was submitted are
-  # put back on the redirect, the same way 017's declare/cancel writes carry
-  # theirs (research.md R5).
-  test "the grant redirect carries whatever filter params were submitted with it" do
-    sign_in users(:frank)
-
-    patch grant_admin_admin_user_path(users(:carol)),
-      params: { current_floor: users(:carol).floor, role: "standard" }
-
-    assert_redirected_to admin_users_path(current_floor: users(:carol).floor, role: "standard")
-  end
-
   # FR-014: the refusal does not depend on whether a filter happens to be set.
+  #
+  # 028: the grant no longer carries or is reached with filter params (it moved
+  # off the filtered list entirely — research.md R2), so this narrows to what it
+  # can still meaningfully assert: the index refusal with filters attached, and
+  # the grant refusal alongside it.
   test "a non-administrator's request is refused even with filter params attached" do
     sign_in users(:carol)
 
@@ -296,7 +289,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
 
     assert_no_changes -> { users(:dave).reload.admin? } do
-      patch grant_admin_admin_user_path(users(:dave)), params: { role: "admin" }
+      patch grant_admin_admin_user_path(users(:dave))
     end
     assert_redirected_to root_path
   end
@@ -361,7 +354,8 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_select "#admin-user-directory a[data-turbo-method=?]", "delete", count: 0
   end
 
-  # 015 FR-006, FR-010: the grant itself.
+  # 015 FR-006, FR-010: the grant itself. 028: redirects to the account's own
+  # detail screen now, not the list (research.md R1).
   test "an administrator grants rights and is told it took effect" do
     sign_in users(:frank)
 
@@ -369,7 +363,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
       patch grant_admin_admin_user_path(users(:carol))
     end
 
-    assert_redirected_to admin_users_path
+    assert_redirected_to admin_user_path(users(:carol))
     assert_not_nil flash[:notice]
     assert_equal users(:frank), users(:carol).reload.admin_granted_by
   end
@@ -495,7 +489,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
     patch grant_admin_admin_user_path(users(:grace))
 
-    assert_redirected_to admin_users_path
+    assert_redirected_to admin_user_path(users(:grace))
     assert_not_nil flash[:notice]
     assert_nil flash[:alert]
     assert_predicate users(:grace).reload, :admin?
@@ -523,6 +517,107 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to admin_users_path
     assert_equal Admin::UsersController::ACCOUNT_GONE_MESSAGE, flash[:alert]
+  end
+
+  # --- 028 User Story 2: revoking a different administrator's rights ----------
+
+  # FR-009, FR-012, FR-018: the revoke itself, redirecting to the target's own
+  # detail screen and clearing every trace of the earlier grant.
+  test "an administrator revokes a different administrator's rights and is told it took effect" do
+    sign_in users(:frank)
+
+    assert_changes -> { users(:grace).reload.admin? }, from: true, to: false do
+      patch revoke_admin_admin_user_path(users(:grace))
+    end
+
+    assert_redirected_to admin_user_path(users(:grace))
+    assert_not_nil flash[:notice]
+    grace = users(:grace).reload
+    assert_nil grace.admin_granted_at
+    assert_nil grace.admin_granted_by
+  end
+
+  # FR-007: no password or other credential is asked for, the same as the grant
+  # (mirrors "the grant asks for no credential" above).
+  test "the revoke asks for no credential" do
+    sign_in users(:frank)
+
+    patch revoke_admin_admin_user_path(users(:grace))
+
+    assert_not_predicate users(:grace).reload, :admin?
+  end
+
+  # FR-014: revoking an already-standard account is not a failure.
+  test "revoking rights from an account that is not an administrator reports success" do
+    sign_in users(:frank)
+
+    patch revoke_admin_admin_user_path(users(:carol))
+
+    assert_redirected_to admin_user_path(users(:carol))
+    assert_not_nil flash[:notice]
+    assert_nil flash[:alert]
+    assert_not_predicate users(:carol).reload, :admin?
+  end
+
+  # FR-013: the same account-gone handling #grant_admin already has.
+  test "revoking rights from an account that no longer exists says so" do
+    sign_in users(:frank)
+    gone = users(:dave).id
+    users(:dave).destroy
+
+    patch revoke_admin_admin_user_path(gone)
+
+    assert_redirected_to admin_users_path
+    assert_equal Admin::UsersController::ACCOUNT_GONE_MESSAGE, flash[:alert]
+  end
+
+  # FR-010: refused the same way the grant already is.
+  test "an anonymous visitor cannot revoke rights" do
+    assert_no_changes -> { users(:grace).reload.admin? } do
+      patch revoke_admin_admin_user_path(users(:grace))
+    end
+
+    assert_redirected_to new_user_session_path
+  end
+
+  test "a signed-in non-administrator cannot revoke rights and is told why" do
+    sign_in users(:carol)
+
+    assert_no_changes -> { users(:grace).reload.admin? } do
+      patch revoke_admin_admin_user_path(users(:grace))
+    end
+
+    assert_redirected_to root_path
+    assert_equal ApplicationController::ADMINISTRATORS_ONLY_MESSAGE, flash[:alert]
+  end
+
+  # --- 028 User Story 3: an administrator cannot revoke their own rights ------
+
+  # FR-011, Acceptance Scenario 2: refused even by direct request, independent of
+  # what the view ever rendered (research.md R3).
+  test "an administrator cannot revoke their own rights" do
+    sign_in users(:frank)
+
+    assert_no_changes -> { users(:frank).reload.admin? } do
+      patch revoke_admin_admin_user_path(users(:frank))
+    end
+
+    assert_redirected_to admin_user_path(users(:frank))
+    assert_not_nil flash[:alert]
+  end
+
+  # Acceptance Scenario 3: the rule is not special-cased to the bootstrap
+  # administrator — a granted administrator targeting themselves is refused the
+  # same way.
+  test "a granted administrator cannot revoke their own rights either" do
+    sign_in users(:grace)
+
+    assert_no_changes -> { users(:grace).reload.admin? } do
+      patch revoke_admin_admin_user_path(users(:grace))
+    end
+
+    assert_redirected_to admin_user_path(users(:grace))
+    assert_not_nil flash[:alert]
   end
 
   # --- 027 User Story 1: the detail screen, and who may reach it --------------
