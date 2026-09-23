@@ -220,31 +220,17 @@ class AccessibilityTest < ApplicationSystemTestCase
 
   # 013: the administrator's screen is audited like every other one. frank rather
   # than carol throughout this section — he is the only account that can reach it.
+  #
+  # 028: the grant control and the provenance line moved to the detail screen
+  # (audited separately in admin_user_detail_test.rb's own accessibility
+  # coverage); this screen is read-only again, so the wait is on the provenance
+  # line alone.
   test "the administrator's users screen is accessible" do
     log_in_as users(:frank)
     visit admin_users_path
     assert_selector "#admin-user-directory"
-    # 015: the grant control and the provenance line are on this screen now, so
-    # the audit that was already here covers them — provided they are actually
-    # rendered when it runs, which is what these two wait for.
-    assert_selector "button", text: "Grant admin rights"
     assert_text "First registration"
     assert_axe_clean
-  end
-
-  # 015 FR-015: axe checks the button has an accessible name; it cannot check the
-  # name says which account. A column of controls reading "Grant admin rights"
-  # passes an audit and still leaves a screen reader user counting rows, which the
-  # requirement forbids — so the distinctness is asserted here directly.
-  test "each grant control is distinguishable by name alone" do
-    log_in_as users(:frank)
-    visit admin_users_path
-
-    names = all("button[aria-label]").map { |button| button[:"aria-label"] }
-
-    assert_operator names.length, :>=, 2
-    assert_equal names.uniq, names, "two grant controls share an accessible name"
-    names.each { |name| assert_match(/\A Grant\ administrator\ rights\ to\ \S+@\S+ \z/x, name) }
   end
 
   # 020: the admin Users screen's four filters, audited the same way 017's two

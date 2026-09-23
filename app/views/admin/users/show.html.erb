@@ -56,6 +56,28 @@
       </div>
     </dl>
 
+    <%# 028 FR-002 to FR-007: the grant and revoke controls, relocated here from
+        the Users list (grant, 015) and newly added (revoke). Only one of the two
+        is ever offered for a given account: grant when it is not yet an admin,
+        revoke when it is one and is not the signed-in administrator's own
+        (FR-003/FR-006). Both reuse the exact confirm/turbo_confirm pattern the
+        "Cancel search" control below already uses on this same screen. %>
+    <% if @user.admin? %>
+      <% if @user != current_user %>
+        <% revoke_message = t(".revoke_confirm", email: @user.email) %>
+        <%= button_to t(".revoke_button"), revoke_admin_admin_user_path(@user), method: :patch,
+              data: { confirm: revoke_message, turbo_confirm: revoke_message },
+              aria: { label: t(".revoke_aria_label", email: @user.email) },
+              class: "btn btn-secondary btn-sm" %>
+      <% end %>
+    <% else %>
+      <% grant_message = t(".grant_confirm", email: @user.email) %>
+      <%= button_to t(".grant_button"), grant_admin_admin_user_path(@user), method: :patch,
+            data: { confirm: grant_message, turbo_confirm: grant_message },
+            aria: { label: t(".grant_aria_label", email: @user.email) },
+            class: "btn btn-secondary btn-sm" %>
+    <% end %>
+
     <%= render "admin/users/locker_profile_editor", user: @user %>
 
     <%# FR-009a: shown only once an admin has actually edited this account's

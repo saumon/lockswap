@@ -184,25 +184,6 @@ class AdminUsersFilterTest < ApplicationSystemTestCase
     assert_selector ".data-table tbody tr", count: User.count
   end
 
-  # FR-016: the filters survive the existing grant-rights redirect.
-  test "granting rights from a filtered list leaves the same filters applied" do
-    log_in_as @administrator
-    visit admin_users_path
-
-    within "#admin-user-filter-role" do
-      click_on "Standard"
-    end
-
-    accept_confirm do
-      within("#admin-user-row-#{users(:carol).id}") { click_button "Grant admin rights" }
-    end
-
-    assert_text(/granted/i)
-    within "#admin-user-filter-role" do
-      assert_selector "[aria-current='true']", text: "Standard"
-    end
-  end
-
   # --- User Story 3: no filter combination is an error ------------------------
 
   # FR-011: told plainly, not left to look like a broken screen.

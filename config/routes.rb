@@ -58,6 +58,7 @@ Rails.application.routes.draw do
     resources :users, only: [ :index, :show ] do
       member do
         patch :grant_admin
+        patch :revoke_admin
       end
 
       resource :locker_profile, only: :update, controller: "user_locker_profiles"

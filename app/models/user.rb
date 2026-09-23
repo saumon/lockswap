@@ -164,6 +164,19 @@ class User < ApplicationRecord
   # rather than re-derived by every caller that needs to say it.
   def admin_rights_granted? = admin? && admin_granted_at.present?
 
+  # 028 FR-009, FR-018: the whole of revoking. Symmetric with #grant_admin_rights!
+  # above — one write, and it clears every trace of the grant rather than
+  # replacing it with a "revoked" record (research.md R4; the Clarifications
+  # session declined a revoked_by/revoked_at pair). The guard clause is FR-014's
+  # mirror of FR-012 above: revoking an account that is already standard is not a
+  # failure and not a second revoke.
+  def revoke_admin_rights!
+    return self unless admin?
+
+    update!(admin: false, admin_granted_at: nil, admin_granted_by: nil)
+    self
+  end
+
   # Says the locker is spoken for without identifying who holds it (002 FR-011).
   # Names the floor, because that is the whole scope of the refusal: the same
   # number is free to take one floor up (006 FR-003).

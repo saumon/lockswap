@@ -441,6 +441,60 @@ class UserTest < ActiveSupport::TestCase
     assert_predicate users(:frank).reload, :admin?
   end
 
+  # --- 028 FR-009, FR-018: revoking ---------------------------------------------
+
+  # The direct counterpart of "granting rights records the flag, the moment and
+  # the grantor together" above — one write clears all three at once, so no
+  # trace of the prior grant survives a revoke.
+  test "revoking rights clears the flag and every trace of the grant" do
+    assert_changes -> { users(:grace).reload.admin? }, from: true, to: false do
+      users(:grace).revoke_admin_rights!
+    end
+
+    grace = users(:grace).reload
+    assert_nil grace.admin_granted_at
+    assert_nil grace.admin_granted_by
+  end
+
+  # FR-014: revoking rights from an account that does not have them is not a
+  # failure and not a second revoke — mirrors "granting rights again leaves the
+  # original origin untouched" above, for the opposite direction.
+  test "revoking rights from a standard account is a no-op, not a failure" do
+    assert_no_changes -> { users(:carol).reload.admin? } do
+      users(:carol).revoke_admin_rights!
+    end
+
+    assert_not_predicate users(:carol).reload, :admin?
+  end
+
+  # FR-016: revoking one account's rights must not touch any other account.
+  test "revoking one account's rights leaves every other account's rights untouched" do
+    users(:grace).revoke_admin_rights!
+
+    assert_predicate users(:frank).reload, :admin?
+    assert_not_predicate users(:carol).reload, :admin?
+  end
+
+  # Edge Cases (spec.md), Assumptions, quickstart.md Scenario 2 steps 7-8: the
+  # clear-then-regrant cycle actually resets provenance rather than merely
+  # appearing to — grace's original grant was by frank; revoking and granting
+  # again by a different administrator must leave no trace of the original.
+  test "granting rights again after a revoke starts a fresh record" do
+    original_at = users(:grace).admin_granted_at
+    original_by = users(:grace).admin_granted_by
+
+    users(:grace).revoke_admin_rights!
+    regranted_at = Time.current
+    users(:grace).grant_admin_rights!(by: users(:carol))
+
+    grace = users(:grace).reload
+    assert_predicate grace, :admin?
+    assert_equal users(:carol), grace.admin_granted_by
+    assert_not_equal original_by, grace.admin_granted_by
+    assert_in_delta regranted_at, grace.admin_granted_at, 5
+    assert_not_equal original_at, grace.admin_granted_at
+  end
+
   # FR-019: the grant outlives the account that made it. dependent: :nullify is
   # what holds this — with :destroy, deleting an administrator would delete
   # everyone they had ever promoted.
