@@ -21,7 +21,12 @@
         <dd class="detail-value <%= "detail-value-empty" unless @user.admin? %>">
           <% if @user.admin? %>
             <div class="cell-stack">
-              <span class="badge badge-info"><%= t(".role_choices.admin") %></span>
+              <%# 029: the super admin's badge names the role explicitly rather than
+                  reading as a plain "Admin" — the one place this account's extra,
+                  exclusive capability (the danger zone) is stated on screen. %>
+              <span class="badge badge-info">
+                <%= @user.super_admin? ? t(".role_choices.super_admin") : t(".role_choices.admin") %>
+              </span>
 
               <p class="meta">
                 <% if @user.admin_rights_granted? %>
@@ -61,9 +66,11 @@
         is ever offered for a given account: grant when it is not yet an admin,
         revoke when it is one and is not the signed-in administrator's own
         (FR-003/FR-006). Both reuse the exact confirm/turbo_confirm pattern the
-        "Cancel search" control below already uses on this same screen. %>
+        "Cancel search" control below already uses on this same screen.
+        029 FR-009: never offered on the super admin's own row either, even to a
+        different administrator — no control anywhere may revoke that role. %>
     <% if @user.admin? %>
-      <% if @user != current_user %>
+      <% if @user != current_user && !@user.super_admin? %>
         <% revoke_message = t(".revoke_confirm", email: @user.email) %>
         <%= button_to t(".revoke_button"), revoke_admin_admin_user_path(@user), method: :patch,
               data: { confirm: revoke_message, turbo_confirm: revoke_message },

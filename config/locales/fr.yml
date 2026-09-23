@@ -99,6 +99,7 @@ fr:
         not_looking_for_a_locker: "Ne recherche pas de casier"
         role_choices:
           admin: "Administrateur"
+          super_admin: "Super administrateur"
           standard: "Standard"
         granted_by: "Accordé par %{email} le %{date}"
         granted_account_removed: "Accordé le %{date} (compte supprimé)"
@@ -111,6 +112,7 @@ fr:
         account_gone: "Ce compte n'existe plus."
         revoked: "Les droits d'administrateur de %{email} ont été révoqués."
         self_forbidden: "Vous ne pouvez pas révoquer vos propres droits d'administrateur."
+        super_admin_forbidden: "Les droits du super administrateur ne peuvent pas être révoqués."
       show:
         account_gone: "Ce compte n'existe plus."
         joined_label: "Inscrit le"
@@ -120,6 +122,7 @@ fr:
         not_set: "Non défini"
         role_choices:
           admin: "Administrateur"
+          super_admin: "Super administrateur"
           standard: "Standard"
         granted_by: "Accordé par %{email} le %{date}"
         granted_account_removed: "Accordé le %{date} (compte supprimé)"
@@ -379,5 +382,5 @@ fr:
     messages:
       locker_number_taken: "n'est pas disponible à cet étage — un autre compte a déjà ce casier"
       locked_by_swap: "ne peut pas être modifié tant que vous avez une proposition d'échange active"
-      last_administrator: "Vous êtes le seul administrateur. Accordez les droits d'administrateur à un autre compte avant d'annuler celui-ci."
+      super_admin_uncancellable: "Le compte du super administrateur ne peut jamais être annulé."
       email_domain_not_allowed: "Votre domaine d'adresse e-mail n'est pas autorisé"

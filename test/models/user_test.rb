@@ -276,6 +276,38 @@ class UserTest < ActiveSupport::TestCase
     assert_not_predicate second, :admin?
   end
 
+  # 029 FR-002/FR-003: the super admin role is exactly the first account's
+  # bootstrap-administrator status, named — so it follows the same rule as
+  # :admin? above, one for one.
+  test "the first account ever created is the super admin" do
+    User.destroy_all
+
+    first = User.create!(email: "first@example.com", password: VALID_PASSWORD)
+
+    assert_predicate first, :super_admin?
+  end
+
+  test "an account created after the first is not the super admin" do
+    User.destroy_all
+    User.create!(email: "first@example.com", password: VALID_PASSWORD)
+
+    second = User.create!(email: "second@example.com", password: VALID_PASSWORD)
+
+    assert_not_predicate second, :super_admin?
+  end
+
+  # 029 FR-013: the existing bootstrap-administrator fixture already satisfies
+  # super_admin? with no code path executed beyond the predicate itself — fixture
+  # data, not a runtime registration — which is what makes the retroactive
+  # promotion automatic rather than a migration (data-model.md, research.md R1).
+  test "the existing bootstrap administrator fixture is already the super admin" do
+    assert_predicate users(:frank), :super_admin?
+  end
+
+  test "a granted administrator fixture is not the super admin" do
+    assert_not_predicate users(:grace), :super_admin?
+  end
+
   # The ordinary case on a site that is already running: signing up today makes
   # nobody an administrator, whatever the fixtures happen to contain.
   #
@@ -327,27 +359,31 @@ class UserTest < ActiveSupport::TestCase
   # longer reachable while other accounts are registered, because the deletion is
   # refused (see the guard tests below). What survives from 013 is the half that
   # still holds — the flag does not move to a successor.
+  # 029: frank may not go here — he is the super admin, and other accounts
+  # (grace among them) remain, so his own destroy is refused (see the
+  # super-admin-specific guard tests below). grace holds rights too, and is not
+  # the super admin, so she may go freely; nobody is promoted to fill the slot
+  # she vacates.
   test "deleting an administrator does not promote anyone in their place" do
-    # frank may go because grace holds the rights too; nobody is promoted to fill
-    # the slot he vacates.
     administrators_before = User.where(admin: true).order(:id).to_a
 
-    users(:frank).destroy
+    users(:grace).destroy
 
-    assert_equal administrators_before - [ users(:frank) ], User.where(admin: true).order(:id).to_a
+    assert_equal administrators_before - [ users(:grace) ], User.where(admin: true).order(:id).to_a
   end
 
   # The same rule seen from the other side: an administrator slot is not an opening
   # that the next person to sign up walks into. 013 tested this by deleting the only
-  # administrator first, which FR-016 now refuses, so the vacancy is staged by
-  # deleting one of two instead.
+  # administrator first, which FR-016 refused; 029 refuses it even more strongly for
+  # the super admin specifically, so the vacancy is staged by deleting the granted
+  # administrator (grace) instead.
   test "signing up while the site has an administrator grants nothing" do
-    users(:frank).destroy
+    users(:grace).destroy
 
     newcomer = User.create!(email: "newcomer@example.com", password: VALID_PASSWORD)
 
     assert_not_predicate newcomer, :admin?
-    assert_equal [ users(:grace) ], User.where(admin: true).to_a
+    assert_equal [ users(:frank) ], User.where(admin: true).to_a
   end
 
   # 015, research.md R1: the retry in User#save identifies the bootstrap-race
@@ -441,6 +477,15 @@ class UserTest < ActiveSupport::TestCase
     assert_predicate users(:frank).reload, :admin?
   end
 
+  # 029 FR-001: granted rights are never super admin rights — admin_granted_at is
+  # always stamped by grant_admin_rights!, which is exactly what keeps a granted
+  # account out of super_admin?'s definition.
+  test "granting rights never makes the recipient the super admin" do
+    users(:carol).grant_admin_rights!(by: users(:frank))
+
+    assert_not_predicate users(:carol).reload, :super_admin?
+  end
+
   # --- 028 FR-009, FR-018: revoking ---------------------------------------------
 
   # The direct counterpart of "granting rights records the flag, the moment and
@@ -498,11 +543,17 @@ class UserTest < ActiveSupport::TestCase
   # FR-019: the grant outlives the account that made it. dependent: :nullify is
   # what holds this — with :destroy, deleting an administrator would delete
   # everyone they had ever promoted.
+  #
+  # 029: the grantor destroyed here has to be an account whose own destroy is
+  # never restricted, so this uses grace (a granted administrator) as the
+  # grantor rather than frank (the super admin, who cannot be destroyed while
+  # carol/others remain) — the dependent: :nullify behavior under test does not
+  # depend on which admin triggers it.
   test "deleting the grantor keeps the grant and clears only the grantor" do
-    users(:carol).grant_admin_rights!(by: users(:frank))
+    users(:carol).grant_admin_rights!(by: users(:grace))
     granted_at = users(:carol).reload.admin_granted_at
 
-    users(:frank).destroy
+    users(:grace).destroy
 
     carol = users(:carol).reload
     assert_predicate carol, :admin?
@@ -510,25 +561,45 @@ class UserTest < ActiveSupport::TestCase
     assert_nil carol.admin_granted_by
   end
 
-  # --- 015 FR-016: the last administrator cannot walk out ----------------------
+  # --- 029 FR-010/FR-014: the super admin cannot walk out while anyone remains -
   #
-  # Granting is the only way in and nothing takes the rights away, so cancelling
-  # an account became the only way out. These say the exit cannot be taken when it
-  # would leave registered accounts with nobody able to administer them.
+  # 015 FR-016 originally guarded this for whichever account was the site's only
+  # administrator. 029 replaces that rule outright (research.md R6): the super
+  # admin's own account may never be cancelled while any other account exists —
+  # admin or not — and, as a direct consequence, a granted (non-super)
+  # administrator's own account is never restricted at all, because the super
+  # admin's permanence already guarantees the site keeps an administrator.
 
-  test "the last administrator cannot be deleted while other accounts remain" do
+  # The strict case: another administrator (grace) is still present, not just
+  # some non-admin accounts — the super admin is refused all the same, which is
+  # what "regardless of how many other admins exist" (FR-010) actually means.
+  test "the super admin cannot be deleted while any other account remains, admin or not" do
+    assert_no_difference -> { User.count } do
+      assert_not users(:frank).destroy
+    end
+
+    assert_predicate users(:frank).reload, :super_admin?
+    assert_includes users(:frank).errors[:base], I18n.t("user.messages.super_admin_uncancellable")
+  end
+
+  # The case 015 FR-016 originally covered — no other admin remains — is still
+  # refused, just by the new, stricter rule rather than the retired one.
+  test "the super admin cannot be deleted even when every other admin has been removed, as long as a non-admin account remains" do
     users(:grace).destroy
 
     assert_no_difference -> { User.count } do
       assert_not users(:frank).destroy
     end
 
-    assert_predicate users(:frank).reload, :admin?
+    assert_predicate users(:frank).reload, :super_admin?
   end
 
-  test "an administrator can be deleted while another administrator remains" do
+  # 029 FR-014: the direct consequence of the super admin's own permanence — a
+  # granted administrator's own account is never restricted, however many other
+  # admins remain (frank, here, always does).
+  test "a granted administrator can be deleted while the super admin remains" do
     assert_difference -> { User.count }, -1 do
-      assert users(:frank).destroy
+      assert users(:grace).destroy
     end
   end
 
@@ -538,28 +609,28 @@ class UserTest < ActiveSupport::TestCase
     end
   end
 
-  # The refusal has to say what to do about it, not merely refuse.
-  test "the refused administrator is told to grant rights to someone else first" do
+  # The refusal has to say what to do about it, not merely refuse — and the
+  # remedy the old message offered ("grant rights to someone else") no longer
+  # applies, since granting rights elsewhere does not let the super admin leave.
+  test "the refused super admin is told the account can never be cancelled" do
     users(:grace).destroy
 
     users(:frank).destroy
 
-    assert_includes users(:frank).errors[:base], User::LAST_ADMINISTRATOR_MESSAGE
+    assert_includes users(:frank).errors[:base], I18n.t("user.messages.super_admin_uncancellable")
   end
 
-  # The case FR-016 deliberately lets through (research.md R4): the sole account
-  # on the site — administrator by definition — can still cancel. With nothing
-  # left to administer there is nobody to lock out, and the next person to
-  # register claims the rights exactly as the first one did (013 FR-001).
-  #
-  # Read literally the requirement refused this too, which would trap the only
-  # person on a new site in an account they could never close.
-  test "the sole account on the site can be deleted even though it is the administrator" do
+  # The one exception FR-010 preserves (research.md R6, spec.md Clarifications):
+  # the sole account on the site — the super admin by definition — can still
+  # cancel. With nothing left to administer there is nobody to lock out, and the
+  # next person to register claims the rights exactly as the first one did (013
+  # FR-001), including the super admin role itself.
+  test "the sole account on the site can be deleted even though it is the super admin" do
     # Staged through the real destroy path rather than delete_all: the wishes and
     # swap proposals hanging off these accounts have foreign keys back to them,
     # and Rails declares SQLite's as deferrable, so delete_all leaves orphans that
     # only surface as a violation later — inside the very destroy under test.
-    users(:grace).destroy                  # allowed: frank is still an administrator
+    users(:grace).destroy                  # allowed: she is not the super admin
     User.where(admin: false).destroy_all   # never guarded
 
     assert_equal [ users(:frank) ], User.all.to_a
@@ -568,7 +639,9 @@ class UserTest < ActiveSupport::TestCase
       assert users(:frank).destroy
     end
 
-    assert_predicate User.create!(email: "next@example.com", password: VALID_PASSWORD), :admin?
+    successor = User.create!(email: "next@example.com", password: VALID_PASSWORD)
+    assert_predicate successor, :admin?
+    assert_predicate successor, :super_admin?
   end
 
   # --- 016: the allowed email domains gate -----------------------------------
@@ -768,11 +841,16 @@ class UserTest < ActiveSupport::TestCase
 
   # dependent: :nullify is what holds this — with :destroy, deleting an
   # administrator would delete every account they had ever edited on behalf of.
+  # 029: the editor destroyed here has to be an account whose own destroy is
+  # never restricted, so this uses grace (a granted administrator) rather than
+  # frank (the super admin, who cannot be destroyed while carol/others remain) —
+  # the dependent: :nullify behavior under test does not depend on which admin
+  # triggers it.
   test "deleting the editor keeps the edit provenance and clears only the editor" do
-    users(:carol).update!(locker_edited_by: users(:frank), locker_edited_at: Time.current)
+    users(:carol).update!(locker_edited_by: users(:grace), locker_edited_at: Time.current)
     edited_at = users(:carol).reload.locker_edited_at
 
-    users(:frank).destroy
+    users(:grace).destroy
 
     carol = users(:carol).reload
     assert_equal edited_at, carol.locker_edited_at
@@ -790,11 +868,13 @@ class UserTest < ActiveSupport::TestCase
     assert_in_delta cancelled_at, carol.search_cancelled_at, 1
   end
 
+  # 029: same reason as the editor test above — grace, not frank, is the one
+  # whose destroy is never restricted.
   test "deleting the canceller keeps the cancellation provenance and clears only the canceller" do
-    users(:carol).update!(search_cancelled_by: users(:frank), search_cancelled_at: Time.current)
+    users(:carol).update!(search_cancelled_by: users(:grace), search_cancelled_at: Time.current)
     cancelled_at = users(:carol).reload.search_cancelled_at
 
-    users(:frank).destroy
+    users(:grace).destroy
 
     carol = users(:carol).reload
     assert_equal cancelled_at, carol.search_cancelled_at

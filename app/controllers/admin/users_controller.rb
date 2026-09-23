@@ -103,6 +103,12 @@ class Admin::UsersController < ApplicationController
     # administrator's own).
     return redirect_to admin_user_path(user), alert: t(".self_forbidden") if user == current_user
 
+    # 029 FR-009: the super admin's rights may never be revoked, by anyone —
+    # not only by themselves (the check above). Refused here, independent of
+    # whether the view ever rendered a control for this row, the same posture
+    # as the self-forbidden guard immediately above (research.md R5).
+    return redirect_to admin_user_path(user), alert: t(".super_admin_forbidden") if user.super_admin?
+
     # FR-014: revoke_admin_rights! is a no-op when the account is already
     # standard, so arriving second at the same destination reports success.
     user.revoke_admin_rights!

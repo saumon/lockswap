@@ -160,6 +160,12 @@ something else tasteful.
 | **020 — Locker/floor/wish and filters on the admin users screen** | ✅ Shipped |
 | **021 — Design system rebuilt around the swap axis** | ✅ Shipped |
 | **022 — Compact floor/locker label alignment** | ✅ Shipped |
+| **023 — Modernized toast notifications** | ✅ Shipped |
+| **025 — Site language setting (French/English)** | ✅ Shipped |
+| **026 — Open the locker search on arrival from the homepage** | ✅ Shipped |
+| **027 — Admin user detail view** | ✅ Shipped |
+| **028 — Admin rights controls on the user detail screen** | ✅ Shipped |
+| **029 — Super admin role and exclusive Danger Zone access** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -267,7 +273,9 @@ What feature 006 corrects — see
   scope the number to, so the floor stays required exactly as before.
 
 What feature 007 changes — see
-[`specs/007-toast-notifications/spec.md`](specs/007-toast-notifications/spec.md):
+[`specs/007-toast-notifications/spec.md`](specs/007-toast-notifications/spec.md). Two of the statements
+below describe 007 as it shipped and **no longer describe the application**: feature 023 moved the
+notification and modernized its finish. They are marked where they occur:
 
 * the lines the application answers with — **Signed in successfully.**, **Locker details saved.**, and
   every other one — used to be a block of text wedged at the top of the page that stayed there until
@@ -277,7 +285,8 @@ What feature 007 changes — see
   instead of taking a strip out of the page — so the content underneath neither jumps down on arrival
   nor springs back on departure, the navigation stays visible and clickable throughout, and on a wide
   screen the message sits over the empty margin beside the content rather than over the content
-  itself;
+  itself. **Superseded by 023**: the message now sits fixed at the bottom right of the screen instead,
+  at every width, which is also what let it stop depending on the header's own published height;
 * **the countdown stops while the pointer is resting on a message, or while the keyboard has landed
   on it**, and picks up where it left off once you move away — three seconds is not long enough for
   every reader, and a message that vanishes mid-sentence cannot be asked for a second time;
@@ -285,7 +294,9 @@ What feature 007 changes — see
   out;
 * a success still reads as a success and a refusal as a refusal, at a glance and without reading the
   words — and each keeps the role that has a screen reader announce it, politely for a confirmation
-  and insistently for a failure;
+  and insistently for a failure. **Superseded by 023**: color is no longer the only visual signal —
+  each message now carries a type icon as well, so the two are told apart even by a reader who cannot
+  perceive color;
 * two messages on the same page stack rather than one quietly standing in for the other, and a long
   one wraps and grows downwards instead of spilling out of the window.
 
@@ -364,7 +375,9 @@ What feature 009 changes — see
   floor on file has already answered it, and clearing the locker number there says the same thing.
 
 What feature 010 adds — see
-[`specs/010-homepage-locker-wish-block/spec.md`](specs/010-homepage-locker-wish-block/spec.md):
+[`specs/010-homepage-locker-wish-block/spec.md`](specs/010-homepage-locker-wish-block/spec.md). One of
+the statements below describes 010 as it shipped and **no longer fully describes the application**:
+feature 026 changed what the two invitation buttons hand off to. It is marked where it occurs:
 
 * the homepage now says where your locker search stands, instead of leaving a declared wish to be
   remembered or looked up. It shows **the floor you are looking on**, and the way back to the page
@@ -376,7 +389,10 @@ What feature 010 adds — see
 * exactly **one of the three** is ever on screen — never two, never none — and a declared wish
   outranks both invitations, so nobody who has already said what they want is asked again;
 * the block **reports, it does not act**: declaring, moving and cancelling stay on the wishes page,
-  which every state links to in a single click or keypress;
+  which every state links to in a single click or keypress. **Superseded by 026**: for the two
+  invitation buttons specifically, that one click now also opens the wishes page's search form and
+  places the cursor in the Floor field — the click still only *links*, but the page it lands on is no
+  longer folded shut behind a summary the person has to press a second time;
 * it says **only the floor you are looking for**. What you hold today is on the card immediately
   below, and one fact in two places is one fact free to disagree with itself;
 * it sits **after the proposals waiting on you** — those cannot move without an answer — and **above
@@ -464,8 +480,10 @@ What feature 012 changes — see
 What feature 013 adds — see
 [`specs/013-admin-user-directory/spec.md`](specs/013-admin-user-directory/spec.md). Four of the
 statements below describe 013 as it shipped and **no longer describe the application**: feature 015
-lifted the one-administrator limit, gave the Users screen its one control, and closed the case where
-the site could be left with nobody in charge. They are marked where they occur:
+lifted the one-administrator limit and gave the Users screen its first control, closing the case where
+the site could be left with nobody in charge; features 027 and 028 then moved every capability that
+acts on an account off the list and onto a detail screen of its own, and gave that screen a
+counterpart for 015's control. They are marked where they occur:
 
 * **the first account ever registered is the site's administrator**, decided at the moment it signs
   up and with nothing to configure. There is no setup step, no seed, no environment variable: the
@@ -502,8 +520,13 @@ the site could be left with nobody in charge. They are marked where they occur:
 * it **reports, and offers nothing to press**. No promote, no demote, no edit, no delete — not
   because those were left for later, but because there is no such capability behind them: the role is
   claimed once at signup and by nothing else. A control that looked like one would be a promise the
-  application cannot keep. **Superseded by 015**, which added the capability first and the control
-  second, in that order; demote, edit and delete are still absent, and still for this reason;
+  application cannot keep. **Superseded by 015, 027 and 028, in that order**: 015 added the capability
+  to promote and put a control for it directly on this list; 027 gave each row a link to a dedicated
+  detail screen and moved editing and search-cancellation there, on the account's own behalf; 028 then
+  moved 015's promote control off this list entirely and onto that same detail screen, adding its
+  counterpart, revoke, beside it. The list itself reports once more — one link per row, nothing that
+  changes an account — and every capability that acts on one now lives on the screen that link opens.
+  Delete remains absent: no control here, or on the detail screen, removes an account outright;
 * it is **a table on a desktop and one labelled card per account on a phone**, from the same markup
   rendered once, on the single breakpoint 012 established — a new screen joins those rules rather
   than arriving with its own. It is audited for accessibility like every other screen, at both
@@ -551,19 +574,29 @@ What feature 014 adds — see
   the same accessibility audit as every other one, at both widths, on every test run.
 
 What feature 015 adds — see
-[`specs/015-grant-admin-rights/spec.md`](specs/015-grant-admin-rights/spec.md):
+[`specs/015-grant-admin-rights/spec.md`](specs/015-grant-admin-rights/spec.md). Five of the statements
+below describe 015 as it shipped and **no longer describe the application**: feature 028 relocated the
+grant control and made a grant reversible; feature 027 gave the same screen an editing capability of
+its own; and feature 029 named one account among the administrators — the super admin — gave it one
+capability the others no longer share, and replaced the rule that kept the site from being left with
+nobody in charge with a stronger one that applies to that account alone. They are marked where they
+occur:
 
 * **an administrator can hand the role to somebody else**, from a button on that account's row in
   the list they already had. Nothing happens on the press: a confirmation names the account and says
   the grant cannot be undone, and only validating it does anything. It is the same construction the
   *Cancel my account* button has always used — the site's one existing way of asking "are you sure?"
-  — rather than a modal written for the occasion;
+  — rather than a modal written for the occasion. **Superseded by 028**: the button is no longer on the
+  list at all — it moved to the account's own detail screen (027) — and the confirmation no longer
+  claims the grant cannot be undone, since a revoke control now sits right beside it there;
 * **no password is asked for on the way through**, which is exactly why the confirmation has to say
   the grant is permanent. That dialog is the only thing between a pointer and an irreversible change,
   and a confirmation that only confirms would be leaning on the reader already knowing what it costs.
   Re-typing a password was considered and turned down for consistency: the closest thing the
   application already does — closing your own account, which is no less final — is guarded by a
-  confirmation and nothing more;
+  confirmation and nothing more. **Superseded by 028**: a grant is no longer irreversible, and neither
+  its own confirmation nor revoke's asks for a password — the same "one plain confirmation, no
+  credential" shape now guards both directions;
 * **there can now be any number of administrators, and the database still promises the part worth
   promising.** The index that made a second administrator impossible was narrowed rather than
   dropped: it covers only accounts that hold the role *without* having been granted it. Two people
@@ -575,7 +608,10 @@ What feature 015 adds — see
 * **rights obtained by grant are the same rights.** The same badge, the same menu, the same screen,
   and the ability to grant the role onwards in turn. Nothing anywhere asks *how* the role was
   obtained, because everything asks only whether it is held — which is a property of how the checks
-  were written, not a promise anyone has to keep remembering;
+  were written, not a promise anyone has to keep remembering. **Superseded by 029** for one account
+  only: the one that has held the role since the very first registration reads *Super Admin* rather
+  than *Admin*, and is the only one the Danger Zone (016) still opens for — every account whose rights
+  were granted keeps exactly what is described above;
 * **each row says where its rights came from**: *First registration*, or *Granted by* somebody *on* a
   date. It is not a log. The role is granted at most once and never taken back, so its origin is a
   single fact about the account rather than a history of events to page through — and it **outlives
@@ -585,14 +621,22 @@ What feature 015 adds — see
   promote, demote, edit, delete — and gave the same reason for all four: there was no capability
   behind any of them, and a control that looked like one would be a promise the application could not
   keep. Exactly one of the four has a capability behind it now, so exactly one of them got a control.
-  The other three are still absent, and still for that reason rather than for lack of time;
+  The other three are still absent, and still for that reason rather than for lack of time.
+  **Superseded by 027 and 028**: demote (028's revoke) and edit (027's floor/locker correction, on the
+  account's own detail screen) both have capabilities behind them now too — only delete is still
+  absent, and still for the original reason;
 * **the last administrator cannot walk out.** Granting became the only way into the role and nothing
   takes it away, which left cancelling an account as the only way out of it — and the way out led
   somewhere with no way back, since the role is only ever claimed automatically on a site with no
   accounts at all. So the cancellation is refused while other accounts remain, and the person is told
   what to do about it rather than merely stopped. The one case it lets through is the sole account
   left on a site: there is nobody to lock out, and whoever registers next claims the role exactly as
-  the first one did;
+  the first one did. **Superseded by 029**, which replaced "the last administrator" with one specific
+  account — the one that has held the role since the very first registration. That one account still
+  cannot walk out while anyone else remains, and still can once it is the last account left, exactly
+  as described above; every administrator granted the role afterward may now leave at any time,
+  however many other administrators remain, because that one account's own permanence already keeps
+  somebody in charge;
 * **the control says which account it acts on**, to a screen reader as well as to the eye. A column
   of buttons all reading *Grant admin rights* is a column of identical buttons, and leaves somebody
   who cannot see the row counting their way down it — so each one carries the account's address in
@@ -601,10 +645,14 @@ What feature 015 adds — see
   every other screen at both widths.
 
 What feature 016 adds — see
-[`specs/016-danger-zone-email-domains/spec.md`](specs/016-danger-zone-email-domains/spec.md):
+[`specs/016-danger-zone-email-domains/spec.md`](specs/016-danger-zone-email-domains/spec.md). One of
+the statements below describes 016 as it shipped and **no longer describes the application**: feature
+029 narrowed who may open the Danger Zone from every administrator to one. It is marked where it
+occurs:
 
 * **the site can decide who is allowed to sign up at all**, by email domain. A **Danger Zone** screen,
-  in the Admin menu beside *Users*, holds the list of domains that may create an account: with
+  in the Admin menu beside *Users*, holds the list of domains that may create an account — **superseded
+  by 029**: beside *Users* only for the one administrator, the super admin, who may still open it — with
   `company.com` on it, `someone@company.com` registers exactly as before and everybody else is turned
   away with *Your email address domain is not allowed*. It is named for the class of setting rather
   than for this one — what belongs on that screen is anything whose blast radius is the whole site;
@@ -726,7 +774,9 @@ What feature 019 adds — see
   trade-off.
 
 What feature 020 adds — see
-[`specs/020-admin-users-filters/spec.md`](specs/020-admin-users-filters/spec.md):
+[`specs/020-admin-users-filters/spec.md`](specs/020-admin-users-filters/spec.md). Two of the statements
+below describe 020 as it shipped and **no longer describe the application**: feature 028 removed the
+grant control this section describes from the list entirely. They are marked where they occur:
 
 * **every row on the admin Users screen now says where that account stands**: current floor, current
   locker, and whether they are looking for one — the same three facts already shown on that person's
@@ -745,13 +795,16 @@ What feature 020 adds — see
   the page, stay where they were;
 * **granting administrator rights from a filtered list leaves it filtered.** The existing grant
   control (015) redirects back to the same narrowed view rather than resetting it, so promoting one
-  account from a shortlist does not mean rebuilding that shortlist by hand;
+  account from a shortlist does not mean rebuilding that shortlist by hand. **Superseded by 028**: the
+  control this describes no longer lives on the list at all — see below;
 * **a combination that matches nobody says so in its own words**, distinct from the screen simply
   being empty, with every chosen filter still visible so one of them can be relaxed without losing the
   others;
 * **nothing about the existing screen changed.** Same email, same "Joined" date, same **Admin** badge,
   same grant control and its confirmation — the new columns and filters sit alongside all of it rather
-  than in place of any of it.
+  than in place of any of it. **Superseded by 028**: the grant control is gone from this screen
+  entirely now, relocated to the account's own detail screen (027) — every other fact named here is
+  still exactly as it was.
 
 What feature 021 brings — this one has no spec of its own; it was a design pass, and the contract it
 produced is written down in [`CLAUDE.md`](CLAUDE.md):
@@ -831,6 +884,150 @@ What feature 022 adds — see
 * **the edit pencil no longer sticks.** Its hover fill is now scoped to devices that actually hover;
   a tap has no pointer-leave to end it, so on a touchscreen the control used to stay filled in after
   being tapped open instead of settling back to transparent.
+
+What feature 023 adds — see
+[`specs/023-toast-redesign/spec.md`](specs/023-toast-redesign/spec.md):
+
+* the notification **left the header's shadow and anchored itself to the corner it now owns**: fixed
+  to the bottom-right of the screen at every width, instead of floating below the header on a wide
+  screen and wherever the header happened to land it on a narrow one;
+* **a type is now told apart by more than colour** — an icon rides beside the message, so a success
+  and a refusal read apart even to an eye that cannot use colour as the signal;
+* the finish is **the app's own, not a treatment invented for this one component**: the same tokens,
+  the same corners, the same type as the cards and buttons around it, replacing the plain white strip
+  007 first shipped;
+* **a burst of notifications stays legible.** More than a handful queued at once used to mean a wall of
+  identical boxes; now only so many are ever shown together, and the rest reveal themselves as the
+  visible ones clear, rather than crowding the corner;
+* nothing that already worked stopped working: the three-second countdown, its pause on hover or
+  keyboard focus, the manual dismiss, and the screen-reader announcement are all exactly as 007 left
+  them — only the notification's shape, colour finish, and corner changed.
+
+What feature 025 adds — this one is documented in full under
+[🌐 Localization](#-localization) below rather than repeated here:
+
+* the site gained a **second Danger Zone setting** beside the allowed email domains (016): which of
+  **English** or **French** the whole site is shown in, one shared choice for every visitor rather
+  than a personal preference;
+* a fresh install **starts in English**, and switching the setting reaches every visitor — including
+  one with a page already open — by their very next request, with nobody asked to sign out and back
+  in;
+* **only the words move.** Dates, times and numbers keep one fixed format regardless of which language
+  is selected, and nothing a person typed — a name, an email address, a comment — is ever translated.
+
+What feature 026 adds — see
+[`specs/026-locker-wish-expand-from-home/spec.md`](specs/026-locker-wish-expand-from-home/spec.md):
+
+* **the two homepage invitations now finish what they start.** "I want a locker!" and "I want to
+  switch my locker!" (010) used to land on the locker wishes screen with the search form folded shut
+  behind a summary — asking, in effect, the same question twice. They now arrive with that zone
+  already open and the cursor already in the Floor field, so typing a floor is the only thing left to
+  do;
+* **the menu asks a different question, and gets a different screen.** Reaching locker wishes from the
+  site menu, a bookmark, or any address that is not one of the two invitations still opens folded,
+  exactly as it always has — the distinction is the whole feature, not a side effect of one path
+  changing;
+* **the intention belongs to one arrival and is spent by it.** It never touches the address: a reload,
+  or Back to the same screen, shows it folded again, the same page the menu would have given, because
+  the address a person can bookmark or share can never disagree with what it shows;
+* it is **one rule at every width.** The zone opens and the field takes focus on a phone exactly as on
+  a desktop — the on-screen keyboard that follows is accepted as the point of having pressed the
+  invitation in the first place;
+* somebody who has already declared a search sees **nothing different**: "See my locker searches!"
+  (010) and the panel it opens are untouched by this feature.
+
+What feature 027 adds — see
+[`specs/027-admin-user-detail-view/spec.md`](specs/027-admin-user-detail-view/spec.md):
+
+* **a link within each row, not the row itself,** takes an administrator from Users (013) to a screen
+  of its own for that one account — admin-only whichever way it is reached, exactly like every other
+  admin destination;
+* **everything about the account lives on one screen now.** Email, role and grant provenance, floor,
+  locker, whether a locker search is standing or the account is party to an active swap — facts that
+  used to mean cross-referencing the Users list and the locker wishes screen, and that had no home at
+  all for a second account's proposal history;
+* **the full proposal history, not just the active one.** Every proposal that account has ever sent or
+  received, in any status, newest first, with its counterpart, its outcome, and the terms involved —
+  the same shape of history the account holder already sees for themselves, read here for somebody
+  else;
+* **a pencil icon corrects floor and locker on the account's behalf**, pre-filled with what is on file
+  and governed by the same rules a self-service edit already follows — a floor is required, a locker
+  number must be free on that floor, and neither can move while a swap proposal is outstanding;
+* **a button cancels a standing search on the account's behalf**, behind a confirmation naming what is
+  about to be removed — guarded, unlike the account holder's own single-click cancel, because it acts
+  on somebody else's account rather than the administrator's own;
+* **both actions leave a trace.** Which administrator edited the floor/locker, or cancelled the
+  search, and when — the same shape of provenance already kept for who granted administrator rights,
+  so a detail screen always says who last touched it and not just what changed.
+
+What feature 028 adds — see
+[`specs/028-move-admin-grant-button/spec.md`](specs/028-move-admin-grant-button/spec.md):
+
+* **the grant control left the Users list and moved onto the account's own detail screen** (027) — the
+  list has one fewer column now, an "Actions" column that held one control for one role and nothing
+  else;
+* **revoking is new capability, not a relocation.** Until now the only way to stop being an
+  administrator was to cancel the account outright; a revoke control, guarded by the same plain
+  confirmation grant already uses — no password, the account named on screen — sits beside the grant
+  control wherever it applies;
+* **an administrator can never revoke their own rights.** The control is not offered on their own
+  detail screen, and a direct request against their own account is refused the same way — whether or
+  not they are the only administrator on the site, there is no special case that would let the last
+  one remove themselves;
+* **revoking clears the record, it does not add to it.** An account reverted to standard shows no
+  trace of who granted it rights or when — a later grant starts a fresh record rather than reviving the
+  old one.
+
+What feature 029 adds — see
+[`specs/029-super-admin-role/spec.md`](specs/029-super-admin-role/spec.md):
+
+* **the first account is no longer just "the administrator" — it is the super admin**, a role named
+  outright rather than left implicit in which row has no grantor behind it. Nothing about how it is
+  obtained changes: it is still decided once, automatically, at the very first registration, with
+  nothing to configure and nobody able to claim it afterward;
+* **one screen became narrower, not the whole site.** The Danger Zone (016) is the super admin's
+  alone now; every other administrator keeps everything else they already had — *Users*, granting and
+  revoking rights, an account's own detail screen — and loses only this one destination, both the
+  entry in the Admin menu and the address itself when typed, bookmarked or guessed;
+* **the role cannot be handed on, taken, or given up while anyone else is on the site.** No control
+  anywhere grants it to a second account, and none revokes it from the one that holds it — not even
+  from that account's own hands. Cancelling that one account is refused for as long as anyone else is
+  registered, because there would be nobody left who could ever hold the role again. The one exception
+  is that account being the last one left on the whole site: that returns things to exactly the empty
+  state the role is decided from, so whoever registers next claims it the same way the first one did;
+* **every other administrator's own account stopped being a special case.** The rule that used to keep
+  the site from being left with nobody in charge is gone, because the super admin's own permanence now
+  keeps that promise more strongly on its own — an administrator whose rights were granted may cancel
+  their own account at any time, however many other administrators remain;
+* **the badge says which one it is.** A role held by one account, with one capability the others do
+  not share, reads as *Super Admin* rather than the plain *Admin* every granted administrator's row
+  still carries — on the Users list and on that account's own detail screen alike.
+
+## 👤 Roles
+
+Three roles exist on a LockSwap instance, and every registered account holds exactly one:
+
+| Role | Who holds it | Can do |
+| --- | --- | --- |
+| **Standard** | Everyone who registers, by default | Manage their own floor and locker, declare a locker wish, send and answer swap proposals — everything an employee needs to swap lockers. |
+| **Admin** | Granted by an existing administrator, to any number of accounts ([015](specs/015-grant-admin-rights/spec.md)) | Everything a standard account can, plus the **Users** directory ([013](specs/013-admin-user-directory/spec.md)): view, edit floor/locker, and cancel a search on anyone's behalf ([027](specs/027-admin-user-detail-view/spec.md)), and grant or revoke administrator rights on any other account ([015](specs/015-grant-admin-rights/spec.md), [028](specs/028-move-admin-grant-button/spec.md)). |
+| **Super Admin** | Exactly one account, always: whichever one registered first on the site ([013](specs/013-admin-user-directory/spec.md), named explicitly by [029](specs/029-super-admin-role/spec.md)) | Everything an admin can, plus exclusive access to the **Danger Zone** ([016](specs/016-danger-zone-email-domains/spec.md)) — the allowed email domains and the site's language ([025](specs/025-multilingual-support/spec.md)). |
+
+What makes the super admin different is not a bigger set of permissions layered on top — it is that
+there is only ever one of them, and the site decides who it is rather than anyone choosing:
+
+* **assigned automatically, once.** The account created by the very first registration on the site
+  becomes the super admin at that moment, with nothing to configure; every account registered after it
+  never can, however many admins the site goes on to have;
+* **cannot be granted, transferred, or taken away.** No control anywhere makes a second account the
+  super admin, and none moves the role off the one that holds it — including that account's own
+  attempt to give it up. The only way the role ever changes hands is the site returning to zero
+  accounts and a new registration claiming it fresh, exactly as the first one did;
+* **the one account that can never leave while anyone else is still around.** Every admin whose rights
+  were granted may cancel their own account whenever they like; the super admin's account is refused
+  that, for as long as any other account exists, because nobody could ever take the role over
+  afterward. It may still leave once it is the very last account on the site — which is not an
+  exception so much as the same rule read the other way: at that point there is nobody left to strand.
 
 ## 🧭 Method: Spec-Driven Development
 
@@ -1081,7 +1278,37 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   reading the floor sought as one sentence on the homepage and on the locker wishes page, checking
   "Your locker" on a phone for one line per field against the desktop layout staying side by side,
   and confirming "Your locker" has no card border or background on the homepage while "Your locker
-  search" above it keeps its own.
+  search" above it keeps its own;
+* [`specs/023-toast-redesign/quickstart.md`](specs/023-toast-redesign/quickstart.md) —
+  triggering a success and an error and telling them apart by icon and colour without reading the
+  text, resizing and rotating the window to watch the bottom-right placement re-settle at both widths,
+  shrinking the window's height to confirm nothing lands on a control about to be used, and firing
+  several notifications in quick succession to watch the cap and the queue take over;
+* [`specs/025-multilingual-support/quickstart.md`](specs/025-multilingual-support/quickstart.md) —
+  switching the Danger Zone's language setting and watching every screen, including one already open,
+  follow it by the next page load, a fresh instance opening in English with nothing configured, a
+  non-administrator finding no language control anywhere, and a date or a number staying in the same
+  format regardless of which language is chosen;
+* [`specs/026-locker-wish-expand-from-home/quickstart.md`](specs/026-locker-wish-expand-from-home/quickstart.md) —
+  pressing each homepage invitation and landing with the search zone already open and the cursor in
+  Floor, reaching the same screen from the menu and finding it folded, reloading or going Back after an
+  invitation to find the intention spent, and the person who already declared a search seeing nothing
+  different;
+* [`specs/027-admin-user-detail-view/quickstart.md`](specs/027-admin-user-detail-view/quickstart.md) —
+  clicking through from the Users list to one account's detail screen and finding the same address
+  refused to a non-administrator, reading its floor, locker, standing search and full proposal history
+  in one place, correcting its floor and locker from the pencil icon, cancelling its search behind a
+  confirmation, and both actions leaving who did it and when on the screen afterward;
+* [`specs/028-move-admin-grant-button/quickstart.md`](specs/028-move-admin-grant-button/quickstart.md) —
+  granting rights from the detail screen instead of the list, revoking them from that same screen
+  behind the same plain confirmation, finding no revoke control anywhere on your own account, and
+  watching a reverted account's grant history disappear rather than merely hide;
+* [`specs/029-super-admin-role/quickstart.md`](specs/029-super-admin-role/quickstart.md) —
+  registering first on an empty instance and finding both admin rights and the Danger Zone, registering
+  second and finding neither, a standard admin losing the Danger Zone entry from the menu and being
+  refused the address directly, the super admin's badge and the Danger Zone still working exactly as
+  before, and the one account that can never be cancelled while anyone else remains — until it is the
+  only one left.
 
 ## 🚢 Deploy
 

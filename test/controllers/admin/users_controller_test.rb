@@ -84,22 +84,28 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
   # truth when only one account could ever hold the rights. Now any number can, so
   # it asserts what 013 FR-012 actually meant — the badge marks administrators and
   # marks nobody else — by counting against the administrators there are.
+  # 029: frank's own badge now reads "Super Admin" rather than the plain "Admin"
+  # every other administrator's row carries — the one account distinguished this
+  # way, since it is a genuinely distinct role with its own exclusive capability.
   test "administrator rows are labelled and no other row is" do
     sign_in users(:frank)
 
     get admin_users_path
 
-    [ users(:frank), users(:grace) ].each do |administrator|
-      assert_select "#admin-user-row-#{administrator.id}" do
-        assert_select ".badge", text: "Admin"
-      end
+    assert_select "#admin-user-row-#{users(:frank).id}" do
+      assert_select ".badge", text: "Super Admin"
+    end
+
+    assert_select "#admin-user-row-#{users(:grace).id}" do
+      assert_select ".badge", text: "Admin"
     end
 
     assert_select "#admin-user-row-#{users(:carol).id}" do
       assert_select ".badge", text: "Admin", count: 0
     end
 
-    assert_select ".badge", text: "Admin", count: User.where(admin: true).count
+    assert_select ".badge", text: "Admin", count: User.where(admin: true).count - 1
+    assert_select ".badge", text: "Super Admin", count: 1
   end
 
   # --- 020 User Story 1: locker, floor and wish on every row ------------------
@@ -620,6 +626,20 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil flash[:alert]
   end
 
+  # --- 029 FR-009: nobody may revoke the super admin's rights, not even a
+  # different administrator ----------------------------------------------------
+
+  test "an administrator cannot revoke the super admin's rights" do
+    sign_in users(:grace)
+
+    assert_no_changes -> { users(:frank).reload.admin? } do
+      patch revoke_admin_admin_user_path(users(:frank))
+    end
+
+    assert_redirected_to admin_user_path(users(:frank))
+    assert_not_nil flash[:alert]
+  end
+
   # --- 027 User Story 1: the detail screen, and who may reach it --------------
 
   test "an administrator can view another account's detail screen" do
@@ -639,6 +659,19 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     get admin_user_path(users(:frank))
 
     assert_response :success
+  end
+
+  # 029: the detail screen's own copy of the badge distinction the Users list
+  # already carries (see "administrator rows are labelled and no other row is"
+  # above) — the super admin's badge names the role explicitly.
+  test "the detail screen's role badge names the super admin explicitly" do
+    sign_in users(:frank)
+
+    get admin_user_path(users(:frank))
+    assert_select ".badge", text: "Super Admin"
+
+    get admin_user_path(users(:grace))
+    assert_select ".badge", text: "Admin"
   end
 
   test "an anonymous visitor requesting a user's detail screen is sent to sign in" do

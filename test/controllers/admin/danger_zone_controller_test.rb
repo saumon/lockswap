@@ -80,12 +80,30 @@ class Admin::DangerZoneControllerTest < ActionDispatch::IntegrationTest
   # 015 established the granted administrator as the case worth testing
   # separately: rights obtained by grant are the same rights, and every check on
   # the site keys off admin? rather than on how it was obtained.
-  test "a granted administrator is let through too" do
+  #
+  # 029 FR-005/FR-006: this feature deliberately inverts that premise for the
+  # danger zone specifically — grace has ordinary administrator rights, but only
+  # the super admin (frank) may reach this screen now (research.md R2/R3).
+  test "a granted administrator who is not the super admin is refused" do
     sign_in users(:grace)
 
     get admin_danger_zone_path
 
-    assert_response :success
+    assert_redirected_to root_path
+    assert_equal ApplicationController::ADMINISTRATORS_ONLY_MESSAGE, flash[:alert]
+  end
+
+  # Same restriction on the write, mirroring "a signed-in non-administrator
+  # cannot change the language" below but for a standard admin instead of a
+  # non-admin.
+  test "a granted administrator who is not the super admin cannot change the language" do
+    sign_in users(:grace)
+
+    patch admin_danger_zone_path, params: { site_language_setting: { language: "fr" } }
+
+    assert_redirected_to root_path
+    assert_equal ApplicationController::ADMINISTRATORS_ONLY_MESSAGE, flash[:alert]
+    assert_equal "en", SiteLanguageSetting.current.language
   end
 
   # --- User Story 3: the refusals ---------------------------------------------

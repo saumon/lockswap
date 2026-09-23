@@ -9,8 +9,12 @@ class Admin::AllowedEmailDomainsController < ApplicationController
   # FR-002: the same pair that guards the screen guards the writes, so what is
   # hidden from the navigation is also refused at the address. Restated here
   # rather than inherited, for the reason Admin::DangerZoneController gives.
+  #
+  # 029 FR-005: these writes are "actions the danger zone screen offers" just as
+  # much as the language setting is, so they narrow to the super admin the same
+  # way (research.md R2).
   before_action :authenticate_user!
-  before_action :require_admin!
+  before_action :require_super_admin!
 
   # Between the screen being drawn and a button on it being pressed, another
   # administrator can have removed the same domain. The outcome asked for already

@@ -84,13 +84,16 @@ class AdminUsersTest < ApplicationSystemTestCase
     end
   end
 
-  # FR-018: the badge is the same on every administrator row; the line beneath it
-  # is what says where the rights came from.
+  # FR-018: the badge is the same on every *granted* administrator row; the line
+  # beneath it is what says where the rights came from. 029: the one exception is
+  # the super admin's own row, whose badge names the role explicitly rather than
+  # reading as a plain "Admin".
   test "an administrator row says whether the rights were claimed or granted" do
     log_in_as @administrator
     visit admin_users_path
 
     within "#admin-user-row-#{@administrator.id}" do
+      assert_text "Super Admin"
       assert_text "First registration"
     end
 
@@ -109,14 +112,15 @@ class AdminUsersTest < ApplicationSystemTestCase
     assert_text ApplicationController::ADMINISTRATORS_ONLY_MESSAGE
   end
 
-  # --- 015 FR-016: the site keeps an administrator -----------------------------
+  # --- 029 FR-010: the super admin can never cancel while anyone else remains -
 
-  # The whole arc, the way a person meets it: one administrator may leave while
-  # another remains; the last one is stopped and told what to do; doing it lets
-  # them leave. The refusal is only useful if the remedy is reachable from it.
-  test "the last administrator is stopped from cancelling until someone else is promoted" do
-    # grace's departure is the staging, not the subject: what this test is about
-    # starts once frank is the only administrator left. Doing it through the
+  # The super admin is stopped, full stop — unlike a granted administrator (see
+  # the next test), there is no remedy that lets them leave while anyone else is
+  # still registered, because no other account could ever take over the role.
+  test "the super admin is stopped from cancelling while any other account remains" do
+    # grace's departure is not what triggers the refusal here (the super admin
+    # is blocked whenever anyone else remains, admin or not) — it is kept only
+    # to minimize the diff from this test's own history. Doing it through the
     # browser added a login, a page and a dialog that no assertion here depends
     # on — three more chances for a dropped interaction, for nothing.
     users(:grace).destroy
@@ -125,26 +129,17 @@ class AdminUsersTest < ApplicationSystemTestCase
     visit edit_user_registration_path
     accept_confirm { click_button "Cancel my account" }
 
-    assert_text User::LAST_ADMINISTRATOR_MESSAGE
+    assert_text I18n.t("user.messages.super_admin_uncancellable")
     assert_predicate User.find_by(email: @administrator.email), :present?
-
-    # 028: the grant control lives on the detail screen now, not the list.
-    visit admin_user_path(users(:carol))
-    accept_confirm { click_button "Grant admin rights" }
-    assert_text(/granted/i)
-
-    visit edit_user_registration_path
-    accept_confirm { click_button "Cancel my account" }
-    assert_no_current_path edit_user_registration_path
-
-    assert_nil User.find_by(email: @administrator.email)
   end
 
-  # FR-019: the grant outlives the account that made it. grace was promoted by
-  # frank; when frank goes, her row still says the rights were granted and when,
-  # and says plainly that the account which granted them is no longer there.
+  # FR-019: the grant outlives the account that made it. carol was promoted by
+  # grace (a granted administrator, not the super admin, so her own account can
+  # always be cancelled — FR-014); once grace goes, carol's row still says the
+  # rights were granted and when, and says plainly that the account which
+  # granted them is no longer there.
   test "a grant survives the deletion of the administrator who made it" do
-    log_in_as @administrator
+    log_in_as users(:grace)
     # 028: the grant control lives on the detail screen now, not the list.
     visit admin_user_path(users(:carol))
     accept_confirm { click_button "Grant admin rights" }
@@ -154,10 +149,10 @@ class AdminUsersTest < ApplicationSystemTestCase
     accept_confirm { click_button "Cancel my account" }
     assert_no_current_path edit_user_registration_path
 
-    log_in_as users(:grace)
+    log_in_as users(:carol)
     visit admin_users_path
 
-    within "#admin-user-row-#{users(:grace).id}" do
+    within "#admin-user-row-#{users(:carol).id}" do
       assert_text "Granted on"
       assert_text "(account removed)"
       assert_text "Admin"

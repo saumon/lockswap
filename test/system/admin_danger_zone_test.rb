@@ -100,6 +100,33 @@ class AdminDangerZoneTest < ApplicationSystemTestCase
     end
   end
 
+  # --- 029 User Story 2: the danger zone narrows to the super admin only ------
+
+  # The missing middle case between the two tests above: grace has ordinary
+  # administrator rights (so the Admin menu and "Users" are hers to see), but is
+  # not the super admin, so "Danger Zone" is not (FR-007).
+  test "a standard admin sees Users but not Danger Zone in the Admin menu" do
+    log_in_as users(:grace)
+
+    within ".site-bar" do
+      find("summary", text: "Admin").click
+
+      assert_link "Users", visible: true
+      assert_no_link "Danger Zone", visible: :all
+    end
+  end
+
+  # FR-006: hiding the link is presentation; this is the refusal that matters,
+  # met the way a person would meet it, mirroring the equivalent non-administrator
+  # test in test/system/admin_users_test.rb.
+  test "a standard admin who types the Danger Zone address is refused and told why" do
+    log_in_as users(:grace)
+    visit admin_danger_zone_path
+
+    assert_current_path root_path
+    assert_text ApplicationController::ADMINISTRATORS_ONLY_MESSAGE
+  end
+
   # --- User Story 2: lifting the restriction ---------------------------------
 
   # FR-003: removing a domain can reopen the site to everybody, so it is guarded

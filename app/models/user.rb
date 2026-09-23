@@ -164,6 +164,12 @@ class User < ApplicationRecord
   # rather than re-derived by every caller that needs to say it.
   def admin_rights_granted? = admin? && admin_granted_at.present?
 
+  # 029 FR-001/FR-003: the account index_users_on_bootstrap_admin already guarantees is unique —
+  # admin_granted_at is nil only for the account claim_administrator_if_first promoted, never for one
+  # grant_admin_rights! promoted (research.md R1). No new column: this predicate is the existing
+  # invariant, named.
+  def super_admin? = admin? && admin_granted_at.nil?
+
   # 028 FR-009, FR-018: the whole of revoking. Symmetric with #grant_admin_rights!
   # above — one write, and it clears every trace of the grant rather than
   # replacing it with a "revoked" record (research.md R4; the Clarifications
@@ -206,28 +212,33 @@ class User < ApplicationRecord
   # 025: kept for tests; see LOCKER_NUMBER_TAKEN_MESSAGE's comment.
   LOCKED_BY_SWAP_MESSAGE = "cannot be changed while you have an active swap proposal".freeze
 
-  # 015 FR-016: names the way out, because a refusal that only refuses leaves the
-  # administrator stuck with no idea what to do next. The remedy is a capability
-  # they already have on the screen they were just on.
-  # 025: kept for tests; see LOCKER_NUMBER_TAKEN_MESSAGE's comment.
-  LAST_ADMINISTRATOR_MESSAGE =
-    "You are the only administrator. Grant administrator rights to another " \
-    "account before cancelling this one.".freeze
+  # 029 FR-010/FR-014, research.md R6: replaces 015's LAST_ADMINISTRATOR_MESSAGE
+  # and the "no other admin remains" rule it guarded — that rule is unreachable
+  # now that the super admin's own permanence guarantees the site keeps an
+  # administrator whenever any other account exists (see
+  # prevent_super_admin_cancellation below). Unlike LAST_ADMINISTRATOR_MESSAGE,
+  # no frozen-string constant is kept for this one: nothing needs to reference it
+  # by name outside I18n — tests assert against I18n.t("user.messages.super_admin_uncancellable")
+  # directly, and RegistrationsController#destroy's fallback already calls I18n.t
+  # fresh rather than a constant.
 
-  # 015 FR-016: granting is the only way rights are obtained and nothing removes
-  # them, so cancelling an account is the only way to stop being an administrator.
-  # This closes the one exit that would leave registered accounts with nobody able
-  # to administer them — the single irreversible state this feature can reach,
-  # since 013 FR-001 only ever fires on an empty site.
+  # 029 FR-010: the super admin's own account is the one exit that can never be
+  # taken while anyone else is still registered — no other account could ever
+  # take over the role afterward, since 013 FR-002 only ever assigns it on a
+  # completely empty site. Replaces 015's keep_an_administrator_for_the_remaining_
+  # accounts, which only blocked deleting the site's *last* admin: this is
+  # stricter (any other account, admin or not, blocks it) and, as a direct
+  # consequence, a granted administrator's own account is never restricted at
+  # all (research.md R6).
   #
   # before_destroy, so the check runs inside the destroy transaction. That is what
   # makes the concurrent case safe: Active Record opens SQLite transactions with
   # default_transaction_mode: :immediate, taking the write lock at BEGIN, and
-  # SQLite permits one writer at a time — so two administrators cancelling at the
-  # same moment are serialized and the second one's count sees the first's
-  # deletion (research.md R4). No advisory lock is needed; moving this check out
-  # of the transaction would remove that guarantee.
-  before_destroy :keep_an_administrator_for_the_remaining_accounts
+  # SQLite permits one writer at a time — so two accounts cancelling at the same
+  # moment are serialized and the second one's count sees the first's deletion
+  # (research.md R4, carried over from 015). No advisory lock is needed; moving
+  # this check out of the transaction would remove that guarantee.
+  before_destroy :prevent_super_admin_cancellation
 
   # 005 FR-001, FR-002: a proposal is an offer made on these exact values, so
   # neither side can move them out from under the other while one is outstanding.
@@ -236,8 +247,9 @@ class User < ApplicationRecord
   # 016 FR-006: the spec fixes this sentence exactly, so it is added to :base and
   # not to :email — full_messages prefixes an attribute-scoped message with the
   # humanized attribute name, which would render it as "Email Your email address
-  # domain is not allowed" (research.md R2). LAST_ADMINISTRATOR_MESSAGE is on
-  # :base for the same reason.
+  # domain is not allowed" (research.md R2). The super_admin_uncancellable
+  # message prevent_super_admin_cancellation adds is on :base for the same
+  # reason.
   EMAIL_DOMAIN_NOT_ALLOWED_MESSAGE = "Your email address domain is not allowed".freeze
 
   # 016 FR-005: registration is gated on the administrator's allow-list.
@@ -272,21 +284,16 @@ class User < ApplicationRecord
       errors.add(:base, I18n.t("user.messages.email_domain_not_allowed"))
     end
 
-    # FR-016. Two conditions, and the second is the one that is easy to leave out:
-    #
-    # "would leave the site with no administrator" read literally also refuses the
-    # sole account on a new site, which is a trap rather than a guard — with no
-    # accounts left there is nothing to administer, and the next registration
-    # claims the rights again. So the question is whether accounts would be left
-    # behind, not merely whether an administrator would be.
-    def keep_an_administrator_for_the_remaining_accounts
-      return unless admin?
+    # 029 FR-010/FR-014, research.md R6: replaces keep_an_administrator_for_the_remaining_accounts,
+    # which this makes permanently unreachable — see the before_destroy comment above for why. Only
+    # the super admin's own row is ever blocked here, and only while at least one other account still
+    # exists; as the sole remaining account it may still go, the same exception 013/015 already carved
+    # out for "the only account on the site."
+    def prevent_super_admin_cancellation
+      return unless super_admin?
+      return unless User.where.not(id: id).exists?
 
-      others = User.where.not(id: id)
-      return unless others.exists?
-      return if others.exists?(admin: true)
-
-      errors.add(:base, I18n.t("user.messages.last_administrator"))
+      errors.add(:base, I18n.t("user.messages.super_admin_uncancellable"))
       throw :abort
     end
 

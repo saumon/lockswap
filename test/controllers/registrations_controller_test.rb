@@ -90,13 +90,13 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
     assert_select "#error_explanation li", text: /doesn't match the password above/
   end
 
-  # --- 015 FR-016: cancelling the last administrator's account ----------------
+  # --- 029 FR-010: cancelling the super admin's account ------------------------
   #
   # The model refuses it; this is where that refusal has to become something the
   # person can read and act on. Devise's own destroy reports success regardless of
   # what the record did, which is the specific thing being corrected here.
 
-  test "the last administrator cannot cancel their account while others remain" do
+  test "the super admin cannot cancel their account while others remain" do
     users(:grace).destroy
     sign_in users(:frank)
 
@@ -104,7 +104,7 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
       delete user_registration_path
     end
 
-    assert_equal User::LAST_ADMINISTRATOR_MESSAGE, flash[:alert]
+    assert_equal I18n.t("user.messages.super_admin_uncancellable"), flash[:alert]
     assert_nil flash[:notice]
   end
 
@@ -120,8 +120,10 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "an administrator can cancel while another administrator remains" do
-    sign_in users(:frank)
+  # 029 FR-014: a granted administrator's own account is never restricted,
+  # however many other admins remain — frank (the super admin) always does.
+  test "a granted administrator can cancel while the super admin remains" do
+    sign_in users(:grace)
 
     assert_difference -> { User.count }, -1 do
       delete user_registration_path

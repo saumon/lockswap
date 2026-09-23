@@ -339,6 +339,16 @@ class AdminUserDetailTest < ApplicationSystemTestCase
     assert_no_button "Revoke admin rights"
   end
 
+  # --- 029 FR-009: no revoke control on the super admin's row, from anyone ----
+
+  test "no revoke control appears on the super admin's own detail screen, even viewed by a different administrator" do
+    log_in_as users(:grace)
+
+    visit admin_user_path(users(:frank))
+
+    assert_no_button "Revoke admin rights"
+  end
+
   # --- 028 Polish: accessibility of both new controls -------------------------
 
   test "the grant and revoke controls are keyboard-operable and accessible" do

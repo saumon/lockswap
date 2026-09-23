@@ -40,12 +40,18 @@
     <div class="site-submenu-panel">
       <%= link_to t(".users"), admin_users_path, class: "site-nav-link",
             "aria-current": ("page" if current_page?(admin_users_path)) %>
-      <%# 016 FR-001/FR-002: the second administrator destination. It sits inside
-          the same condition as the first, so a non-administrator is never sent
-          the link at all — and, as above, that is presentation only: the refusal
-          that matters is require_admin! on the controllers behind it. %>
-      <%= link_to t(".danger_zone"), admin_danger_zone_path, class: "site-nav-link",
-            "aria-current": ("page" if current_page?(admin_danger_zone_path)) %>
+      <%# 016 FR-001/FR-002: the second administrator destination. As above, that
+          is presentation only: the refusal that matters is the guard on the
+          controllers behind it.
+          029 FR-007: this link narrows further than the submenu around it — the
+          submenu (and "Users" above) stays open to every administrator, but this
+          one link is now the super admin's alone, matching require_super_admin!
+          on Admin::DangerZoneController/Admin::AllowedEmailDomainsController
+          (research.md R4). %>
+      <% if current_user.super_admin? %>
+        <%= link_to t(".danger_zone"), admin_danger_zone_path, class: "site-nav-link",
+              "aria-current": ("page" if current_page?(admin_danger_zone_path)) %>
+      <% end %>
     </div>
   </details>
 <% end %>
