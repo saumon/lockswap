@@ -233,4 +233,44 @@ class Admin::AllowedEmailDomainsControllerTest < ActionDispatch::IntegrationTest
       }
     end
   end
+
+  # --- 029 User Story 2: the danger zone narrows to the super admin only ------
+  #
+  # Same refusal as the non-administrator tests above, but for an account that
+  # does have ordinary administrator rights — grace is granted, not the super
+  # admin, so these actions (the writes behind the danger zone screen) are
+  # refused to her too now (FR-005/FR-006).
+
+  test "a signed-in standard admin cannot add a domain and is told why" do
+    sign_in users(:grace)
+
+    assert_no_difference -> { AllowedEmailDomain.count } do
+      post admin_allowed_email_domains_path, params: { allowed_email_domain: { domain: "sneaky.example" } }
+    end
+
+    assert_redirected_to root_path
+    assert_equal ApplicationController::ADMINISTRATORS_ONLY_MESSAGE, flash[:alert]
+  end
+
+  test "a signed-in standard admin cannot remove a domain and so cannot reopen registration" do
+    domain = AllowedEmailDomain.create!(domain: "allowed.example")
+    sign_in users(:grace)
+
+    assert_no_difference -> { AllowedEmailDomain.count } do
+      delete admin_allowed_email_domain_path(domain)
+    end
+
+    assert_redirected_to root_path
+    assert_equal ApplicationController::ADMINISTRATORS_ONLY_MESSAGE, flash[:alert]
+
+    # And the restriction is still in force afterwards, which is the point.
+    delete destroy_user_session_path
+
+    assert_no_difference -> { User.count } do
+      post user_registration_path, params: {
+        user: { email: "person@other.example", password: VALID_PASSWORD,
+                password_confirmation: VALID_PASSWORD }
+      }
+    end
+  end
 end

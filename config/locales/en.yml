@@ -41,6 +41,7 @@ en:
         not_looking_for_a_locker: "Not looking for a locker"
         role_choices:
           admin: "Admin"
+          super_admin: "Super Admin"
           standard: "Standard"
         granted_by: "Granted by %{email} on %{date}"
         granted_account_removed: "Granted on %{date} (account removed)"
@@ -53,6 +54,7 @@ en:
         account_gone: "That account no longer exists."
         revoked: "%{email}'s administrator rights have been revoked."
         self_forbidden: "You cannot revoke your own administrator rights."
+        super_admin_forbidden: "The super admin's rights cannot be revoked."
       show:
         account_gone: "That account no longer exists."
         joined_label: "Joined"
@@ -62,6 +64,7 @@ en:
         not_set: "Not set"
         role_choices:
           admin: "Admin"
+          super_admin: "Super Admin"
           standard: "Standard"
         granted_by: "Granted by %{email} on %{date}"
         granted_account_removed: "Granted on %{date} (account removed)"
@@ -321,5 +324,5 @@ en:
     messages:
       locker_number_taken: "is not available on that floor — another account already has this locker"
       locked_by_swap: "cannot be changed while you have an active swap proposal"
-      last_administrator: "You are the only administrator. Grant administrator rights to another account before cancelling this one."
+      super_admin_uncancellable: "The super admin account can never be cancelled."
       email_domain_not_allowed: "Your email address domain is not allowed"

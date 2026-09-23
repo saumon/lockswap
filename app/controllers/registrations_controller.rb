@@ -13,11 +13,11 @@ class RegistrationsController < Devise::RegistrationsController
 
   public
 
-    # 015 FR-016: Devise's own destroy calls resource.destroy and then reports
-    # success whatever came back, so the last administrator would be told their
-    # account had been cancelled while it sat there intact. The refusal itself is
-    # the model's (User#keep_an_administrator_for_the_remaining_accounts, which
-    # throws :abort); this turns it into something the person can read and act on.
+    # 029 FR-010, research.md R6: Devise's own destroy calls resource.destroy and
+    # then reports success whatever came back, so the super admin would be told
+    # their account had been cancelled while it sat there intact. The refusal
+    # itself is the model's (User#prevent_super_admin_cancellation, which throws
+    # :abort); this turns it into something the person can read and act on.
     #
     # Only the refusal is handled here. A destroy that goes through is Devise's
     # business — sign-out, flash, redirect — so it is handed straight back to
@@ -26,6 +26,6 @@ class RegistrationsController < Devise::RegistrationsController
       return super if resource.destroy
 
       redirect_to after_inactive_sign_up_path_for(resource),
-                  alert: resource.errors[:base].first || I18n.t("user.messages.last_administrator")
+                  alert: resource.errors[:base].first || I18n.t("user.messages.super_admin_uncancellable")
     end
 end

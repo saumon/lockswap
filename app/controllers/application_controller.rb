@@ -45,6 +45,19 @@ class ApplicationController < ActionController::Base
       redirect_to root_path, alert: I18n.t("application.administrators_only")
     end
 
+    # 029 FR-006: the danger zone's own admin-only guard, one tier further.
+    # Structurally identical to require_admin! above — refuses on its own, same
+    # message, same reasoning — differing only in the predicate checked
+    # (research.md R2/R3, contracts/super-admin-access.md). The message is
+    # deliberately the same one a non-admin already sees rather than a distinct
+    # "super admins only" string: a standard admin's refusal reads exactly like
+    # anyone else's, revealing nothing about a more privileged tier existing.
+    def require_super_admin!
+      return if current_user&.super_admin?
+
+      redirect_to root_path, alert: I18n.t("application.administrators_only")
+    end
+
     # FR-007: every successful sign-in — including the automatic one right after
     # signup — gets the 30-day persistent session. The spec asks for a blanket
     # 30-day session, so this is not an opt-in "remember me" checkbox.

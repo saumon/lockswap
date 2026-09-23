@@ -126,9 +126,14 @@
                       into the label column. %>
                   <div class="cell-stack">
                     <%# 015 FR-008: the badge is identical on every administrator
-                        row. Rights obtained by grant are not lesser rights, and
-                        nothing here may suggest they are. %>
-                    <span class="badge badge-info"><%= t(".role_choices.admin") %></span>
+                        row regardless of how the rights were obtained — granted
+                        rights are not lesser rights. 029 narrows that by exactly
+                        one case: the super admin's badge names the role
+                        explicitly, since it is a genuinely distinct role with its
+                        own exclusive capability, not a provenance detail. %>
+                    <span class="badge badge-info">
+                      <%= user.super_admin? ? t(".role_choices.super_admin") : t(".role_choices.admin") %>
+                    </span>
 
                     <%# 015 FR-018: where the rights came from, beneath the badge
                         rather than beside it — one fact about the account, not a

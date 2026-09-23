@@ -10,12 +10,13 @@
 # identity, so #update lives directly on this controller (research.md R6).
 class Admin::DangerZoneController < ApplicationController
   # Both, in this order, as Admin::UsersController declares them: signed in at
-  # all, then signed in as an administrator (FR-002). Declared here rather than
-  # inherited from an admin base class, so a controller in this namespace states
-  # its own guard and cannot lose it to a refactor somewhere else. Applies to
-  # both actions below — neither scopes it with only:/except:.
+  # all, then signed in as the super admin (029 FR-005/FR-006 — this screen
+  # narrowed from every administrator to the super admin only). Declared here
+  # rather than inherited from an admin base class, so a controller in this
+  # namespace states its own guard and cannot lose it to a refactor somewhere
+  # else. Applies to both actions below — neither scopes it with only:/except:.
   before_action :authenticate_user!
-  before_action :require_admin!
+  before_action :require_super_admin!
 
   # FR-003, 025 FR-011: the configuration as it stands, plus the empty
   # allowed-domain form and the current language selection.
