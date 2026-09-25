@@ -2098,6 +2098,16 @@
     gap: var(--spacing-1);
   }
 
+  /* 030 FR-012: one sample in the Danger Zone's locker format examples — the
+     value as typed, then the word saying whether the pattern accepts it. The
+     two are read as a pair, so they sit on one line inside the cell's
+     .cell-stack rather than as two stacked items. */
+  .locker-format-sample {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+  }
+
   /* --- 012 FR-005: the narrow treatment of a data list --------------------
      Below the breakpoint the two data lists stop being tables and become one
      stacked card per record. The alternative — keeping the table and letting

@@ -110,4 +110,29 @@ class LockerWishEntryTest < ApplicationSystemTestCase
       assert_touch_targets_at_least
     end
   end
+  # 030 FR-004/SC-007: once the floors are a list, the arrival focuses the select
+  # instead of a text field — same id, same autofocus — and the page still
+  # passes the audit with it.
+  test "with a floor list saved, the declare zone opens with the floor select focused and accessible" do
+    SiteFloorList.current.update!(floors_text: "3, 4, 5")
+    log_in_as users(:erin)
+
+    click_reliably "I want a locker! 🙏", until_selector: "details[open] summary"
+
+    assert_equal "locker_wish_floor", page.evaluate_script("document.activeElement.id")
+    assert_equal "SELECT", page.evaluate_script("document.activeElement.tagName")
+    assert_axe_clean
+
+    # Keyboard only: arrow down from the prompt to the first floor, Tab on to the
+    # submit (a select, unlike a text field, does not submit on Enter), and
+    # press it from the keyboard.
+    find_field("Floor").send_keys(:down)
+    assert_equal "3", find_field("Floor").value
+    find_field("Floor").send_keys(:tab)
+    assert_equal "Save my wish", page.evaluate_script("document.activeElement.value")
+    find_button("Save my wish").send_keys(:enter)
+
+    assert_selector "#locker-wish-floor", text: "3"
+    assert_equal "3", users(:erin).reload.locker_wish.floor
+  end
 end

@@ -553,6 +553,9 @@ class LockerWishesControllerTest < ActionDispatch::IntegrationTest
     # Pre-warming it here means both requests below see an existing row and pay
     # the same, smaller cost, isolating the one thing 018 is actually asserting.
     SiteLanguageSetting.current
+    # 030: the declare form's floor field reads SiteFloorList.current, which has
+    # the same first-call SELECT+INSERT, so it is pre-warmed for the same reason.
+    SiteFloorList.current
 
     sign_in users(:bob) # reciprocates with henry and iris
     with_matches = count_queries { get locker_wishes_path(current_floor: "") }
@@ -625,4 +628,15 @@ class LockerWishesControllerTest < ActionDispatch::IntegrationTest
         remove_method :save_without_forced_conflict
       end
     end
+  # 030 FR-005: the wish's floor is held to the same list.
+  test "a wish for a floor outside the site's list is refused even when submitted directly" do
+    SiteFloorList.current.update!(floors_text: "0, 1, 2, 3")
+    sign_in users(:alice)
+
+    assert_no_difference -> { LockerWish.count } do
+      post locker_wish_path, params: { locker_wish: { floor: "7" } }
+    end
+
+    assert_response :unprocessable_entity
+  end
 end

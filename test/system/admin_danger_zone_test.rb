@@ -230,4 +230,136 @@ class AdminDangerZoneTest < ApplicationSystemTestCase
       assert_text "Welcome to LockSwap"
     end
   end
+  # --- 030 User Story 1: the site's floors ------------------------------------
+
+  # FR-006 on screen: before the first save, the section says floors are still
+  # typed freely, rather than showing an empty list.
+  test "the floors section says floors are free text until a list is saved" do
+    log_in_as @administrator
+    visit admin_danger_zone_path
+
+    within "#danger-zone-floors" do
+      assert_selector "#danger-zone-floors-empty", text: /typed freely/i
+    end
+  end
+
+  # FR-001/FR-002, acceptance scenarios 1 and 3: saved, cleaned up, and still
+  # there on the next visit.
+  test "a floor list is saved, cleaned up, and still there on the next visit" do
+    log_in_as @administrator
+    visit admin_danger_zone_path
+
+    fill_in_reliably "Floors", with: "RDC, 1, 2, 2, , 3"
+    click_on "Save floors"
+
+    assert_text "Floors saved."
+    assert_field "Floors", with: "RDC, 1, 2, 3"
+    assert_no_selector "#danger-zone-floors-empty"
+
+    visit admin_danger_zone_path
+
+    assert_field "Floors", with: "RDC, 1, 2, 3"
+  end
+
+  # FR-003, acceptance scenario 4: the refusal is shown in the floors card and
+  # nowhere else, and the list in force is untouched.
+  test "an empty floor list is refused inside its own card" do
+    SiteFloorList.current.update!(floors_text: "0, 1")
+    log_in_as @administrator
+    visit admin_danger_zone_path
+
+    fill_in_reliably "Floors", with: " , "
+    click_on "Save floors"
+
+    within("#danger-zone-floors") { assert_selector ".form-errors" }
+    within("#danger-zone-language") { assert_no_selector ".form-errors" }
+    within("#danger-zone-allowed-domains") { assert_no_selector ".form-errors" }
+    assert_equal %w[0 1], SiteFloorList.current.reload.floors
+  end
+
+  # The newer site-wide settings sit between the language and the domains.
+  test "the floors section sits between the language and the domains" do
+    log_in_as @administrator
+    visit admin_danger_zone_path
+
+    ids = all(".card[id^='danger-zone-']").map { |card| card[:id] }
+
+    assert_operator ids.index("danger-zone-language"), :<, ids.index("danger-zone-floors")
+    assert_operator ids.index("danger-zone-floors"), :<, ids.index("danger-zone-allowed-domains")
+  end
+  # --- 030 User Story 3: the locker number format -----------------------------
+
+  test "the format section sits between the floors and the domains" do
+    log_in_as @administrator
+    visit admin_danger_zone_path
+
+    ids = all(".card[id^='danger-zone-']").map { |card| card[:id] }
+
+    assert_operator ids.index("danger-zone-floors"), :<, ids.index("danger-zone-locker-format")
+    assert_operator ids.index("danger-zone-locker-format"), :<, ids.index("danger-zone-allowed-domains")
+  end
+
+  # FR-012, acceptance scenario 1: examples with their results, in words.
+  test "the examples show each pattern with accepted and refused samples, in words" do
+    log_in_as @administrator
+    visit admin_danger_zone_path
+
+    within "#locker-format-examples" do
+      assert_selector "tbody tr", count: LockerNumberFormat::EXAMPLES.size
+
+      within(:xpath, ".//tbody/tr[.//td[normalize-space()='\\d{3}']]") do
+        assert_selector ".locker-format-sample", text: /042\s*Accepted/
+        assert_selector ".locker-format-sample", text: /42\s*Refused/
+        assert_selector ".locker-format-sample", text: /1234\s*Refused/
+      end
+    end
+  end
+
+  # FR-006-style statement for the format, then acceptance scenario 2.
+  test "a format and its description are saved and shown on the next visit" do
+    log_in_as @administrator
+    visit admin_danger_zone_path
+
+    within("#danger-zone-locker-format") { assert_selector "#danger-zone-locker-format-empty" }
+
+    fill_in_reliably "Pattern", with: "\\d{3}"
+    fill_in_reliably "Description", with: "3 chiffres, ex. 042"
+    click_on "Save format"
+
+    assert_text "Locker number format saved."
+    assert_no_selector "#danger-zone-locker-format-empty"
+
+    visit admin_danger_zone_path
+
+    assert_field "Pattern", with: "\\d{3}"
+    assert_field "Description", with: "3 chiffres, ex. 042"
+  end
+
+  # FR-010, acceptance scenario 3: refused in its own card, previous format kept.
+  test "an invalid pattern is refused inside its own card" do
+    LockerNumberFormat.current.update!(pattern: "\\d{3}")
+    log_in_as @administrator
+    visit admin_danger_zone_path
+
+    fill_in_reliably "Pattern", with: "[0-9"
+    click_on "Save format"
+
+    within("#danger-zone-locker-format") { assert_text "is not a valid regular expression" }
+    within("#danger-zone-floors") { assert_no_selector ".form-errors" }
+    assert_equal "\\d{3}", LockerNumberFormat.current.reload.pattern
+  end
+
+  # Acceptance scenario 4: clearing the pattern lifts the format.
+  test "clearing the pattern says any locker number is accepted again" do
+    LockerNumberFormat.current.update!(pattern: "\\d{3}", description: "3 digits")
+    log_in_as @administrator
+    visit admin_danger_zone_path
+
+    fill_in_reliably "Pattern", with: ""
+    click_on "Save format"
+
+    assert_text "Locker number format removed"
+    assert_selector "#danger-zone-locker-format-empty"
+    assert_not LockerNumberFormat.current.reload.in_force?
+  end
 end

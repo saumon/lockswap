@@ -134,7 +134,12 @@ tabular figures, so a column of locker numbers lines up on the digit; everything
 brand's own face. The page sits on a faint grid rather than an empty white field, the page titles have
 come out of their cards, and the header has become a strip of frosted glass that the content scrolls
 underneath. All of it is written down, so the next change extends it instead of replacing it with
-something else tasteful.
+something else tasteful. And what counts as a floor, or as a locker number, has become the site's to
+decide rather than whatever each person happens to type: the super admin lists the floors the building
+actually has, and every floor field becomes a choice from that list — so "1", "01" and "1st" can no
+longer be three different floors that never match — and can set the format a locker number must follow,
+with examples on the same screen of what each pattern accepts and refuses. Until either is set, nothing
+changes, and whatever is already on file stays as it is until it is next edited.
 
 | Feature | Status |
 | --- | --- |
@@ -166,6 +171,7 @@ something else tasteful.
 | **027 — Admin user detail view** | ✅ Shipped |
 | **028 — Admin rights controls on the user detail screen** | ✅ Shipped |
 | **029 — Super admin role and exclusive Danger Zone access** | ✅ Shipped |
+| **030 — Configurable floors and locker number format** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -183,7 +189,8 @@ What feature 002 adds — see
 * the floor and the locker number are shown on the homepage as soon as they are on file;
 * a user who has filled in nothing yet is asked for them right there, as **two separate fields**;
 * the floor is required; the locker number is not, because having no locker assigned is an ordinary
-  state and is displayed as such, never as an error;
+  state and is displayed as such, never as an error. Both are typed freely — until 030, below, lets the
+  super admin turn the floor into a choice from a list and hold the locker number to a format;
 * a locker number belongs to one account at a time — a clash is refused without ever revealing who
   holds it, and the database enforces that even when two people submit at the same moment (scoped to
   a single floor since 006, below);
@@ -198,7 +205,9 @@ What feature 003 adds — see
   before recording anything;
 * one wish per account — declaring again moves the existing wish to the new floor instead of adding a
   second, and the database enforces that even when two declarations land at the same moment;
-* the floor is required (blank or whitespace is refused) and free-form, exactly as on the profile;
+* the floor is required (blank or whitespace is refused) and free-form, exactly as on the profile —
+  **superseded by 030** once the super admin has saved a floor list: it is then a choice from that
+  list, on the wish exactly as on the profile;
 * having no locker assigned is no obstacle to declaring a wish, and already holding one is precisely
   the point of a swap — neither blocks anything;
 * a **Locker wishes** page lists every active wish to any logged-in user: who is looking (by email),
@@ -1003,6 +1012,38 @@ What feature 029 adds — see
   not share, reads as *Super Admin* rather than the plain *Admin* every granted administrator's row
   still carries — on the Users list and on that account's own detail screen alike.
 
+What feature 030 adds — see
+[`specs/030-configurable-floors-locker-format/spec.md`](specs/030-configurable-floors-locker-format/spec.md):
+
+* **the building's floors are listed once, by the super admin**, on the Danger Zone, as one
+  comma-separated line — `RDC, 1, 2, 3`. Spaces are trimmed, empty entries dropped and a repeated floor
+  kept once; the order typed is the order offered, because no sort could know that *RDC* comes before
+  *1* or where a mezzanine sits. An empty list is refused, so once a list exists it can be changed but
+  never removed;
+* **every floor field then becomes a choice from that list** — your own locker details, the floor you
+  are looking for, and an administrator correcting somebody else's — and a floor outside it is refused
+  on every one of them, including a request built by hand rather than sent from the form. Two people on
+  the same floor are now written down the same way, which is what lets a swap match find them;
+* **nothing changes until the list is saved.** A new instance, or one updated to this version, keeps
+  floors as free text exactly as before; the Danger Zone says so rather than showing an empty field;
+* **removing a floor strands nobody.** Anyone already on a floor that has left the list keeps it — still
+  shown, still filtered on, still matched — and finds it selected in their form, marked *(no longer
+  offered)*, so they can change their locker number without being made to move. Only choosing a
+  different floor has to land on a listed one;
+* **the super admin can set the format every locker number must follow**, written as a regular
+  expression — `\d{3}` for exactly three digits, `\d{1,3}` for one to three — with an optional
+  description in plain words, *3 digits, e.g. 042*, which is what people entering a number are shown
+  instead of the pattern. The whole number has to match, never just part of it; surrounding spaces are
+  ignored, and an empty number is still the ordinary answer of someone with no locker;
+* **the screen explains the notation instead of assuming it.** Beside the field, a table of example
+  patterns shows what each one means and which sample numbers it accepts and refuses — and those
+  verdicts are worked out by the very check that enforces the format, so the screen can never claim
+  something the site does not do. A pattern that is not a valid regular expression is refused, and the
+  format already in force stays;
+* **numbers already on file are left alone.** Setting or tightening a format rewrites nobody's locker
+  number and blocks nothing; a number that does not follow it is kept until it is next changed, and the
+  change has to follow it. Past swap proposals keep the floor and number they were recorded with.
+
 ## 👤 Roles
 
 Three roles exist on a LockSwap instance, and every registered account holds exactly one:
@@ -1011,7 +1052,7 @@ Three roles exist on a LockSwap instance, and every registered account holds exa
 | --- | --- | --- |
 | **Standard** | Everyone who registers, by default | Manage their own floor and locker, declare a locker wish, send and answer swap proposals — everything an employee needs to swap lockers. |
 | **Admin** | Granted by an existing administrator, to any number of accounts ([015](specs/015-grant-admin-rights/spec.md)) | Everything a standard account can, plus the **Users** directory ([013](specs/013-admin-user-directory/spec.md)): view, edit floor/locker, and cancel a search on anyone's behalf ([027](specs/027-admin-user-detail-view/spec.md)), and grant or revoke administrator rights on any other account ([015](specs/015-grant-admin-rights/spec.md), [028](specs/028-move-admin-grant-button/spec.md)). |
-| **Super Admin** | Exactly one account, always: whichever one registered first on the site ([013](specs/013-admin-user-directory/spec.md), named explicitly by [029](specs/029-super-admin-role/spec.md)) | Everything an admin can, plus exclusive access to the **Danger Zone** ([016](specs/016-danger-zone-email-domains/spec.md)) — the allowed email domains and the site's language ([025](specs/025-multilingual-support/spec.md)). |
+| **Super Admin** | Exactly one account, always: whichever one registered first on the site ([013](specs/013-admin-user-directory/spec.md), named explicitly by [029](specs/029-super-admin-role/spec.md)) | Everything an admin can, plus exclusive access to the **Danger Zone** ([016](specs/016-danger-zone-email-domains/spec.md)) — the allowed email domains, the site's language ([025](specs/025-multilingual-support/spec.md)), and the site's floor list and locker number format ([030](specs/030-configurable-floors-locker-format/spec.md)). |
 
 What makes the super admin different is not a bigger set of permissions layered on top — it is that
 there is only ever one of them, and the site decides who it is rather than anyone choosing:
@@ -1308,7 +1349,13 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   second and finding neither, a standard admin losing the Danger Zone entry from the menu and being
   refused the address directly, the super admin's badge and the Danger Zone still working exactly as
   before, and the one account that can never be cancelled while anyone else remains — until it is the
-  only one left.
+  only one left;
+* [`specs/030-configurable-floors-locker-format/quickstart.md`](specs/030-configurable-floors-locker-format/quickstart.md) —
+  every floor field still free text before anything is saved, a floor list saved on the Danger Zone and
+  cleaned up on the way in, each floor form turning into a choice from it in the order typed, a removed
+  floor kept and marked rather than lost, a locker number format with its description refusing a number
+  that does not follow it and accepting one that does, an invalid pattern refused with the old format
+  still in force, and a granted administrator refused both settings.
 
 ## 🚢 Deploy
 

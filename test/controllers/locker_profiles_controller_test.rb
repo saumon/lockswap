@@ -98,4 +98,24 @@ class LockerProfilesControllerTest < ActionDispatch::IntegrationTest
         remove_method :save_without_forced_conflict
       end
     end
+  # 030 FR-005: refused at the model, so a request built by hand is refused too.
+  test "a floor outside the site's list is refused even when submitted directly" do
+    SiteFloorList.current.update!(floors_text: "0, 1, 2, 3")
+    sign_in users(:alice)
+
+    patch locker_profile_path, params: { user: { floor: "7", locker_number: "" } }
+
+    assert_response :unprocessable_entity
+    assert_nil users(:alice).reload.floor
+  end
+  # 030 FR-013: refused at the model, so a request built by hand is refused too.
+  test "a locker number that does not match the format is refused even when submitted directly" do
+    LockerNumberFormat.current.update!(pattern: "\\d{3}")
+    sign_in users(:carol)
+
+    patch locker_profile_path, params: { user: { floor: users(:carol).floor, locker_number: "42" } }
+
+    assert_response :unprocessable_entity
+    assert_nil users(:carol).reload.locker_number
+  end
 end

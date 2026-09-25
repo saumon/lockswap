@@ -253,4 +253,37 @@ class LockerWishTest < ApplicationSystemTestCase
       assert_no_button "Propose swap"
     end
   end
+  # --- 030 User Story 2: a wish is for a floor the site offers ----------------
+
+  test "with a floor list saved, declaring a wish is a choice from it" do
+    SiteFloorList.current.update!(floors_text: "RDC, 1, 2")
+    log_in_as users(:alice)
+    visit locker_wishes_path
+    find("summary", text: "I'm looking for a locker").click
+
+    options = all("select[name='locker_wish[floor]'] option").map(&:text)
+    assert_equal [ "Choose a floor", "RDC", "1", "2" ], options
+
+    select "RDC", from: "Floor"
+    click_on "Save my wish"
+
+    assert_selector "#locker-wish-floor", text: "RDC"
+    assert_equal "RDC", users(:alice).reload.locker_wish.floor
+  end
+
+  # The "Change floor" form is the same control, with the wish's floor selected.
+  test "changing the floor of a wish is a choice from the same list" do
+    SiteFloorList.current.update!(floors_text: "4, 5, 6")
+    log_in_as users(:carol)
+    visit locker_wishes_path
+    find("summary", text: "Change floor").click
+
+    assert_select "Floor", selected: "5"
+
+    select "6", from: "Floor"
+    click_on "Save my wish"
+
+    assert_selector "#locker-wish-floor", text: "6"
+    assert_equal "6", users(:carol).reload.locker_wish.floor
+  end
 end

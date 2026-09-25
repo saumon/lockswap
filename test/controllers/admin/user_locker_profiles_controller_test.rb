@@ -87,4 +87,27 @@ class Admin::UserLockerProfilesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_user_session_path
     assert_equal "3", users(:bob).reload.floor
   end
+  # 030 FR-005: an administrator's edit is held to the same list, with no bypass.
+  test "a floor outside the site's list is refused even when submitted directly" do
+    SiteFloorList.current.update!(floors_text: "0, 1, 2, 3")
+    sign_in users(:frank)
+    original_floor = users(:carol).floor
+
+    patch admin_user_locker_profile_path(users(:carol)),
+      params: { user: { floor: "7", locker_number: "Z99" } }
+
+    assert_response :unprocessable_entity
+    assert_equal original_floor, users(:carol).reload.floor
+  end
+  # 030 FR-013: an administrator's edit is held to the same format.
+  test "a locker number that does not match the format is refused even when submitted directly" do
+    LockerNumberFormat.current.update!(pattern: "\\d{3}")
+    sign_in users(:frank)
+
+    patch admin_user_locker_profile_path(users(:carol)),
+      params: { user: { floor: users(:carol).floor, locker_number: "42" } }
+
+    assert_response :unprocessable_entity
+    assert_nil users(:carol).reload.locker_number
+  end
 end

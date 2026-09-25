@@ -78,6 +78,17 @@ Rails.application.routes.draw do
     # only ever one danger zone.
     resource :danger_zone, only: [ :show, :update ], controller: "danger_zone"
 
+    # 030 FR-001: the floor list shown on the Danger Zone. A singleton of its own
+    # — one list, edited in place — with its own validations, so it is routed
+    # beside the screen rather than folded into DangerZoneController#update,
+    # which is the language setting's write (research.md R7). controller: for the
+    # same pluralization reason as above.
+    resource :floor_list, only: :update, controller: "floor_list"
+
+    # 030 FR-009: the locker number format, routed the same way for the same
+    # reasons as the floor list above.
+    resource :locker_number_format, only: :update, controller: "locker_number_format"
+
     # 016 FR-003: the domains themselves. No :update — changing a domain is
     # remove-then-add, which leaves the resource with exactly the two operations
     # the spec describes and no partially-edited state to validate.

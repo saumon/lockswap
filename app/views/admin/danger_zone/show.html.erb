@@ -39,6 +39,134 @@
     <% end %>
   </div>
 
+  <%# 030 User Story 1: the floors that exist in the building. Once saved, every
+      floor field on the site offers exactly these, in this order (FR-004), so
+      the list is edited as the one line the super admin thinks of it as. %>
+  <div id="danger-zone-floors" class="card card--alert stack-tight">
+    <p class="meta">
+      <%= t(".floors_explanation") %>
+    </p>
+
+    <%# FR-006 said in words: before the first save the site behaves as it
+        always has, and the screen states that rather than showing an empty
+        field and leaving the consequence to be inferred. Read from the saved
+        list, so a refused first attempt does not hide it. %>
+    <% unless @site_floor_list.floors_in_database.present? %>
+      <p id="danger-zone-floors-empty" class="detail-value-empty">
+        <%= t(".floors_empty") %>
+      </p>
+    <% end %>
+
+    <%= render "devise/shared/error_messages", resource: @site_floor_list %>
+
+    <%# novalidate: the server decides what is valid, as on every form here. %>
+    <%= form_with model: @site_floor_list, url: admin_floor_list_path, method: :patch,
+                  html: { class: "stack-tight", novalidate: true } do |f| %>
+      <div class="field">
+        <%= f.label :floors_text, class: "field-label" %>
+        <%= f.text_field :floors_text, autocomplete: "off",
+              aria: { describedby: "site_floor_list_floors_hint" }, class: "field-input" %>
+        <p id="site_floor_list_floors_hint" class="field-hint">
+          <%= t(".floors_hint") %>
+        </p>
+      </div>
+
+      <%= f.submit t(".save_floors_button"), class: "btn btn-primary" %>
+    <% end %>
+  </div>
+
+  <%# 030 User Story 3: the format every entered locker number must follow,
+      written as a regular expression, with the reference examples below it so
+      the super admin need not know the notation beforehand (FR-012). %>
+  <div id="danger-zone-locker-format" class="card card--alert stack-tight">
+    <p class="meta">
+      <%= t(".format_explanation") %>
+    </p>
+
+    <%# Read from the saved row, so a refused save does not claim a format is in
+        force that was never stored. %>
+    <% if @locker_number_format.pattern_in_database.blank? %>
+      <p id="danger-zone-locker-format-empty" class="detail-value-empty">
+        <%= t(".format_empty") %>
+      </p>
+    <% end %>
+
+    <%= render "devise/shared/error_messages", resource: @locker_number_format %>
+
+    <%= form_with model: @locker_number_format, url: admin_locker_number_format_path, method: :patch,
+                  html: { class: "stack-tight", novalidate: true } do |f| %>
+      <%# The pattern is a measured value in the design's sense — it is read
+          character by character — so it is set in the mono face (.data-value),
+          and spellcheck is off because none of it is a word. %>
+      <div class="field">
+        <%= f.label :pattern, class: "field-label" %>
+        <%= f.text_field :pattern, autocomplete: "off", spellcheck: false,
+              aria: { describedby: "locker_number_format_pattern_hint" }, class: "field-input data-value" %>
+        <p id="locker_number_format_pattern_hint" class="field-hint">
+          <%= t(".pattern_hint") %>
+        </p>
+      </div>
+
+      <div class="field">
+        <%= f.label :description, class: "field-label" %>
+        <%= f.text_field :description, autocomplete: "off",
+              aria: { describedby: "locker_number_format_description_hint" }, class: "field-input" %>
+        <p id="locker_number_format_description_hint" class="field-hint">
+          <%= t(".description_hint") %>
+        </p>
+      </div>
+
+      <%= f.submit t(".save_format_button"), class: "btn btn-primary" %>
+    <% end %>
+
+    <%# FR-012/SC-004: the examples. Each sample's result is computed with the
+        same LockerNumberFormat#matches? that enforces the saved format, never
+        written down, so the table cannot say something the site does not do.
+        The same table construction as the domains list below — explicit roles
+        and data-label — so it becomes one labelled card per pattern below the
+        breakpoint. Every result is a word on a badge: colour is never the only
+        signal. The table is named by a label above it rather than a <caption>,
+        which centres itself — every heading on the site sits flush left. %>
+    <p id="locker-format-examples-label" class="field-label"><%= t(".examples_caption") %></p>
+    <div class="table-scroll">
+      <table id="locker-format-examples" class="data-table" role="table"
+             aria-labelledby="locker-format-examples-label">
+        <thead>
+          <tr role="row">
+            <th scope="col" role="columnheader"><%= t(".example_pattern_header") %></th>
+            <th scope="col" role="columnheader"><%= t(".example_meaning_header") %></th>
+            <th scope="col" role="columnheader"><%= t(".example_samples_header") %></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% LockerNumberFormat::EXAMPLES.each do |example| %>
+            <% example_format = LockerNumberFormat.new(pattern: example[:pattern]) %>
+            <tr role="row">
+              <td class="data-value" role="cell" data-label="<%= t(".example_pattern_header") %>"><%= example[:pattern] %></td>
+              <td role="cell" data-label="<%= t(".example_meaning_header") %>">
+                <%= t(".format_examples.#{example[:key]}") %>
+              </td>
+              <td role="cell" data-label="<%= t(".example_samples_header") %>">
+                <span class="cell-stack">
+                  <% example[:samples].each do |sample| %>
+                    <% accepted = example_format.matches?(sample) %>
+                    <span class="locker-format-sample">
+                      <span class="data-value"><%= sample %></span>
+                      <span class="badge <%= accepted ? "badge-success" : "badge-error" %>">
+                        <%= accepted ? t(".format_examples.accepted") : t(".format_examples.refused") %>
+                      </span>
+                    </span>
+                  <% end %>
+                </span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <div id="danger-zone-allowed-domains" class="card card--alert stack-tight">
 
     <%# FR-004 said in words. "No domains configured" and "anybody may register"

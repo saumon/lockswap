@@ -154,4 +154,35 @@ class LockerWishTest < ActiveSupport::TestCase
     refute locker_wishes(:henry_wish).reciprocal_match?("03", "7")
     refute locker_wishes(:henry_wish).reciprocal_match?(" 3", "7")
   end
+  # --- 030 User Story 2: a wish is for a floor the site offers ----------------
+
+  test "a wish for a floor outside the site's list is refused" do
+    SiteFloorList.current.update!(floors_text: "0, 1, 2")
+    wish = LockerWish.new(user: users(:alice), floor: "7")
+
+    assert_not wish.valid?
+    assert_includes wish.errors[:floor], I18n.t("errors.messages.floor_not_offered")
+  end
+
+  test "a wish for a listed floor is accepted" do
+    SiteFloorList.current.update!(floors_text: "0, 1, 2")
+
+    assert_predicate LockerWish.new(user: users(:alice), floor: "1"), :valid?
+  end
+
+  test "any floor is accepted while no list is saved" do
+    assert_predicate LockerWish.new(user: users(:alice), floor: "anything"), :valid?
+  end
+
+  # FR-011: a wish on a floor since removed is kept, and saving it untouched is
+  # not a refusal.
+  test "a wish on a floor no longer listed stays valid until its floor is changed" do
+    wish = LockerWish.create!(user: users(:alice), floor: "5")
+    SiteFloorList.current.update!(floors_text: "0, 1, 2")
+
+    assert_predicate wish.reload, :valid?
+
+    wish.floor = "6"
+    assert_not wish.valid?
+  end
 end

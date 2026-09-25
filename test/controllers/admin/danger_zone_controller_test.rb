@@ -26,7 +26,7 @@ class Admin::DangerZoneControllerTest < ActionDispatch::IntegrationTest
 
     get admin_danger_zone_path
 
-    assert_select ".data-table tbody tr", count: AllowedEmailDomain.count
+    assert_select "#danger-zone-allowed-domains .data-table tbody tr", count: AllowedEmailDomain.count
     assert_select "td", text: "alpha.example"
     assert_select "td", text: "beta.example"
   end
@@ -40,7 +40,7 @@ class Admin::DangerZoneControllerTest < ActionDispatch::IntegrationTest
 
     get admin_danger_zone_path
 
-    listed = css_select(".data-table tbody td[data-label='Domain']").map { |cell| cell.text.strip }
+    listed = css_select("#danger-zone-allowed-domains .data-table tbody td[data-label='Domain']").map { |cell| cell.text.strip }
 
     assert_equal AllowedEmailDomain.order(:domain).pluck(:domain), listed
   end
@@ -55,7 +55,7 @@ class Admin::DangerZoneControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "#danger-zone-allowed-domains-empty"
-    assert_select ".data-table tbody tr", count: 0
+    assert_select "#danger-zone-allowed-domains .data-table tbody tr", count: 0
   end
 
   test "the empty-state message is gone once a domain is configured" do

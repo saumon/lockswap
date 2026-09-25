@@ -29,7 +29,7 @@ class LockerProfileTest < ApplicationSystemTestCase
     # Opening the disclosure reflows the page. Waiting for the submit button —
     # the last thing to settle — keeps a later click from being aimed at where
     # the button used to be and silently going nowhere.
-    assert_selector "input[name='user[floor]']"
+    assert_selector "[name='user[floor]']"
     assert_selector "input[type=submit][value='Save locker details']"
   end
 
@@ -374,5 +374,141 @@ class LockerProfileTest < ApplicationSystemTestCase
 
     assert_field "Locker number", with: ""
     assert_no_button "I don't have a locker 😔"
+  end
+  # --- 030 User Story 2: the floor is a choice from the site's list -----------
+
+  # The select's options as the browser lists them, prompt included.
+  def floor_options
+    all("select[name='user[floor]'] option").map(&:text)
+  end
+
+  # FR-006: until a list is saved, the floor is still typed.
+  test "with no floor list saved, the floor is still a text field" do
+    log_in_as users(:alice)
+
+    assert_selector "input[type=text][name='user[floor]']"
+    assert_no_selector "select[name='user[floor]']"
+  end
+
+  # FR-004, acceptance scenario 1: exactly the listed floors, in the typed order.
+  test "the first-entry form offers exactly the listed floors, in order, and saves one" do
+    SiteFloorList.current.update!(floors_text: "RDC, 1, 2, 3")
+    log_in_as users(:alice)
+
+    assert_equal [ "Choose a floor", "RDC", "1", "2", "3" ], floor_options
+
+    select "2", from: "Floor"
+    click_on "Save locker details"
+
+    assert_selector "#locker-profile-floor", text: "2"
+    assert_equal "2", users(:alice).reload.floor
+  end
+
+  # The prompt is not a floor: leaving it chosen is the existing "required" error.
+  test "leaving the prompt chosen is refused as a missing floor" do
+    SiteFloorList.current.update!(floors_text: "0, 1")
+    log_in_as users(:alice)
+
+    click_on "Save locker details"
+
+    assert_text "Floor can't be blank"
+    assert_nil users(:alice).reload.floor
+  end
+
+  # The pencil editor offers the same list, with the saved floor selected.
+  test "the pencil editor offers the listed floors with the saved one selected" do
+    SiteFloorList.current.update!(floors_text: "1, 2, 3")
+    log_in_as users(:carol)
+    open_locker_editor
+
+    assert_equal [ "Choose a floor", "1", "2", "3" ], floor_options
+    assert_select "Floor", selected: "2"
+  end
+
+  # FR-007/FR-011: a floor since removed is shown selected, marked, and the form
+  # still saves with it left alone.
+  test "a saved floor no longer listed is shown as such and can be kept" do
+    SiteFloorList.current.update!(floors_text: "0, 1")
+    users(:carol).update_columns(floor: "5")
+    log_in_as users(:carol)
+    open_locker_editor
+
+    assert_select "Floor", selected: "5 (no longer offered)"
+
+    fill_in_reliably "Locker number", with: "C44"
+    click_on "Save locker details"
+
+    assert_selector "#locker-profile-locker-number", text: "C44"
+    assert_equal "5", users(:carol).reload.floor
+  end
+
+  # FR-020: the super admin's save reaches another account's very next page,
+  # with nothing to sign out of or refresh.
+  test "a list the super admin saves is what the next user is offered" do
+    log_in_as users(:frank)
+    visit admin_danger_zone_path
+    fill_in_reliably "Floors", with: "7, 8"
+    click_on "Save floors"
+    assert_text "Floors saved."
+    click_on "Log out"
+    assert_text "Signed out successfully."
+
+    log_in_as users(:alice)
+
+    assert_equal [ "Choose a floor", "7", "8" ], floor_options
+  end
+  # --- 030 User Story 4: locker numbers follow the site's format --------------
+
+  # FR-016 and acceptance scenarios 1, 2 and 4: the hint says what is expected in
+  # the super admin's words, the refusal repeats it, a conforming number saves,
+  # and "no locker" is still an answer.
+  test "the locker number follows the format, described in the super admin's words" do
+    LockerNumberFormat.current.update!(pattern: "\\d{3}", description: "3 chiffres, ex. 042")
+    log_in_as users(:carol)
+    open_locker_editor
+
+    within("#locker_number_hint") { assert_text "Required format: 3 chiffres, ex. 042" }
+
+    save_locker_details "Locker number" => "42"
+    within("#error_explanation") { assert_text "must match the required format: 3 chiffres, ex. 042" }
+    assert_nil users(:carol).reload.locker_number
+
+    fill_in_reliably "Locker number", with: "042"
+    click_on "Save locker details"
+    assert_selector "#locker-profile-locker-number", text: "042"
+    assert_equal "042", users(:carol).reload.locker_number
+  end
+
+  # Clarification Q1: with no description, the pattern itself is what is shown.
+  test "with no description, the hint and the refusal show the pattern" do
+    LockerNumberFormat.current.update!(pattern: "\\d{3}")
+    log_in_as users(:carol)
+    open_locker_editor
+
+    within("#locker_number_hint") { assert_text "Required format: \\d{3}" }
+
+    save_locker_details "Locker number" => "42"
+    within("#error_explanation") { assert_text "must match the required format: \\d{3}" }
+  end
+
+  # FR-015: the first-entry "I don't have a locker" choice still saves.
+  test "saying you have no locker still saves under a format" do
+    LockerNumberFormat.current.update!(pattern: "\\d{3}")
+    log_in_as users(:alice)
+
+    fill_in_reliably "Floor", with: "5"
+    click_on "I don't have a locker 😔"
+    click_on "Save locker details"
+
+    assert_selector "#locker-profile-locker-number", text: "No locker assigned"
+    assert_nil users(:alice).reload.locker_number
+  end
+
+  # With no format set, the hint is exactly what it was.
+  test "with no format set, the locker number hint says nothing about a format" do
+    log_in_as users(:carol)
+    open_locker_editor
+
+    within("#locker_number_hint") { assert_no_text "Required format" }
   end
 end

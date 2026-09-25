@@ -362,4 +362,53 @@ class AdminUserDetailTest < ApplicationSystemTestCase
     assert_selector "button", text: "Revoke admin rights"
     assert_axe_clean
   end
+  # --- 030 User Story 2: the administrator's editor offers the same list -----
+
+  test "with a floor list saved, the administrator's editor offers it and saves a listed floor" do
+    SiteFloorList.current.update!(floors_text: "1, 2, 9")
+    log_in_as @administrator
+
+    visit admin_user_path(users(:carol))
+    find("summary[aria-label='Edit locker details']").click
+
+    options = all("#admin-user-locker-editor select[name='user[floor]'] option").map(&:text)
+    assert_equal [ "Choose a floor", "1", "2", "9" ], options
+
+    select "9", from: "Floor"
+    click_on "Save"
+
+    assert_selector "#admin-user-detail-floor", text: "9"
+    assert_equal "9", users(:carol).reload.floor
+  end
+
+  test "with a floor list saved, the administrator's editor is still accessible" do
+    SiteFloorList.current.update!(floors_text: "1, 2, 9")
+    log_in_as @administrator
+
+    visit admin_user_path(users(:carol))
+    find("summary[aria-label='Edit locker details']").click
+
+    assert_selector "#admin-user-locker-editor select[name='user[floor]']"
+    assert_axe_clean
+  end
+  # --- 030 User Story 4: the administrator's edit follows the format ---------
+
+  test "the administrator's editor states the format and refuses a number that does not follow it" do
+    LockerNumberFormat.current.update!(pattern: "\\d{3}", description: "3 chiffres, ex. 042")
+    log_in_as @administrator
+
+    visit admin_user_path(users(:carol))
+    find("summary[aria-label='Edit locker details']").click
+
+    within("#admin_locker_number_hint") { assert_text "Required format: 3 chiffres, ex. 042" }
+
+    fill_in "Locker number", with: "42"
+    click_on "Save"
+    assert_text "must match the required format: 3 chiffres, ex. 042"
+    assert_nil users(:carol).reload.locker_number
+
+    fill_in "Locker number", with: "042"
+    click_on "Save"
+    assert_selector "#admin-user-detail-locker", text: "042"
+  end
 end

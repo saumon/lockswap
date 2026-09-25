@@ -10,12 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_22_135943) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_133506) do
   create_table "allowed_email_domains", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "domain", null: false
     t.datetime "updated_at", null: false
     t.index ["domain"], name: "index_allowed_email_domains_on_domain", unique: true
+  end
+
+  create_table "locker_number_formats", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "description"
+    t.string "pattern"
+    t.datetime "updated_at", null: false
   end
 
   create_table "locker_swap_proposals", force: :cascade do |t|
@@ -45,6 +52,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_135943) do
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.index ["user_id"], name: "index_locker_wishes_on_user_id", unique: true
+  end
+
+  create_table "site_floor_lists", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.json "floors"
+    t.datetime "updated_at", null: false
   end
 
   create_table "site_language_settings", force: :cascade do |t|

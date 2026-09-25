@@ -18,7 +18,9 @@
                       data: (show_no_locker_choice ? { controller: "locker-entry-choice" } : {}) } do |f| %>
   <div class="field">
     <%= f.label :floor, class: "field-label" %>
-    <%= f.text_field :floor, autocomplete: "off", class: "field-input" %>
+    <%# 030 FR-004: free text until the super admin lists the floors, a choice
+        from that list after (shared/_floor_field). %>
+    <%= render "shared/floor_field", form: f %>
   </div>
 
   <%= tag.div class: "field",
@@ -26,9 +28,15 @@
     <%= f.label :locker_number, class: "field-label" %>
     <%= f.text_field :locker_number, autocomplete: "off",
           aria: { describedby: "locker_number_hint" }, class: "field-input" %>
-    <%# FR-002/FR-008: say up front that this one is optional. %>
+    <%# FR-002/FR-008: say up front that this one is optional.
+        030 FR-016: and, once the super admin has set one, what format it has to
+        follow — in the same hint, so the field still has one description. %>
+    <% locker_number_format = LockerNumberFormat.current %>
     <p id="locker_number_hint" class="field-hint">
       <%= t(".locker_number_hint") %>
+      <% if locker_number_format.in_force? %>
+        <%= t("user.locker_number_format_hint", expected: locker_number_format.display) %>
+      <% end %>
     </p>
   <% end %>
 
