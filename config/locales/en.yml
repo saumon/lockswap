@@ -1,4 +1,17 @@
 en:
+  # 030: shared by User and LockerWish through SiteFloorValidator, so one entry
+  # per language rather than one per model.
+  errors:
+    messages:
+      floor_not_offered: "is not one of the site's floors"
+      locker_number_format_mismatch: "must match the required format: %{expected}"
+  # 030: English needs no override for most columns — Rails humanizes them
+  # correctly on its own — but floors_text is a virtual attribute whose
+  # humanized name ("Floors text") is not what the form calls it.
+  activerecord:
+    attributes:
+      site_floor_list:
+        floors_text: "Floors"
   admin:
     danger_zone:
       show:
@@ -20,6 +33,34 @@ en:
         domains_empty: "No domains are listed, so registration is currently open to any email domain."
         domain_hint: "The domain only, without the @ — for example, company.com. Subdomains are not included: add mail.company.com separately if it should be allowed."
         add_domain_button: "Add domain"
+        floors_explanation: "The floors that exist in the building. Once a list is saved, every floor field on the site becomes a choice from it, offered in the order typed here."
+        floors_empty: "No list is saved, so floors are still typed freely wherever they are asked for."
+        floors_hint: "Separate floors with commas, in the order they should be offered — for example: 0, 1, 2, 3. A floor cannot itself contain a comma."
+        save_floors_button: "Save floors"
+        format_explanation: "The format every locker number entered on the site must follow, written as a regular expression. The whole number must match, not just part of it."
+        format_empty: "No format is set, so any locker number is accepted."
+        pattern_hint: "For example \\d{3} for exactly three digits. Leave empty to accept any locker number."
+        description_hint: "Optional. Shown to people entering a locker number, in place of the pattern — for example: 3 digits, e.g. 042."
+        save_format_button: "Save format"
+        examples_caption: "Examples"
+        example_pattern_header: "Pattern"
+        example_meaning_header: "Meaning"
+        example_samples_header: "Samples"
+        format_examples:
+          accepted: "Accepted"
+          refused: "Refused"
+          three_digits: "Exactly three digits"
+          one_to_three_digits: "One to three digits"
+          letter_then_two_digits: "A capital letter, then two digits"
+          two_pairs_with_dash: "Two digits, a dash, two digits"
+          a_or_b_then_three_digits: "A or B, then three digits"
+    floor_list:
+      update:
+        saved: "Floors saved."
+    locker_number_format:
+      update:
+        saved: "Locker number format saved."
+        cleared: "Locker number format removed: any locker number is accepted again."
     users:
       index:
         title: "Users"
@@ -152,6 +193,14 @@ en:
         no_confirmation_instructions: "Didn't receive confirmation instructions?"
         no_unlock_instructions: "Didn't receive unlock instructions?"
         sign_in_with: "Sign in with %{provider}"
+  locker_number_format:
+    messages:
+      invalid_pattern: "is not a valid regular expression"
+  floor_list:
+    messages:
+      required: "must list at least one floor"
+      too_many: "can list at most %{count} floors"
+      floor_too_long: "cannot include “%{floor}”: a floor is at most %{count} characters"
   allowed_email_domain:
     messages:
       invalid_domain: "must look like company.com"
@@ -309,6 +358,9 @@ en:
     manifest:
       description: "Find the locker that suits you, and swap with someone who wants yours."
   shared:
+    floor_field:
+      prompt: "Choose a floor"
+      no_longer_offered: "%{floor} (no longer offered)"
     brand_stacked:
       tagline: "Find the locker that suits you"
     site_menu:
@@ -321,6 +373,7 @@ en:
       danger_zone: "Danger Zone"
       log_out: "Log out"
   user:
+    locker_number_format_hint: "Required format: %{expected}"
     messages:
       locker_number_taken: "is not available on that floor — another account already has this locker"
       locked_by_swap: "cannot be changed while you have an active swap proposal"

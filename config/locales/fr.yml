@@ -19,6 +19,8 @@ fr:
       allowed_email_domain: "domaine e-mail autorisé"
       locker_wish: "recherche de casier"
       site_language_setting: "réglage de langue du site"
+      site_floor_list: "liste des étages"
+      locker_number_format: "format de numéro de casier"
     attributes:
       user:
         floor: "Étage"
@@ -29,6 +31,11 @@ fr:
         floor: "Étage"
       site_language_setting:
         language: "Langue"
+      site_floor_list:
+        floors_text: "Étages"
+      locker_number_format:
+        pattern: "Expression"
+        description: "Description"
 
   date:
     formats:
@@ -57,6 +64,11 @@ fr:
       significant: false
       strip_insignificant_zeros: false
 
+  errors:
+    messages:
+      floor_not_offered: "ne fait pas partie des étages du site"
+      locker_number_format_mismatch: "doit respecter le format requis : %{expected}"
+
   admin:
     danger_zone:
       show:
@@ -78,6 +90,34 @@ fr:
         domains_empty: "Aucun domaine n'est listé, l'inscription est donc actuellement ouverte à tout domaine e-mail."
         domain_hint: "Le domaine seul, sans le @ — par exemple, company.com. Les sous-domaines ne sont pas inclus : ajoutez mail.company.com séparément si besoin."
         add_domain_button: "Ajouter un domaine"
+        floors_explanation: "Les étages qui existent dans le bâtiment. Une fois la liste enregistrée, chaque champ « étage » du site devient un choix parmi elle, proposé dans l'ordre saisi ici."
+        floors_empty: "Aucune liste n'est enregistrée : les étages sont encore saisis librement partout où ils sont demandés."
+        floors_hint: "Séparez les étages par des virgules, dans l'ordre où ils doivent être proposés — par exemple : 0, 1, 2, 3. Un étage ne peut pas lui-même contenir de virgule."
+        save_floors_button: "Enregistrer les étages"
+        format_explanation: "Le format que doit respecter chaque numéro de casier saisi sur le site, écrit sous forme d'expression régulière. Le numéro entier doit correspondre, pas seulement une partie."
+        format_empty: "Aucun format n'est défini : tout numéro de casier est accepté."
+        pattern_hint: "Par exemple \\d{3} pour exactement trois chiffres. Laissez vide pour accepter tout numéro de casier."
+        description_hint: "Facultatif. Affiché aux personnes qui saisissent un numéro de casier, à la place de l'expression — par exemple : 3 chiffres, ex. 042."
+        save_format_button: "Enregistrer le format"
+        examples_caption: "Exemples"
+        example_pattern_header: "Expression"
+        example_meaning_header: "Signification"
+        example_samples_header: "Exemples de saisie"
+        format_examples:
+          accepted: "Accepté"
+          refused: "Refusé"
+          three_digits: "Exactement trois chiffres"
+          one_to_three_digits: "De un à trois chiffres"
+          letter_then_two_digits: "Une lettre majuscule, puis deux chiffres"
+          two_pairs_with_dash: "Deux chiffres, un tiret, deux chiffres"
+          a_or_b_then_three_digits: "A ou B, puis trois chiffres"
+    floor_list:
+      update:
+        saved: "Étages enregistrés."
+    locker_number_format:
+      update:
+        saved: "Format du numéro de casier enregistré."
+        cleared: "Format du numéro de casier supprimé : tout numéro de casier est de nouveau accepté."
     users:
       index:
         title: "Utilisateurs"
@@ -210,6 +250,14 @@ fr:
         no_confirmation_instructions: "Vous n'avez pas reçu les instructions de confirmation ?"
         no_unlock_instructions: "Vous n'avez pas reçu les instructions de déverrouillage ?"
         sign_in_with: "Se connecter avec %{provider}"
+  locker_number_format:
+    messages:
+      invalid_pattern: "n'est pas une expression régulière valide"
+  floor_list:
+    messages:
+      required: "doit contenir au moins un étage"
+      too_many: "peut contenir au plus %{count} étages"
+      floor_too_long: "ne peut pas contenir « %{floor} » : un étage fait au plus %{count} caractères"
   allowed_email_domain:
     messages:
       invalid_domain: "doit ressembler à company.com"
@@ -367,6 +415,9 @@ fr:
     manifest:
       description: "Trouvez le casier qui vous convient, et échangez-le avec quelqu'un qui veut le vôtre."
   shared:
+    floor_field:
+      prompt: "Choisissez un étage"
+      no_longer_offered: "%{floor} (n'est plus proposé)"
     brand_stacked:
       tagline: "Trouvez le casier qui vous convient"
     site_menu:
@@ -379,6 +430,7 @@ fr:
       danger_zone: "Zone de danger"
       log_out: "Se déconnecter"
   user:
+    locker_number_format_hint: "Format requis : %{expected}"
     messages:
       locker_number_taken: "n'est pas disponible à cet étage — un autre compte a déjà ce casier"
       locked_by_swap: "ne peut pas être modifié tant que vous avez une proposition d'échange active"

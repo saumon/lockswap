@@ -922,4 +922,121 @@ class UserTest < ActiveSupport::TestCase
     ensure
       User.skip_callback(:create, :before, still_claiming, raise: false)
     end
+  # --- 030 User Story 2: floors are a choice from the site's list -------------
+
+  # FR-005: once a list is saved, only its floors can be chosen.
+  test "a floor outside the site's list is refused on the locker profile save path" do
+    SiteFloorList.current.update!(floors_text: "0, 1, 2, 3")
+    user = users(:alice)
+
+    user.floor = "7"
+    assert_not user.valid?(:locker_profile_update)
+    assert_includes user.errors[:floor], I18n.t("errors.messages.floor_not_offered")
+
+    user.floor = "2"
+    assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
+  end
+
+  # FR-006: before the first save the floor is free text, as it always was.
+  test "any floor is accepted while no list is saved" do
+    user = users(:alice)
+    user.floor = "anything"
+
+    assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
+  end
+
+  # FR-007/FR-011: a floor removed from the list stays on file and can be saved
+  # again unchanged — only a change has to land on a listed floor.
+  test "a saved floor no longer listed is kept when left unchanged, refused when changed to another unlisted one" do
+    SiteFloorList.current.update!(floors_text: "0, 1, 2")
+    user = users(:carol)
+    user.update_columns(floor: "5")
+
+    user.floor = "5"
+    user.locker_number = "C77"
+    assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
+
+    user.floor = "6"
+    assert_not user.valid?(:locker_profile_update)
+    assert_includes user.errors[:floor], I18n.t("errors.messages.floor_not_offered")
+  end
+
+  # The rule belongs to the locker profile save path only, like the presence rule
+  # beside it: Devise's own account update must not trip over a legacy floor.
+  test "the floor list does not apply outside the locker profile save path" do
+    SiteFloorList.current.update!(floors_text: "0, 1")
+    user = users(:carol)
+    user.email = "carol.renamed@example.com"
+
+    assert user.save, user.errors.full_messages.to_sentence
+  end
+  # --- 030 User Story 4: locker numbers follow the site's format --------------
+
+  test "a locker number that does not match the format is refused on the locker profile save path" do
+    LockerNumberFormat.current.update!(pattern: "\\d{3}")
+    user = users(:carol)
+
+    user.locker_number = "42"
+    assert_not user.valid?(:locker_profile_update)
+    assert_includes user.errors[:locker_number],
+                    I18n.t("errors.messages.locker_number_format_mismatch", expected: "\\d{3}")
+
+    user.locker_number = "042"
+    assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
+  end
+
+  # FR-014: the spaces are ignored for the check *and* gone from what is saved,
+  # so the stored number is the one uniqueness compares (006).
+  test "surrounding spaces are stripped before the number is checked and saved" do
+    LockerNumberFormat.current.update!(pattern: "\\d{3}")
+    user = users(:carol)
+    user.locker_number = " 042 "
+
+    assert_equal "042", user.locker_number
+    assert user.save(context: :locker_profile_update), user.errors.full_messages.to_sentence
+
+    rival = users(:alice)
+    rival.floor = user.floor
+    rival.locker_number = "  042"
+    assert_not rival.valid?(:locker_profile_update)
+    assert_includes rival.errors[:locker_number], User::LOCKER_NUMBER_TAKEN_MESSAGE
+  end
+
+  # FR-015: "no locker" stays a valid answer whatever the format.
+  test "no locker number is accepted whatever the format" do
+    LockerNumberFormat.current.update!(pattern: "\\d{3}")
+    user = users(:carol)
+    user.locker_number = "   "
+
+    assert_nil user.locker_number
+    assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
+  end
+
+  # FR-017: a number on file from before the format is kept while it is left
+  # alone — here only the floor moves — and refused once it is changed to
+  # another number that does not match.
+  test "a legacy number is kept while unchanged and refused once changed to another that does not match" do
+    user = users(:bob)
+    user.update_columns(locker_number: "42")
+    LockerNumberFormat.current.update!(pattern: "\\d{3}")
+    LockerSwapProposal.where(requester: user).or(LockerSwapProposal.where(recipient: user)).delete_all
+
+    user.floor = "8"
+    assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
+
+    user.locker_number = "43"
+    assert_not user.valid?(:locker_profile_update)
+  end
+
+  # FR-021: history keeps what was recorded at the time, whatever the site's
+  # floors and format become afterwards.
+  test "changing the floor list and the format leaves resolved proposals as recorded" do
+    proposal = locker_swap_proposals(:dave_declined_to_carol)
+    recorded = proposal.attributes.slice(*proposal.attributes.keys.grep(/_at_resolution\z/))
+
+    SiteFloorList.current.update!(floors_text: "RDC")
+    LockerNumberFormat.current.update!(pattern: "Z\\d")
+
+    assert_equal recorded, proposal.reload.attributes.slice(*recorded.keys)
+  end
 end

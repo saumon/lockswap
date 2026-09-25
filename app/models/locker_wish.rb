@@ -8,6 +8,9 @@ class LockerWish < ApplicationRecord
   # Rails treats a whitespace-only string as blank, so presence alone already
   # rejects "   " — no separate trimming step is needed (FR-007).
   validates :floor, presence: true
+  # 030 FR-005: a wish is for a floor the site offers, once a list is saved —
+  # the same rule, from the same validator, as a locker profile's floor.
+  validates :floor, site_floor: true
 
   # 003 FR-011/FR-012, extracted from the controller by 017: every wish on offer,
   # oldest declaration first, with its owner loaded so the rows do not each cost a

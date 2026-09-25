@@ -84,6 +84,30 @@ class AccessibilityTest < ApplicationSystemTestCase
     assert_axe_clean
   end
 
+  # 030 SC-007: once a floor list is saved the floor becomes a <select>, so both
+  # the first-entry form and the pencil editor are audited with it — the editor
+  # with the "(no longer offered)" option a removed floor brings with it.
+  test "home first entry with a floor list saved is accessible" do
+    SiteFloorList.current.update!(floors_text: "0, 1, 3")
+    log_in_as users(:alice)
+    assert_selector "select[name='user[floor]']"
+    assert_axe_clean
+  end
+
+  test "home editor with a floor list saved is accessible" do
+    # carol is on floor 2, which this list leaves out — so the editor also
+    # carries the "(no longer offered)" option.
+    SiteFloorList.current.update!(floors_text: "0, 1, 3")
+    log_in_as users(:carol)
+    wait_for_turbo
+    find("summary[aria-label='Edit locker details']").click
+    # Visible, so the audit below runs on the open editor rather than on a
+    # closed disclosure whose contents axe would skip.
+    assert_selector "select[name='user[floor]']"
+    assert_selector "select[name='user[floor]'] option", text: "(no longer offered)", visible: :all
+    assert_axe_clean
+  end
+
   # bob is the recipient of alice_pending_to_bob.
   # 010: the third state of the locker wish block — erin has answered the locker
   # question with "no locker" and declared no wish. The other two states are

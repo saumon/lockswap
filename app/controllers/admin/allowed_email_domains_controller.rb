@@ -6,6 +6,8 @@
 # validate. No #index either — the list is the Danger Zone screen, which is a
 # screen and not this resource (research.md R3).
 class Admin::AllowedEmailDomainsController < ApplicationController
+  include LoadsDangerZone
+
   # FR-002: the same pair that guards the screen guards the writes, so what is
   # hidden from the navigation is also refused at the address. Restated here
   # rather than inherited, for the reason Admin::DangerZoneController gives.
@@ -34,12 +36,11 @@ class Admin::AllowedEmailDomainsController < ApplicationController
     else
       # Re-render the screen the administrator was on, with the rejected entry
       # still in the field and the reason above it (FR-008) — the same shape
-      # LockerProfilesController#update uses for a rejected edit. The list has to
-      # be reloaded because this action never ran #show: without it the screen
-      # would come back with its existing configuration missing, which reads as
-      # the failed addition having wiped it.
-      @allowed_email_domains = AllowedEmailDomain.order(:domain)
-      @site_language_setting = SiteLanguageSetting.current
+      # LockerProfilesController#update uses for a rejected edit. The rest of the
+      # screen has to be reloaded because this action never ran #show: without it
+      # the screen would come back with its existing configuration missing, which
+      # reads as the failed addition having wiped it.
+      load_danger_zone
       render "admin/danger_zone/show", status: :unprocessable_entity
     end
   end

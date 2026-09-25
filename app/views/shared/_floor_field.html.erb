@@ -1,0 +1,38 @@
+<%# locals: (form:, hint_id: nil, autofocus: false) %>
+<%#
+  030 FR-004: the one floor control every floor entry form renders — the user's
+  own locker profile (first entry and pencil editor), the locker wish's declare
+  and "Change floor" forms, and an administrator's editor for another account.
+  One definition, so the three cannot drift apart. The label, the hint and the
+  field wrapper stay with each caller, which is where they differ.
+
+  FR-006: until the super admin saves a list, this is exactly the text field it
+  always was. Once one is saved it becomes a <select> of the listed floors, in
+  the order typed (clarification Q3). 017 ruled a <select> out for the floor
+  *filters*, because one that submits on change fires as a keyboard user arrows
+  through it; this one sits inside a form with its own submit, so moving through
+  it commits nothing (research.md R6).
+
+  FR-007: a record already on a floor that has since left the list keeps it —
+  it is offered, selected, and marked as no longer offered, so the person sees
+  what is on file and can save the form without being made to move. Read from
+  the saved value, so a rejected edit being corrected does not invent one.
+
+  The list is read once, here, rather than once per question asked of it.
+%>
+<% floor_list = SiteFloorList.current %>
+
+<% if floor_list.configured? %>
+  <% options = floor_list.floors.map { |floor| [ floor, floor ] } %>
+  <% saved_floor = form.object.saved_floor %>
+  <% if saved_floor.present? && !floor_list.offers?(saved_floor) %>
+    <% options.unshift([ t("shared.floor_field.no_longer_offered", floor: saved_floor), saved_floor ]) %>
+  <% end %>
+
+  <%= form.select :floor, options,
+        { include_blank: t("shared.floor_field.prompt") },
+        { autofocus: autofocus, aria: { describedby: hint_id }.compact, class: "field-input" } %>
+<% else %>
+  <%= form.text_field :floor, autofocus: autofocus, autocomplete: "off",
+        aria: { describedby: hint_id }.compact, class: "field-input" %>
+<% end %>

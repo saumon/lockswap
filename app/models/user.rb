@@ -48,7 +48,13 @@ class User < ApplicationRecord
 
   # "No locker" must reach the database as NULL, never "": a unique index treats
   # NULLs as distinct, but two empty strings would collide (002 FR-002, FR-011).
-  normalizes :locker_number, with: ->(value) { value.blank? ? nil : value }
+  #
+  # 030 FR-014: surrounding spaces go too, so " 042 " is checked against the
+  # locker number format *and* stored as "042" — the value uniqueness compares
+  # (research.md R5). normalizes also applies to where(locker_number:) lookups,
+  # so the admin Users screen's current-locker search ignores stray spaces the
+  # same way.
+  normalizes :locker_number, with: ->(value) { value.to_s.strip.presence }
 
   # 013 FR-001: the first account ever registered is the site's administrator.
   # Assigned here rather than derived on read, because a derived answer would move
@@ -94,6 +100,10 @@ class User < ApplicationRecord
   # for a user who has not set a floor yet — including Devise's own account
   # update — which is not what "the floor is required" means here (002 FR-007).
   validates :floor, presence: true, on: :locker_profile_update
+  # 030 FR-005: once the super admin has saved a floor list, a floor chosen here
+  # has to be on it. Same save path as the presence rule above, for the same
+  # reason — see SiteFloorValidator for what it lets through and why.
+  validates :floor, site_floor: true, on: :locker_profile_update
   # The values as they are on file. While a rejected edit is being re-displayed
   # the attributes hold the input being corrected, so anything reporting what is
   # actually saved has to read past them.
@@ -206,6 +216,11 @@ class User < ApplicationRecord
   validates :locker_number,
             uniqueness: { scope: :floor, message: ->(_record, _data) { I18n.t("user.messages.locker_number_taken") } },
             allow_nil: true, on: :locker_profile_update
+
+  # 030 FR-013: once the super admin has set a locker number format, a number
+  # entered here has to follow it. See LockerNumberFormatValidator for what it
+  # lets through (no locker, an unchanged legacy number) and why.
+  validates :locker_number, locker_number_format: true, on: :locker_profile_update
 
   # 005 FR-003: says why the field is refused, so the restriction reads as a
   # state the account is in rather than as something wrong with the input.

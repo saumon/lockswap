@@ -796,4 +796,14 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
       ActiveSupport::Notifications.subscribed(counter, "sql.active_record") { yield }
       count
     end
+  # 030 research.md R5: stripping the locker number applies to lookups too, so
+  # a search typed with stray spaces still finds the exact number.
+  test "the current-locker filter ignores surrounding spaces" do
+    sign_in users(:frank)
+
+    get admin_users_path, params: { current_locker: "  #{users(:quinn).locker_number} " }
+
+    listed = css_select(".data-table tbody td[data-label='Email']").map { |cell| cell.text.strip }
+    assert_equal [ users(:quinn).email ], listed
+  end
 end

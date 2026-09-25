@@ -9,6 +9,8 @@
 # it IS this screen's own state rather than a resource with independent
 # identity, so #update lives directly on this controller (research.md R6).
 class Admin::DangerZoneController < ApplicationController
+  include LoadsDangerZone
+
   # Both, in this order, as Admin::UsersController declares them: signed in at
   # all, then signed in as the super admin (029 FR-005/FR-006 — this screen
   # narrowed from every administrator to the super admin only). Declared here
@@ -19,16 +21,11 @@ class Admin::DangerZoneController < ApplicationController
   before_action :require_super_admin!
 
   # FR-003, 025 FR-011: the configuration as it stands, plus the empty
-  # allowed-domain form and the current language selection.
-  #
-  # Ordered by domain rather than by insertion, because an administrator scanning
-  # for one is reading a list, not a history. Admin::AllowedEmailDomainsController
-  # and #update below re-render this view on a rejected write, so all three
-  # instance variables are also set there.
+  # allowed-domain form and the current language selection. The same loader
+  # serves every controller that re-renders this view on a rejected write
+  # (LoadsDangerZone).
   def show
-    @allowed_email_domains = AllowedEmailDomain.order(:domain)
-    @allowed_email_domain = AllowedEmailDomain.new
-    @site_language_setting = SiteLanguageSetting.current
+    load_danger_zone
   end
 
   # 025 FR-001/FR-011: the only write this controller owns directly. Success
@@ -47,8 +44,7 @@ class Admin::DangerZoneController < ApplicationController
       redirect_to admin_danger_zone_path,
         notice: t("admin.danger_zone.show.language_updated", language: language_name, locale: new_language)
     else
-      @allowed_email_domains = AllowedEmailDomain.order(:domain)
-      @allowed_email_domain = AllowedEmailDomain.new
+      load_danger_zone
       render :show, status: :unprocessable_entity
     end
   end

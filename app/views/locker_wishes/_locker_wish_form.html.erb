@@ -28,9 +28,11 @@
         ship in the same server response; opening the disclosure from script
         after render would leave this permanently unfocused with no error
         anywhere). No viewport branch: the behaviour is identical on a phone
-        and on a desktop. Rails omits the attribute entirely when false. %>
-    <%= f.text_field :floor, autofocus: autofocus, autocomplete: "off",
-          aria: { describedby: "locker_wish_floor_hint" }, class: "field-input" %>
+        and on a desktop. Rails omits the attribute entirely when false.
+        030: the control is shared/_floor_field — a text field, or a select once
+        the super admin has listed the floors — and carries the autofocus
+        either way. %>
+    <%= render "shared/floor_field", form: f, hint_id: "locker_wish_floor_hint", autofocus: autofocus %>
     <p id="locker_wish_floor_hint" class="field-hint">
       <%= t(".floor_hint") %>
     </p>
