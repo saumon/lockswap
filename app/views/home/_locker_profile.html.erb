@@ -15,7 +15,17 @@
   <div class="stack-tight">
     <h2 class="card-title"><%= t(".title") %></h2>
 
-    <dl class="detail-grid">
+    <%# 032 FR-001, research.md R2: read the same way `current_user.saved_floor`/
+        `saved_locker_number` below — directly through current_user, not an
+        ivar — since this partial has two renderers (HomeController and
+        LockerProfilesController on a rejected edit), per this file's own note
+        at the top. %>
+    <% zone_name = LockerMapEntry.zone_name_for(current_user.saved_floor, current_user.saved_locker_number) %>
+    <%# detail-grid--zone: opt-in third grid column (application.css), only
+        while this card actually has a zone field to put in it — a card with
+        just Floor and Locker number keeps the plain 2-column layout every
+        other .detail-grid on the site already has. %>
+    <dl class="detail-grid <%= "detail-grid--zone" if zone_name %>">
       <div>
         <dt class="detail-term"><%= t(".floor") %></dt>
         <dd id="locker-profile-floor" class="detail-value"><%= current_user.saved_floor %></dd>
@@ -29,6 +39,20 @@
           <%= current_user.saved_locker_number.presence || t(".no_locker_assigned") %>
         </dd>
       </div>
+
+      <%# A third field of this same grid, not the shared/_zone_label
+          partial's inline "Zone: X" sentence: on the homepage the zone is
+          uniform with Floor and Locker number — same term/value markup, same
+          row at desktop, no colon, its own bold label at every width (French
+          follow-up request, 2026-09-26). Omitted entirely when absent
+          (FR-005), the same as it always was — an empty grid cell is not
+          shown. %>
+      <% if zone_name %>
+        <div>
+          <dt class="detail-term"><%= t("shared.zone_label") %></dt>
+          <dd id="locker-profile-zone" class="detail-value"><%= zone_name %></dd>
+        </div>
+      <% end %>
     </dl>
   </div>
 

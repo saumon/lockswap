@@ -555,4 +555,99 @@ class LockerProfileTest < ApplicationSystemTestCase
 
     within("#error_explanation") { assert_text I18n.t("errors.messages.locker_number_unknown") }
   end
+
+  # --- 032 User Story 1: the locker's own zone is shown when declared --------
+
+  test "a locker declared in a zone shows that zone's name on the homepage" do
+    Zone.create!(floor: "3", name: "Aile Nord").locker_map_entries.create!(locker_number: "B12")
+    log_in_as users(:bob)
+
+    within("#locker-profile") { assert_selector "#locker-profile-zone", text: "Aile Nord" }
+  end
+
+  # FR-005: a locker on file that simply isn't in the Locker Map is an ordinary
+  # state, not an error — the exact behavior from before this feature existed.
+  test "a locker not declared in any zone shows no zone field at all, and no error" do
+    log_in_as users(:bob)
+
+    within("#locker-profile") { assert_no_selector "#locker-profile-zone" }
+    assert_no_selector "[role=alert]"
+  end
+
+  # FR-006: having no locker at all is unaffected by this feature.
+  test "having no locker at all shows no zone field at all" do
+    log_in_as users(:carol)
+
+    within("#locker-profile") { assert_no_selector "#locker-profile-zone" }
+  end
+
+  # French follow-up request, 2026-09-26: uniform with Floor and Locker number
+  # — the same term/value markup, so "Zone" carries no colon (dt content is
+  # exactly the label, the same as "Floor" and "Locker number" carry none) and
+  # its value sits in its own field, distinct from the locker number's.
+  test "the zone is its own field, with no colon on its label" do
+    Zone.create!(floor: "3", name: "Aile Nord").locker_map_entries.create!(locker_number: "B12")
+    log_in_as users(:bob)
+
+    within("#locker-profile") do
+      assert_selector ".detail-grid > div:has(#locker-profile-zone) dt", text: "Zone", exact_text: true
+      assert_selector "#locker-profile-zone", text: "Aile Nord"
+      assert_selector "#locker-profile-locker-number", text: "B12"
+      assert_no_selector "#locker-profile-locker-number", text: "Zone"
+    end
+  end
+
+  # French follow-up request, 2026-09-26: at desktop width the zone sits on
+  # the same row as Floor and Locker number, to the right of both — not
+  # wrapped onto a row of its own.
+  test "at desktop width, the zone sits on the same row as floor and locker number" do
+    Zone.create!(floor: "3", name: "Aile Nord").locker_map_entries.create!(locker_number: "B12")
+    log_in_as users(:bob)
+
+    assert_same_line "#locker-profile-floor", "#locker-profile-zone"
+
+    floor_rect = element_rect("#locker-profile-floor")
+    locker_number_rect = element_rect("#locker-profile-locker-number")
+    zone_rect = element_rect("#locker-profile-zone")
+    assert_operator floor_rect["left"], :<, locker_number_rect["left"]
+    assert_operator locker_number_rect["left"], :<, zone_rect["left"],
+      "expected the zone to sit to the right of the locker number, on the same row"
+  end
+
+  # French follow-up request, 2026-09-26: on mobile the zone's label and value
+  # share one compact line ("Zone Aile Nord"), the same as Floor and Locker
+  # number already do — and the label is bold, `.detail-term`'s existing
+  # treatment at every width, not a mobile-only rule.
+  test "on mobile, the zone's label and value share one line, and the label is bold" do
+    Zone.create!(floor: "3", name: "Aile Nord").locker_map_entries.create!(locker_number: "B12")
+    log_in_as users(:bob)
+
+    with_viewport(:phone) do
+      assert_same_line ".detail-grid > div:has(#locker-profile-zone) dt", "#locker-profile-zone"
+
+      weight = page.evaluate_script(<<~JS)
+        getComputedStyle(document.querySelector(".detail-grid > div:has(#locker-profile-zone) dt")).fontWeight
+      JS
+      assert_operator weight.to_i, :>=, 600, "expected the zone's label to be bold"
+    end
+  end
+
+  # SC-005 (optional regression, T038): a rename is reflected the very next
+  # time the page renders, with no separate step — there is no caching layer
+  # between the zone lookup and the database (research.md R1).
+  test "renaming a zone changes what the homepage shows on the next render" do
+    zone = Zone.create!(floor: "3", name: "Aile Nord")
+    zone.locker_map_entries.create!(locker_number: "B12")
+    log_in_as users(:bob)
+
+    within("#locker-profile") { assert_selector "#locker-profile-zone", text: "Aile Nord" }
+
+    zone.update!(name: "Aile Sud")
+    visit root_path
+
+    within("#locker-profile") do
+      assert_selector "#locker-profile-zone", text: "Aile Sud"
+      assert_no_text "Aile Nord"
+    end
+  end
 end

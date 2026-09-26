@@ -1,4 +1,14 @@
 en:
+  # 032: a single deliberate exception to 025/FR-012's "dates keep one fixed
+  # format regardless of language" rule, on the user's own explicit request —
+  # this one format (only ever used for the homepage's received-proposal
+  # timestamp) is the same literal string in both languages, "à" included,
+  # rather than varying by site language — consistent with FR-012's own
+  # reasoning (pick one rendering, on purpose, and hold it), just applied to a
+  # second, different fixed string instead of extending the first one's use.
+  time:
+    formats:
+      numeric_at: "%d/%m/%Y à %H:%M"
   # 030: shared by User and LockerWish through SiteFloorValidator, so one entry
   # per language rather than one per model.
   errors:
@@ -304,7 +314,9 @@ en:
       wants_to_swap_html: "%{email} would like to swap lockers with you"
       not_set: "not set"
       none_assigned: "none assigned"
-      proposal_details: "Floor %{floor} · Locker %{locker} · Sent %{sent_at}"
+      proposal_details: "Floor %{floor} · Locker %{locker}"
+      proposal_details_with_zone: "Floor %{floor} · Locker %{locker} · Zone %{zone}"
+      sent_at: "Sent %{sent_at}"
       accept: "Accept"
       accepting: "Accepting…"
       decline: "Decline"
@@ -413,6 +425,17 @@ en:
     floor_field:
       prompt: "Choose a floor"
       no_longer_offered: "%{floor} (no longer offered)"
+    # 032 FR-001–FR-004: the one word every screen uses to introduce a locker's
+    # zone, whenever the locker is declared in the Locker Map — reused rather
+    # than re-worded per screen, so the same fact reads the same way everywhere.
+    # Also the header of the dedicated Zone column on the two tables where a
+    # locker number already has a cell of its own (admin directory, locker
+    # search list).
+    zone_label: "Zone"
+    # The dedicated Zone column's placeholder, in the same voice as its
+    # neighbours ("Not set", "No locker assigned") — an undeclared locker is an
+    # ordinary state, not a blank cell.
+    no_zone: "No zone"
     brand_stacked:
       tagline: "Find the locker that suits you"
     site_menu:

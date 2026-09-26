@@ -110,12 +110,7 @@ class LockerSwapProposal < ApplicationRecord
   # sides' details still for exactly as long as that state lasts. A settled one
   # reads the record, which is the only account left of what was on the table.
   def floor_and_locker_summary
-    sides = if pending? || accepted?
-      [ [ requester.floor, requester.locker_number ], [ recipient.floor, recipient.locker_number ] ]
-    else
-      [ [ requester_floor_at_resolution, requester_locker_number_at_resolution ],
-        [ recipient_floor_at_resolution, recipient_locker_number_at_resolution ] ]
-    end
+    sides = locker_sides
 
     # Joined by a word rather than a ↔: read aloud, a screen reader set to low
     # punctuation verbosity drops the symbol entirely and runs the two sides
@@ -126,6 +121,19 @@ class LockerSwapProposal < ApplicationRecord
     verb = completed? ? I18n.t("locker_swap_proposal.floor_and_locker_summary.exchanged") :
                          I18n.t("locker_swap_proposal.floor_and_locker_summary.proposed")
     "#{verb}: #{sides.map { |side| locker_details(*side) }.join(" #{I18n.t('locker_swap_proposal.floor_and_locker_summary.for')} ")}"
+  end
+
+  # 032 research.md R3: the same two [floor, locker_number] pairs
+  # floor_and_locker_summary turns into one joined sentence, exposed on their
+  # own so a caller (the swap-history table) can resolve their zones via
+  # LockerMapEntry.zone_names_for without re-deriving this branching itself.
+  def locker_sides
+    if pending? || accepted?
+      [ [ requester.floor, requester.locker_number ], [ recipient.floor, recipient.locker_number ] ]
+    else
+      [ [ requester_floor_at_resolution, requester_locker_number_at_resolution ],
+        [ recipient_floor_at_resolution, recipient_locker_number_at_resolution ] ]
+    end
   end
 
   # Whether this user has anything outstanding at all — waiting for an answer as

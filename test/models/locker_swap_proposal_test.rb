@@ -355,6 +355,29 @@ class LockerSwapProposalTest < ActiveSupport::TestCase
     assert_includes proposal.floor_and_locker_summary, "Floor 4, locker D07"
   end
 
+  # 032 research.md R3: the same two pairs floor_and_locker_summary already
+  # computes internally, exposed so a caller can resolve their zones without
+  # re-deriving the pending/accepted-vs-settled branching a second time.
+  test "locker_sides returns the live pairs while pending or accepted" do
+    pending = LockerSwapProposal.create!(requester: users(:dave), recipient: users(:carol))
+    assert_equal [ [ "4", "D07" ], [ "2", nil ] ], pending.locker_sides
+
+    accepted = LockerSwapProposal.create!(requester: users(:bob), recipient: users(:carol),
+                                          status: :accepted)
+    assert_equal [ [ "3", "B12" ], [ "2", nil ] ], accepted.locker_sides
+  end
+
+  test "locker_sides returns the resolution snapshot once a proposal is settled" do
+    proposal = LockerSwapProposal.create!(requester: users(:dave), recipient: users(:carol))
+    proposal.decline!
+
+    assert_equal [ [ "4", "D07" ], [ "2", nil ] ], proposal.locker_sides
+
+    users(:dave).update!(floor: "9", locker_number: "D99")
+
+    assert_equal [ [ "4", "D07" ], [ "2", nil ] ], proposal.reload.locker_sides
+  end
+
   # FR-014 / Acceptance Scenario 4: an exchange is completed once. Anything that
   # is not in progress has nothing to confirm.
   test "only an exchange in progress can be confirmed" do

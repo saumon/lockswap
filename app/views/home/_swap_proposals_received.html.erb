@@ -13,10 +13,25 @@
             <p>
               <%= t(".wants_to_swap_html", email: content_tag(:span, proposal.requester.email, class: "strong data-value")) %>
             </p>
-            <p class="meta">
-              <%= t(".proposal_details", floor: proposal.requester.saved_floor.presence || t(".not_set"),
-                    locker: proposal.requester.saved_locker_number.presence || t(".none_assigned"),
-                    sent_at: l(proposal.created_at, format: :long)) %>
+            <%# 032 FR-002, research.md R2: a single-record screen, resolved
+                directly here — the same "value on file" reader below. Folded
+                into the same line as floor/locker rather than the shared/
+                _zone_label partial's own separate element: on this card the
+                zone reads as one more fact about the locker, alongside floor
+                and locker number, with the sent date moved to its own line
+                below instead (French follow-up request, 2026-09-26). %>
+            <% zone_name = LockerMapEntry.zone_name_for(proposal.requester.saved_floor, proposal.requester.saved_locker_number) %>
+            <p id="swap-proposal-received-<%= proposal.id %>-details" class="meta">
+              <% if zone_name %>
+                <%= t(".proposal_details_with_zone", floor: proposal.requester.saved_floor.presence || t(".not_set"),
+                      locker: proposal.requester.saved_locker_number.presence || t(".none_assigned"), zone: zone_name) %>
+              <% else %>
+                <%= t(".proposal_details", floor: proposal.requester.saved_floor.presence || t(".not_set"),
+                      locker: proposal.requester.saved_locker_number.presence || t(".none_assigned")) %>
+              <% end %>
+            </p>
+            <p id="swap-proposal-received-<%= proposal.id %>-sent-at" class="meta">
+              <%= t(".sent_at", sent_at: l(proposal.created_at, format: :numeric_at)) %>
             </p>
           </div>
 

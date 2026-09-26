@@ -166,6 +166,46 @@ class LockerSwapProposalTest < ApplicationSystemTestCase
     assert_no_selector "#swap-proposals-received"
   end
 
+  # --- 032 User Story 2: a locker's zone shown on a received proposal --------
+  #
+  # French follow-up request, 2026-09-26: the zone reads as one more fact on
+  # the same line as floor/locker ("Floor 4 · Locker D07 · Zone Aile Nord", no
+  # colon), and the sent date moves to its own line below in a new numeric
+  # format ("Sent 26/09/2026 à 17:28"), instead of sharing a line with it.
+
+  test "a received proposal's zone is shown on the same line as floor and locker, when declared" do
+    Zone.create!(floor: "4", name: "Aile Nord").locker_map_entries.create!(locker_number: "D07")
+    LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob))
+
+    log_in_as users(:bob)
+
+    within "#swap-proposals-received" do
+      assert_text "Floor 4 · Locker D07 · Zone Aile Nord"
+    end
+  end
+
+  # FR-006: alice (alice_pending_to_bob) has neither floor nor locker.
+  test "a received proposal shows no zone when the requester has no locker at all" do
+    log_in_as users(:bob)
+
+    within "#swap-proposals-received" do
+      assert_text users(:alice).email
+      assert_no_text "Zone"
+    end
+  end
+
+  test "a received proposal's sent date sits on its own line, in the numeric format" do
+    log_in_as users(:bob)
+    proposal = locker_swap_proposals(:alice_pending_to_bob)
+
+    within "#swap-proposals-received" do
+      assert_selector "#swap-proposal-received-#{proposal.id}-details", text: "Floor not set · Locker none assigned"
+      assert_no_selector "#swap-proposal-received-#{proposal.id}-details", text: "Sent"
+      assert_match(%r{\ASent \d{2}/\d{2}/\d{4} à \d{2}:\d{2}\z},
+        find("#swap-proposal-received-#{proposal.id}-sent-at").text)
+    end
+  end
+
   # User Story 3, Acceptance Scenario 3 (FR-007, FR-009): the decline is how the
   # requester finds out, and the comment comes with it. dave's fixture decline is
   # still unacknowledged, so it is owed to him.
@@ -236,6 +276,29 @@ class LockerSwapProposalTest < ApplicationSystemTestCase
     within "#swap-exchange-in-progress" do
       assert_text users(:bob).email
       assert_no_selector "input[value='Confirm exchange completed']"
+    end
+  end
+
+  # --- 032 User Story 2: a locker's zone shown on an exchange in progress ----
+
+  test "an exchange in progress shows the counterpart's zone when declared" do
+    Zone.create!(floor: "4", name: "Aile Nord").locker_map_entries.create!(locker_number: "D07")
+    LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob), status: :accepted)
+
+    log_in_as users(:bob)
+
+    within "#swap-exchange-in-progress" do
+      assert_text "Zone: Aile Nord"
+    end
+  end
+
+  test "an exchange in progress shows no zone when the counterpart's locker is not declared" do
+    LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob), status: :accepted)
+
+    log_in_as users(:bob)
+
+    within "#swap-exchange-in-progress" do
+      assert_no_text "Zone:"
     end
   end
 
@@ -326,6 +389,21 @@ class LockerSwapProposalTest < ApplicationSystemTestCase
 
     within("#{row}-comment") { assert_text "Found another swap" }
     within("#{row}-locker-details") { assert_text "Floor 4, locker D07" }
+  end
+
+  # 032: User Story 4 (a locker's zone shown on swap history) shipped, then was
+  # withdrawn on the user's explicit follow-up request (2026-09-26) — the
+  # "Locker details" column reports only what floor_and_locker_summary already
+  # says, never a zone, on either history screen (this one and the admin
+  # account detail page's). This guards against it quietly reappearing.
+  test "history's locker details column never shows a zone, even when one is declared" do
+    Zone.create!(floor: "4", name: "Aile Nord").locker_map_entries.create!(locker_number: "D07")
+
+    log_in_as users(:dave)
+    visit locker_swap_proposals_path
+
+    row = "#swap-proposal-history-row-#{locker_swap_proposals(:dave_declined_to_carol).id}-locker-details"
+    within(row) { assert_no_text "Aile Nord" }
   end
 
   # The review surface stays a review surface: nothing here decides anything.

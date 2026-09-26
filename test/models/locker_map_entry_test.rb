@@ -54,4 +54,55 @@ class LockerMapEntryTest < ActiveSupport::TestCase
     # normalizes its own input the same way the model does
     assert LockerMapEntry.known?("2", " 203 ")
   end
+
+  # 032 FR-001–FR-004, research.md R1: the one batched lookup every screen that
+  # shows a floor + locker number reads from.
+  test ".zone_names_for resolves every declared pair in exactly one query, keyed by the pair" do
+    zone = Zone.create!(floor: "2", name: "Aile Nord")
+    zone.locker_map_entries.create!(locker_number: "203")
+
+    result = assert_queries_count(1) do
+      LockerMapEntry.zone_names_for([ [ "2", "203" ], [ "2", "999" ] ])
+    end
+
+    assert_equal({ [ "2", "203" ] => "Aile Nord" }, result)
+  end
+
+  test ".zone_names_for returns {} for an empty or all-blank input, without querying" do
+    assert_no_queries { assert_equal({}, LockerMapEntry.zone_names_for([])) }
+    assert_no_queries { assert_equal({}, LockerMapEntry.zone_names_for([ [ nil, nil ], [ "", " " ] ])) }
+  end
+
+  test ".zone_name_for returns the zone's name for a declared pair, nil otherwise" do
+    zone = Zone.create!(floor: "2", name: "Aile Nord")
+    zone.locker_map_entries.create!(locker_number: "203")
+
+    assert_equal "Aile Nord", LockerMapEntry.zone_name_for("2", "203")
+    assert_nil LockerMapEntry.zone_name_for("2", "999")
+    assert_nil LockerMapEntry.zone_name_for(nil, nil)
+  end
+
+  # FR-007: a rename is reflected the very next time anything asks, since there
+  # is no caching layer standing between the lookup and the database.
+  test ".zone_name_for reflects a zone rename on the very next call" do
+    zone = Zone.create!(floor: "2", name: "Aile Nord")
+    zone.locker_map_entries.create!(locker_number: "203")
+
+    assert_equal "Aile Nord", LockerMapEntry.zone_name_for("2", "203")
+
+    zone.update!(name: "Aile Sud")
+
+    assert_equal "Aile Sud", LockerMapEntry.zone_name_for("2", "203")
+  end
+
+  test ".zone_name_for stops returning a pair once it is removed from its zone" do
+    zone = Zone.create!(floor: "2", name: "Aile Nord")
+    entry = zone.locker_map_entries.create!(locker_number: "203")
+
+    assert_equal "Aile Nord", LockerMapEntry.zone_name_for("2", "203")
+
+    entry.destroy!
+
+    assert_nil LockerMapEntry.zone_name_for("2", "203")
+  end
 end

@@ -64,6 +64,12 @@ class Admin::UsersController < ApplicationController
                  .with_locker_number(filter_selection(:current_locker))
                  .email_containing(filter_selection(:email))
                  .order(:created_at)
+
+    # 032 FR-003, research.md R1/R2: one query for the whole list, never one
+    # per row.
+    @locker_zone_names = LockerMapEntry.zone_names_for(
+      @users.map { |user| [ user.saved_floor, user.saved_locker_number ] }
+    )
   end
 
   # 015 FR-006: the grant. The confirmation that guards it lives in the view — by
@@ -127,6 +133,9 @@ class Admin::UsersController < ApplicationController
                            :locker_wish).find_by(id: params[:id])
 
     return redirect_to admin_users_path, alert: t(".account_gone") if @user.nil?
+
+    # 032 FR-003, research.md R2: a single-record screen.
+    @locker_zone_name = LockerMapEntry.zone_name_for(@user.saved_floor, @user.saved_locker_number)
 
     # 027 FR-005, research.md R6: every proposal this account is party to, in
     # either role, that is still pending or accepted — zero, one, or more than

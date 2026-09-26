@@ -16,6 +16,10 @@
       <%= t(".counterpart_details", floor: counterpart.saved_floor.presence || t(".not_set"),
             locker: counterpart.saved_locker_number.presence || t(".none_assigned")) %>
     </p>
+    <%# 032 FR-002, research.md R2: a single-record screen, resolved directly
+        here — the same "value on file" reader used above. %>
+    <%= render "shared/zone_label",
+          zone_name: LockerMapEntry.zone_name_for(counterpart.saved_floor, counterpart.saved_locker_number) %>
   </div>
 
   <% if viewer_is_recipient %>

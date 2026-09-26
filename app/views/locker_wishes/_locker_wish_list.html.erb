@@ -73,6 +73,10 @@
               <th scope="col" role="columnheader"><%= t(".person_header") %></th>
               <th scope="col" role="columnheader"><%= t(".their_floor_label") %></th>
               <th scope="col" role="columnheader"><%= t(".their_locker_header") %></th>
+              <%# 032 FR-002: its own column — this table already gives the
+                  locker number a dedicated cell, so the zone gets one too
+                  rather than sharing it. %>
+              <th scope="col" role="columnheader"><%= t("shared.zone_label") %></th>
               <%# 004 FR-001: the swap starts here, on the row of the person being
                   asked. %>
               <th scope="col" role="columnheader"><%= t(".swap_header") %></th>
@@ -94,6 +98,14 @@
 
                 <td id="<%= row_id %>-current-locker" role="cell" data-label="<%= t(".their_locker_header") %>" class="data-value <%= "detail-value-empty" if wish.user.saved_locker_number.blank? %>">
                   <%= wish.user.saved_locker_number.presence || t("home.locker_profile.no_locker_assigned") %>
+                </td>
+
+                <%# 032 FR-002, research.md R1/R2: resolved once per request in
+                    the controller, never once per row. %>
+                <% zone_name = @locker_zone_names[[ wish.user.saved_floor, wish.user.saved_locker_number ]] %>
+                <td id="<%= row_id %>-current-zone" role="cell" data-label="<%= t("shared.zone_label") %>"
+                    class="data-value <%= "detail-value-empty" unless zone_name %>">
+                  <%= zone_name || t("shared.no_zone") %>
                 </td>
 
                 <%# 004: every reason a swap cannot be proposed is said plainly on

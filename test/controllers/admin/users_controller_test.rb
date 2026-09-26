@@ -126,6 +126,37 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_select "#admin-user-row-#{users(:alice).id}-floor", text: "Not set"
   end
 
+  # --- 032 User Story 3: a locker's zone shown in the account directory ------
+  #
+  # A dedicated column (French follow-up request, 2026-09-26): every table that
+  # already gives the locker number its own cell gets a "Zone" column of its
+  # own too, rather than folding the zone into that cell.
+
+  test "a row's own locker shows the zone it is declared in, in its own column" do
+    Zone.create!(floor: "3", name: "Aile Nord").locker_map_entries.create!(locker_number: "B12")
+    sign_in users(:frank)
+
+    get admin_users_path
+
+    assert_select "#admin-user-row-#{users(:bob).id}-zone", text: "Aile Nord"
+  end
+
+  test "a row's locker not declared in any zone shows the no-zone placeholder" do
+    sign_in users(:frank)
+
+    get admin_users_path
+
+    assert_select "#admin-user-row-#{users(:bob).id}-zone", text: "No zone"
+  end
+
+  test "an account with no locker at all shows the no-zone placeholder" do
+    sign_in users(:frank)
+
+    get admin_users_path
+
+    assert_select "#admin-user-row-#{users(:alice).id}-zone", text: "No zone"
+  end
+
   # FR-003: whether the account is looking for a locker, and on which floor.
   test "each row shows the account's active wish, or that it has none" do
     sign_in users(:frank)
@@ -674,6 +705,27 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_select ".badge", text: "Admin"
   end
 
+  # --- 032 User Story 3: a locker's zone shown on the account detail page ----
+
+  test "the detail screen shows the account's locker zone when declared" do
+    Zone.create!(floor: "3", name: "Aile Nord").locker_map_entries.create!(locker_number: "B12")
+    sign_in users(:frank)
+
+    get admin_user_path(users(:bob))
+
+    assert_select "#admin-user-detail-locker .zone-label", text: "Zone: Aile Nord"
+  end
+
+  test "the detail screen shows no zone when the locker is not declared, or there is none at all" do
+    sign_in users(:frank)
+
+    get admin_user_path(users(:bob))
+    assert_select "#admin-user-detail-locker .zone-label", count: 0
+
+    get admin_user_path(users(:alice))
+    assert_select "#admin-user-detail-locker .zone-label", count: 0
+  end
+
   test "an anonymous visitor requesting a user's detail screen is sent to sign in" do
     get admin_user_path(users(:bob))
 
@@ -742,6 +794,19 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     get admin_user_path(users(:dave))
 
     assert_select "#admin-user-detail-history-row-#{locker_swap_proposals(:dave_declined_to_carol).id}"
+  end
+
+  # 032: User Story 4 (a locker's zone shown on swap history) shipped, then was
+  # withdrawn on the user's explicit follow-up request (2026-09-26). This
+  # guards against it quietly reappearing on this history table.
+  test "the detail screen's proposal history never shows a zone, even when one is declared" do
+    Zone.create!(floor: "4", name: "Aile Nord").locker_map_entries.create!(locker_number: "D07")
+    sign_in users(:frank)
+
+    get admin_user_path(users(:dave))
+
+    assert_select "#admin-user-detail-history-row-#{locker_swap_proposals(:dave_declined_to_carol).id}-locker-details",
+                  text: /\AProposed: Floor 4, locker D07 for Floor 2, no locker assigned\z/
   end
 
   test "the detail screen states plainly when there is no proposal history" do

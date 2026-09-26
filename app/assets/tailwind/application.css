@@ -1711,6 +1711,16 @@
     .detail-grid > div {
       display: block;
     }
+
+    /* 032: opt-in third column, only for a card whose grid actually carries a
+       Zone field (the homepage's own locker card, when one is declared) — so
+       it sits on the same row as Floor and Locker number rather than wrapping
+       onto a row of its own. Left off the base .detail-grid: a card with only
+       two fields (no zone, or the admin detail page's own grid) keeps exactly
+       the 2-column layout it always had. */
+    .detail-grid.detail-grid--zone {
+      grid-template-columns: repeat(3, minmax(0, 15rem));
+    }
   }
 
   .detail-term {

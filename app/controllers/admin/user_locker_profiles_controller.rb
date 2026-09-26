@@ -60,6 +60,11 @@ class Admin::UserLockerProfilesController < ApplicationController
     # A rejected edit re-renders the detail screen with the same search-status
     # and proposal-history data #show itself loads, so those sections do not
     # vanish because the floor/locker edit failed.
+    #
+    # 032: and the same zone lookup #show loads for the account's own locker —
+    # this is admin/users/show.html.erb's second renderer, the same reason
+    # home/_locker_profile reads current_user directly rather than through an
+    # ivar only one of its two renderers would set (research.md R2).
     def load_proposal_data
       @active_proposals =
         (@user.sent_swap_proposals.where(status: %i[pending accepted]).includes(:recipient).to_a +
@@ -67,5 +72,6 @@ class Admin::UserLockerProfilesController < ApplicationController
       @proposal_history =
         (@user.sent_swap_proposals.includes(:recipient).to_a +
          @user.received_swap_proposals.includes(:requester).to_a).sort_by(&:created_at).reverse
+      @locker_zone_name = LockerMapEntry.zone_name_for(@user.saved_floor, @user.saved_locker_number)
     end
 end

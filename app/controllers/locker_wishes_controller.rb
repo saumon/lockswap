@@ -102,6 +102,12 @@ class LockerWishesController < ApplicationController
       @viewer_in_progress = LockerSwapProposal.in_progress_for?(current_user)
       @pending_recipient_ids = current_user.sent_swap_proposals.pending.pluck(:recipient_id)
 
+      # 032 FR-002, research.md R1/R2: one query for the whole list, never one
+      # per row.
+      @locker_zone_names = LockerMapEntry.zone_names_for(
+        @locker_wishes.map { |wish| [ wish.user.saved_floor, wish.user.saved_locker_number ] }
+      )
+
       # 018 FR-001/FR-003/FR-004: read past any unsaved edit, same reason as
       # everywhere else `saved_floor` is used (research R1). `current_user` and
       # `current_user.locker_wish` are both already loaded above and by

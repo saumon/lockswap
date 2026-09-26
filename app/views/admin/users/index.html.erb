@@ -64,6 +64,11 @@
                 administrator no longer has to leave this screen to see them. %>
             <th scope="col" role="columnheader"><%= t(".floor_header") %></th>
             <th scope="col" role="columnheader"><%= t(".locker_header") %></th>
+            <%# 032 FR-003: its own column — the same locker cell everywhere
+                else on the site folds the zone in as a second line, but this
+                table already gives the locker number a dedicated cell, so the
+                zone gets one too rather than sharing it. %>
+            <th scope="col" role="columnheader"><%= t("shared.zone_label") %></th>
             <th scope="col" role="columnheader"><%= t(".wish_header") %></th>
             <%# FR-012: its own column rather than a mark tacked onto the email,
                 so the one row that differs says how it differs. %>
@@ -102,6 +107,14 @@
               <td id="admin-user-row-<%= user.id %>-locker" role="cell" data-label="<%= t(".locker_header") %>"
                   class="data-value <%= "detail-value-empty" if user.saved_locker_number.blank? %>">
                 <%= user.saved_locker_number.presence || t("home.locker_profile.no_locker_assigned") %>
+              </td>
+
+              <%# 032 FR-003, research.md R1/R2: resolved once per request in
+                  the controller, never once per row. %>
+              <% zone_name = @locker_zone_names[[ user.saved_floor, user.saved_locker_number ]] %>
+              <td id="admin-user-row-<%= user.id %>-zone" role="cell" data-label="<%= t("shared.zone_label") %>"
+                  class="data-value <%= "detail-value-empty" unless zone_name %>">
+                <%= zone_name || t("shared.no_zone") %>
               </td>
 
               <%# 020 FR-003: user.locker_wish is eager-loaded on the index query

@@ -60,6 +60,10 @@ fr:
       default: "%a, %d %b %Y %H:%M:%S %z"
       short: "%d %b %H:%M"
       long: "%B %d, %Y %H:%M"
+      # 032: see en.yml for the reasoning — a deliberate second fixed format,
+      # identical in both languages, used only for the homepage's
+      # received-proposal timestamp.
+      numeric_at: "%d/%m/%Y à %H:%M"
     am: "am"
     pm: "pm"
   number:
@@ -356,7 +360,9 @@ fr:
       wants_to_swap_html: "%{email} souhaite échanger son casier avec vous"
       not_set: "non défini"
       none_assigned: "aucun attribué"
-      proposal_details: "Étage %{floor} · Casier %{locker} · Envoyée le %{sent_at}"
+      proposal_details: "Étage %{floor} · Casier %{locker}"
+      proposal_details_with_zone: "Étage %{floor} · Casier %{locker} · Zone %{zone}"
+      sent_at: "Envoyée le %{sent_at}"
       accept: "Accepter"
       accepting: "Acceptation en cours…"
       decline: "Refuser"
@@ -465,6 +471,9 @@ fr:
     floor_field:
       prompt: "Choisissez un étage"
       no_longer_offered: "%{floor} (n'est plus proposé)"
+    # 032 FR-001–FR-004: voir en.yml pour le raisonnement.
+    zone_label: "Zone"
+    no_zone: "Aucune zone"
     brand_stacked:
       tagline: "Trouvez le casier qui vous convient"
     site_menu:

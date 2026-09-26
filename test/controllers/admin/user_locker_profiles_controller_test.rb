@@ -19,6 +19,24 @@ class Admin::UserLockerProfilesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to admin_user_path(users(:carol))
   end
 
+  # 032: this action re-renders admin/users/show.html.erb on a rejected edit —
+  # its second renderer, alongside Admin::UsersController#show — and must
+  # supply that template's zone lookups itself rather than relying on #show
+  # having run first (research.md R2, the same reason home/_locker_profile
+  # reads current_user directly instead of an ivar).
+  test "a rejected edit still shows the account's own locker zone" do
+    Zone.create!(floor: users(:carol).floor, name: "Aile Nord")
+      .locker_map_entries.create!(locker_number: "Z01")
+    users(:carol).update_columns(locker_number: "Z01")
+    sign_in users(:frank)
+
+    patch admin_user_locker_profile_path(users(:carol)),
+      params: { user: { floor: "", locker_number: "Z99" } }
+
+    assert_response :unprocessable_entity
+    assert_select "#admin-user-detail-locker .zone-label", text: "Zone: Aile Nord"
+  end
+
   # FR-009: a blank floor is refused, same as the self-service rule.
   test "a blank floor is refused and nothing changes" do
     sign_in users(:frank)

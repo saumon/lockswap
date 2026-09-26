@@ -580,6 +580,38 @@ class LockerWishesControllerTest < ActionDispatch::IntegrationTest
     assert_select "span.badge-success", count: 0
   end
 
+  # --- 032 User Story 2: a locker's zone shown on the search list -------------
+  #
+  # A dedicated column (French follow-up request, 2026-09-26): every table that
+  # already gives the locker number its own cell gets a "Zone" column of its
+  # own too, rather than folding the zone into that cell.
+
+  test "a row's own locker shows the zone it is declared in, in its own column" do
+    Zone.create!(floor: "3", name: "Aile Nord").locker_map_entries.create!(locker_number: "B12")
+    sign_in users(:dave)
+
+    get locker_wishes_path
+
+    assert_select "#locker-wish-row-#{users(:bob).id}-current-zone", text: "Aile Nord"
+  end
+
+  test "a row's locker not declared in any zone shows the no-zone placeholder" do
+    sign_in users(:dave)
+
+    get locker_wishes_path
+
+    assert_select "#locker-wish-row-#{users(:bob).id}-current-zone", text: "No zone"
+  end
+
+  # FR-006: karl has an active wish but no saved floor or locker of his own.
+  test "a wisher with no locker at all shows the no-zone placeholder" do
+    sign_in users(:dave)
+
+    get locker_wishes_path
+
+    assert_select "#locker-wish-row-#{users(:karl).id}-current-zone", text: "No zone"
+  end
+
   private
 
     # What each axis offers, in the order it offers it — so a comparison catches a

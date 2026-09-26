@@ -1,0 +1,16 @@
+<%# locals: (zone_name:) %>
+<%# 032 FR-001–FR-004, FR-008: the one place this feature renders "which zone,
+    if any" — reused everywhere a floor + locker number is already shown, so
+    every screen reads the same way and a future change to it happens once.
+    Renders nothing when the pair is not declared in the Locker Map (FR-005):
+    absence here is the ordinary state, not an error.
+
+    Reuses the existing `.meta` treatment (muted, non-mono prose) rather than
+    inventing a new component: that is already how the site marks a fact as
+    secondary to the value beside it, and it is never the swap-axis blue/green
+    — a zone belongs to neither side (CLAUDE.md, research.md R4). Prose next to
+    a `.data-value`'s monospace digits is itself the visual distinction FR-008
+    asks for, with no new CSS rule required. %>
+<% if zone_name.present? %>
+  <span class="meta zone-label"><%= t("shared.zone_label") %>: <%= zone_name %></span>
+<% end %>

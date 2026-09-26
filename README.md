@@ -173,6 +173,7 @@ changes, and whatever is already on file stays as it is until it is next edited.
 | **029 — Super admin role and exclusive Danger Zone access** | ✅ Shipped |
 | **030 — Configurable floors and locker number format** | ✅ Shipped |
 | **031 — Locker map (zones and known lockers)** | ✅ Shipped |
+| **032 — Locker zone visibility across screens** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -1077,6 +1078,37 @@ What feature 031 adds — see
 * **the field stays free text everywhere.** No dropdown, no list to choose from while typing — the only
   thing that changed is what a save is willing to accept.
 
+What feature 032 adds — see
+[`specs/032-locker-zone-visibility/spec.md`](specs/032-locker-zone-visibility/spec.md):
+
+* **a locker's zone now shows up everywhere its floor and number already do** — your own locker card on
+  the homepage, the locker search list, a swap proposal received, an exchange in progress, and the admin
+  account directory and detail page — whenever an administrator has declared that floor + locker pair in
+  the Locker Map (031). A locker nobody has mapped yet displays exactly as it always has: no zone, no
+  error, the ordinary state it was before this feature existed;
+* **the two tables that already give a locker number its own cell get a "Zone" column of its own too** —
+  the account directory and the locker search list — with an explicit *No zone* placeholder, the same
+  voice as their neighbouring *Not set*/*No locker assigned* columns, rather than folding the zone into
+  the locker cell;
+* **your own locker card matches Floor and Locker number exactly**: the zone is a third field in the same
+  grid, no colon on its label, the same row at desktop and the same bold label at every width — not the
+  inline sentence every other screen uses for it;
+* **a received proposal reads the zone as one more fact about the locker, on the same line as floor and
+  number**, with the date it was sent moved to its own line below in a fixed `day/month/year à hour:minute`
+  format reserved for that one field — a deliberate, narrow exception to 025's "dates keep one format
+  regardless of language" rule, since this new format is itself still identical in both languages, never
+  translated;
+* **it is read live, never cached.** Renaming a zone, or moving a locker out of it, shows up everywhere
+  that locker is displayed the very next time each screen is shown — there is nothing to invalidate and
+  no separate step;
+* **swap history says nothing about zones.** Each row there already combines two people's floor and
+  locker into one sentence, and a single column cannot cleanly carry two different zones — so the
+  *Locker details* column reads exactly as it did before this feature, on both the self-service history
+  screen and the admin detail page's;
+* **no schema change.** The zone comes from a single batched, indexed lookup against 031's existing
+  `Zone`/`LockerMapEntry` tables — one query per screen, never one per row, whatever the size of the
+  list it is answering for.
+
 ## 👤 Roles
 
 Three roles exist on a LockSwap instance, and every registered account holds exactly one:
@@ -1172,7 +1204,9 @@ visitor, signed in or not, on their very next page load.
 * dates, times, and numbers deliberately **do not** change with the language: `fr.yml` pins
   `date`/`time`/`number` formatting back to the exact English values, overriding what `rails-i18n`
   would otherwise contribute for French, so a timestamp reads identically whichever language is
-  selected;
+  selected — feature 032 adds one narrow, deliberate exception, a second fixed time format used only
+  for the homepage's received-proposal timestamp, itself pinned identically in both languages rather
+  than varying with the site's language the way it does not for any other date on the site;
 * a dedicated test, [`test/i18n_completeness_test.rb`](test/i18n_completeness_test.rb), diffs the two
   locale-file pairs directly and fails the suite if a key exists in English but has no French
   counterpart. That direct diff is the actual enforcement behind "every screen is fully translated" —
@@ -1406,7 +1440,13 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   zone refused with that zone named, the screen itself refused to a standard account, an undeclared
   locker refused on both the self-service form and the admin editor, changing only the floor re-checking
   a pair whose locker number text never moved, and deleting a non-empty zone to watch its lockers go
-  with it while an account already on one of them keeps displaying it but cannot re-save it.
+  with it while an account already on one of them keeps displaying it but cannot re-save it;
+* [`specs/032-locker-zone-visibility/quickstart.md`](specs/032-locker-zone-visibility/quickstart.md) —
+  declaring a zone for a locker and watching its name appear on the homepage, the locker search list, a
+  received proposal, an exchange in progress, and both admin screens, an undeclared locker showing
+  nothing extra on any of them, renaming the zone or removing the locker from it and watching every
+  screen catch up on its next render with no separate step, and the swap-history screens confirmed to
+  show none of it at all.
 
 ## 🚢 Deploy
 

@@ -57,6 +57,8 @@
         <dt class="detail-term"><%= t(".locker_label") %></dt>
         <dd id="admin-user-detail-locker" class="detail-value <%= "detail-value-empty" if @user.saved_locker_number.blank? %>">
           <%= @user.saved_locker_number.presence || t("home.locker_profile.no_locker_assigned") %>
+          <%# 032 FR-003, research.md R2: resolved once in the controller. %>
+          <%= render "shared/zone_label", zone_name: @locker_zone_name %>
         </dd>
       </div>
     </dl>
