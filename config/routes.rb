@@ -93,6 +93,22 @@ Rails.application.routes.draw do
     # remove-then-add, which leaves the resource with exactly the two operations
     # the spec describes and no partially-edited state to validate.
     resources :allowed_email_domains, only: [ :create, :destroy ]
+
+    # 031 FR-001/FR-002: the Locker Map screen. Singular — one screen, like the
+    # danger zone — and controller: for the same pluralization reason as
+    # :locker_number_format above (a bare `resource :locker_map` would route
+    # to "LockerMapsController"). Ordinary admin-only (require_admin!), not the
+    # super-admin-only guard the danger zone and its own resources above use
+    # (research.md R7).
+    resource :locker_map, only: :show, controller: "locker_map"
+
+    # 031 FR-003 through FR-008: zones and, nested under one, the locker
+    # numbers it declares. Nested because a locker map entry only ever makes
+    # sense within its zone — there is no reason to address one independently
+    # (mirrors admin/locker_profile's nesting under admin/users).
+    resources :zones, only: [ :create, :update, :destroy ] do
+      resources :locker_map_entries, only: [ :create, :destroy ]
+    end
   end
 
   # Defines the root path route ("/") — the homepage a successful login lands on (FR-005).

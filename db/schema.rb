@@ -10,12 +10,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_133506) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_213603) do
   create_table "allowed_email_domains", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "domain", null: false
     t.datetime "updated_at", null: false
     t.index ["domain"], name: "index_allowed_email_domains_on_domain", unique: true
+  end
+
+  create_table "locker_map_entries", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "floor", null: false
+    t.string "locker_number", null: false
+    t.datetime "updated_at", null: false
+    t.integer "zone_id", null: false
+    t.index ["floor", "locker_number"], name: "index_locker_map_entries_on_floor_and_locker_number", unique: true
+    t.index ["zone_id"], name: "index_locker_map_entries_on_zone_id"
   end
 
   create_table "locker_number_formats", force: :cascade do |t|
@@ -91,6 +101,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_133506) do
     t.index ["search_cancelled_by_id"], name: "index_users_on_search_cancelled_by_id"
   end
 
+  create_table "zones", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "floor", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["floor", "name"], name: "index_zones_on_floor_and_name", unique: true
+  end
+
+  add_foreign_key "locker_map_entries", "zones"
   add_foreign_key "locker_swap_proposals", "users", column: "recipient_id"
   add_foreign_key "locker_swap_proposals", "users", column: "requester_id"
   add_foreign_key "locker_wishes", "users"

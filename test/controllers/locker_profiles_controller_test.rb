@@ -118,4 +118,25 @@ class LockerProfilesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_nil users(:carol).reload.locker_number
   end
+
+  # 031 FR-010: refused at the model, so a request built by hand is refused too.
+  test "an undeclared locker is refused even when submitted directly, once the map is in use" do
+    Zone.create!(floor: "2", name: "Aile Nord").locker_map_entries.create!(locker_number: "203")
+    sign_in users(:alice)
+
+    patch locker_profile_path, params: { user: { floor: "2", locker_number: "999" } }
+
+    assert_response :unprocessable_entity
+    assert_nil users(:alice).reload.locker_number
+  end
+
+  test "a declared locker is accepted" do
+    Zone.create!(floor: "2", name: "Aile Nord").locker_map_entries.create!(locker_number: "203")
+    sign_in users(:alice)
+
+    patch locker_profile_path, params: { user: { floor: "2", locker_number: "203" } }
+
+    assert_redirected_to root_path
+    assert_equal "203", users(:alice).reload.locker_number
+  end
 end

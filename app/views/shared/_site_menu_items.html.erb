@@ -40,6 +40,11 @@
     <div class="site-submenu-panel">
       <%= link_to t(".users"), admin_users_path, class: "site-nav-link",
             "aria-current": ("page" if current_page?(admin_users_path)) %>
+      <%# 031 FR-001: ordinary admin content, like "Users" above it — not the
+          super-admin-only tier "Danger Zone" below narrows to (research.md
+          R7). %>
+      <%= link_to t(".locker_map"), admin_locker_map_path, class: "site-nav-link",
+            "aria-current": ("page" if current_page?(admin_locker_map_path)) %>
       <%# 016 FR-001/FR-002: the second administrator destination. As above, that
           is presentation only: the refusal that matters is the guard on the
           controllers behind it.

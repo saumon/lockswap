@@ -353,6 +353,52 @@ class AccessibilityTest < ApplicationSystemTestCase
     names.each { |name| assert_match(/\ARemove \S+\.\S+\z/, name) }
   end
 
+  # 031 finding M2: this screen's audits live here, not inline in
+  # admin_locker_map_test.rb — the same per-screen-audit home every other
+  # feature's new screen uses (e.g. the Danger Zone audits just above, 030's
+  # floor-select audits below). grace is a granted (non-super) admin, since
+  # `require_admin!` is this screen's actual guard (research.md R7).
+  test "the locker map is accessible" do
+    zone = Zone.create!(floor: "2", name: "Aile Nord")
+    zone.locker_map_entries.create!(locker_number: "203")
+    log_in_as users(:grace)
+
+    visit admin_locker_map_path
+
+    assert_text "Aile Nord"
+    assert_axe_clean
+  end
+
+  # FR-004a: the standalone new-zone form's refused state carries the
+  # form-error component, the same failure mode worth auditing 016's own
+  # refused-domain test above checks for.
+  test "the locker map's new-zone form shows an accessible error" do
+    log_in_as users(:grace)
+    visit admin_locker_map_path
+
+    within("#new-zone-form") { click_on "Create zone" }
+
+    assert_selector ".form-errors"
+    assert_axe_clean
+  end
+
+  # 031 US3, finding M2: the remove/delete controls are new interactive
+  # elements on this screen, audited here the same way T023's original pair
+  # covers the rest of it.
+  test "the locker map's destroy controls are accessible" do
+    zone = Zone.create!(floor: "2", name: "Aile Nord")
+    zone.locker_map_entries.create!(locker_number: "203")
+    log_in_as users(:grace)
+
+    visit admin_locker_map_path
+
+    # 031 density pass: the per-locker remove control is icon-only (×), named
+    # by aria-label rather than by visible text (mirrors .toast-dismiss, 023).
+    assert_selector "button[aria-label='Remove 203']"
+    assert_selector "button", text: "Delete zone"
+    assert_axe_clean
+  end
+
   # 013 FR-003: the Admin menu open, which is a state that exists on one account's
   # pages and nobody else's — so it would never be looked at unless asked for by
   # name. Audited at both treatments for the same reason 012 audits the panel:

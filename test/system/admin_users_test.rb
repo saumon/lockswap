@@ -127,7 +127,7 @@ class AdminUsersTest < ApplicationSystemTestCase
 
     log_in_as @administrator
     visit edit_user_registration_path
-    accept_confirm { click_button "Cancel my account" }
+    accept_confirm_reliably { click_button "Cancel my account" }
 
     assert_text I18n.t("user.messages.super_admin_uncancellable")
     assert_predicate User.find_by(email: @administrator.email), :present?
@@ -142,11 +142,11 @@ class AdminUsersTest < ApplicationSystemTestCase
     log_in_as users(:grace)
     # 028: the grant control lives on the detail screen now, not the list.
     visit admin_user_path(users(:carol))
-    accept_confirm { click_button "Grant admin rights" }
+    accept_confirm_reliably { click_button "Grant admin rights" }
     assert_text(/granted/i)
 
     visit edit_user_registration_path
-    accept_confirm { click_button "Cancel my account" }
+    accept_confirm_reliably { click_button "Cancel my account" }
     assert_no_current_path edit_user_registration_path
 
     log_in_as users(:carol)

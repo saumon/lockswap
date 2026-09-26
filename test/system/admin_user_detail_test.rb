@@ -135,12 +135,12 @@ class AdminUserDetailTest < ApplicationSystemTestCase
     log_in_as @administrator
 
     visit admin_user_path(users(:bob))
-    accept_confirm do
+    accept_confirm_reliably do
       click_button "Cancel search"
     end
 
     # Waiting assertion first, so the request has actually completed and the
-    # redirect rendered before the database is checked (accept_confirm returns
+    # redirect rendered before the database is checked (accept_confirm_reliably returns
     # as soon as the dialog is dismissed, not once the request finishes). bob
     # is also the recipient on the pending alice_pending_to_bob fixture, so the
     # search-status area still shows that active proposal — only the wish's own
@@ -209,7 +209,7 @@ class AdminUserDetailTest < ApplicationSystemTestCase
     log_in_as @administrator
     visit admin_user_path(users(:carol))
 
-    accept_confirm { click_button "Grant admin rights" }
+    accept_confirm_reliably { click_button "Grant admin rights" }
 
     assert_text(/granted/i)
     assert_no_field "user_password"
@@ -229,7 +229,7 @@ class AdminUserDetailTest < ApplicationSystemTestCase
     log_in_as users(:grace)
 
     visit admin_user_path(users(:carol))
-    accept_confirm { click_button "Grant admin rights" }
+    accept_confirm_reliably { click_button "Grant admin rights" }
 
     assert_text(/granted/i)
     assert_predicate users(:carol).reload, :admin?
@@ -249,7 +249,7 @@ class AdminUserDetailTest < ApplicationSystemTestCase
     using_session(:administrator) do
       log_in_as @administrator
       visit admin_user_path(users(:carol))
-      accept_confirm { click_button "Grant admin rights" }
+      accept_confirm_reliably { click_button "Grant admin rights" }
     end
 
     using_session(:carol) do
@@ -305,7 +305,7 @@ class AdminUserDetailTest < ApplicationSystemTestCase
     log_in_as @administrator
     visit admin_user_path(users(:grace))
 
-    accept_confirm { click_button "Revoke admin rights" }
+    accept_confirm_reliably { click_button "Revoke admin rights" }
 
     assert_text(/revoked/i)
     within "#admin-user-detail" do

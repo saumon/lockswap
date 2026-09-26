@@ -1984,6 +1984,65 @@
     font-size: var(--text-label);
   }
 
+  /* 031: the same width:auto override .filter-text established for 020's
+     filter-bar text inputs, under a name that does not imply filtering — the
+     Locker Map's inline rename and add-locker controls are not filters. Used
+     with an aria-label rather than a visible .field-label: each sits beside
+     the exact fact it acts on (the zone's own heading, the chip list of its
+     lockers), so a second, floating label would restate what the eye already
+     has right next to it — unlike the filter bar's fields, which have
+     nothing else on screen naming what they search. */
+  .field-input-compact {
+    width: auto;
+    min-width: 8rem;
+    padding: var(--spacing-1) var(--spacing-3);
+    font-size: var(--text-label);
+  }
+
+  /* 031: one locker number declared in a zone, with its own removal control
+     inline — the compact bordered mono pill .filter-choice established
+     (021), for a removable fact rather than a navigational choice, so it
+     never carries aria-current and its border never fills on interaction. */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    padding: var(--spacing-1) var(--spacing-2);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: var(--text-data);
+    line-height: 1.5;
+    color: var(--color-ink);
+  }
+
+  /* Mirrors .toast-dismiss's shape (023): an icon-only control whose visible
+     × is not its accessible name — that comes from aria-label, naming the
+     locker number it removes, the same way each domain's own Remove control
+     is named in 016. */
+  .chip-remove {
+    flex: none;
+    padding: 0;
+    background: none;
+    border: 0;
+    color: var(--color-ink-muted);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .chip-remove:hover {
+    color: var(--color-status-error);
+  }
+
+  /* Same reasoning as .stack/.stack-tight's own button_to rule above: the
+     form button_to wraps a chip's remove control in is what Capybara/the
+     browser actually lays out, and a block-level form inside an inline-flex
+     chip is what would otherwise misshape it. */
+  .chip > form.button_to {
+    display: contents;
+  }
+
   /* The table is the one thing allowed to scroll sideways on a narrow screen;
      the page body must not (FR-014). */
   .table-scroll {

@@ -427,6 +427,30 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
       assert_field locator, with: with
     end
 
+    # The same ChromeDriver unreliability fill_in_reliably works around above,
+    # on the click that is supposed to open a native confirm() dialog instead
+    # of on a keystroke: under load, the click is sometimes dropped before it
+    # reaches the browser's own dialog machinery, and Capybara::ModalNotFound
+    # is what that looks like — no dialog ever opened within the wait window.
+    # (admin_users_test.rb had already named this exact risk in its own words,
+    # for one call site: "three more chances for a dropped interaction.")
+    #
+    # Retrying the block is safe here specifically because a *native* dialog
+    # is modal to the whole browser window: one that opened and was merely
+    # missed would leave the session stuck on it, surfacing as a hung or
+    # "unexpected alert open" failure on the very next command — not as
+    # ModalNotFound, which only ever means nothing opened, so nothing the
+    # block does (click a button, submit a form) has happened server-side yet.
+    def accept_confirm_reliably(&block)
+      2.times do
+        return accept_confirm(&block)
+      rescue Capybara::ModalNotFound
+        # one more try
+      end
+
+      accept_confirm(&block)
+    end
+
     # Logs in through the real form, then waits for the homepage so that the
     # browser has actually applied the session cookies before the test moves on.
     def log_in_as(user, password: VALID_PASSWORD)

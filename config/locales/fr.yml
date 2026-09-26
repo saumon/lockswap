@@ -21,6 +21,8 @@ fr:
       site_language_setting: "réglage de langue du site"
       site_floor_list: "liste des étages"
       locker_number_format: "format de numéro de casier"
+      zone: "zone"
+      locker_map_entry: "casier de la cartographie"
     attributes:
       user:
         floor: "Étage"
@@ -36,6 +38,11 @@ fr:
       locker_number_format:
         pattern: "Expression"
         description: "Description"
+      zone:
+        floor: "Étage"
+        name: "Nom"
+      locker_map_entry:
+        locker_number: "Numéro de casier"
 
   date:
     formats:
@@ -68,6 +75,7 @@ fr:
     messages:
       floor_not_offered: "ne fait pas partie des étages du site"
       locker_number_format_mismatch: "doit respecter le format requis : %{expected}"
+      locker_number_unknown: "n'est pas un casier reconnu — demandez à un administrateur de l'ajouter à la cartographie"
 
   admin:
     danger_zone:
@@ -118,6 +126,38 @@ fr:
       update:
         saved: "Format du numéro de casier enregistré."
         cleared: "Format du numéro de casier supprimé : tout numéro de casier est de nouveau accepté."
+    # 031 : l'écran de cartographie des casiers et ses deux écritures.
+    locker_map:
+      show:
+        title: "Cartographie des casiers"
+        new_zone_explanation: "Déclarez une zone sur n'importe quel étage. Une fois créée, ajoutez-y les numéros de casiers qui s'y trouvent physiquement."
+        floor_heading: "Étage %{floor}"
+        no_zones: "Aucune zone n'est encore déclarée sur cet étage."
+        no_lockers: "Aucun numéro de casier n'est encore déclaré dans cette zone."
+    zones:
+      form:
+        create_button: "Créer la zone"
+        rename_button: "Renommer"
+        delete_button: "Supprimer la zone"
+        delete_confirm: "Supprimer la zone « %{zone} » ? Ses %{count} numéros de casiers seront supprimés avec elle."
+        delete_confirm_empty: "Supprimer la zone « %{zone} » ?"
+      create:
+        saved: "Zone créée."
+      update:
+        saved: "Zone renommée."
+        zone_gone: "Cette zone n'existe plus."
+      destroy:
+        deleted: "Zone supprimée."
+    locker_map_entries:
+      form:
+        add_button: "Ajouter un casier"
+        remove_button: "Retirer"
+        remove_confirm: "Retirer le casier %{locker_number} de la zone « %{zone} » ?"
+      create:
+        saved: "Numéro de casier ajouté."
+        zone_gone: "Cette zone n'existe plus."
+      destroy:
+        deleted: "Numéro de casier retiré."
     users:
       index:
         title: "Utilisateurs"
@@ -258,6 +298,13 @@ fr:
       required: "doit contenir au moins un étage"
       too_many: "peut contenir au plus %{count} étages"
       floor_too_long: "ne peut pas contenir « %{floor} » : un étage fait au plus %{count} caractères"
+  # 031 : les deux entités de la cartographie des casiers.
+  zone:
+    messages:
+      name_taken: "est déjà utilisé par une autre zone sur cet étage"
+  locker_map_entry:
+    messages:
+      locker_taken: "est déjà attribué à la zone « %{zone} » sur cet étage"
   allowed_email_domain:
     messages:
       invalid_domain: "doit ressembler à company.com"
@@ -427,6 +474,7 @@ fr:
       proposal_history: "Historique des propositions"
       admin: "Admin"
       users: "Utilisateurs"
+      locker_map: "Cartographie des casiers"
       danger_zone: "Zone de danger"
       log_out: "Se déconnecter"
   user:

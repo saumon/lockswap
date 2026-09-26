@@ -222,6 +222,13 @@ class User < ApplicationRecord
   # lets through (no locker, an unchanged legacy number) and why.
   validates :locker_number, locker_number_format: true, on: :locker_profile_update
 
+  # 031 FR-010: beyond matching the format, the pair has to be a *known* one —
+  # declared by an admin on the Locker Map. Unlike the format check above,
+  # this one is over the pair (floor, locker_number), so it also re-checks
+  # when only the floor moves. See KnownLockerValidator for what it lets
+  # through (no locker, no floor, neither half changing) and why.
+  validates :locker_number, known_locker: true, on: :locker_profile_update
+
   # 005 FR-003: says why the field is refused, so the restriction reads as a
   # state the account is in rather than as something wrong with the input.
   # 025: kept for tests; see LOCKER_NUMBER_TAKEN_MESSAGE's comment.

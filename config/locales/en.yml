@@ -5,13 +5,26 @@ en:
     messages:
       floor_not_offered: "is not one of the site's floors"
       locker_number_format_mismatch: "must match the required format: %{expected}"
+      locker_number_unknown: "is not a recognized locker — ask an administrator to add it to the locker map"
   # 030: English needs no override for most columns — Rails humanizes them
   # correctly on its own — but floors_text is a virtual attribute whose
   # humanized name ("Floors text") is not what the form calls it.
+  #
+  # 031: zone/name and locker_map_entry/locker_number ARE plain humanizable
+  # columns (English needs no override there either) — they are listed here
+  # only because the Locker Map's compact inline controls (finding: too
+  # sparse) read their aria-label from t("activerecord.attributes...")
+  # directly rather than through f.label's own automatic humanization, and a
+  # direct t() call has no such fallback in any language.
   activerecord:
     attributes:
       site_floor_list:
         floors_text: "Floors"
+      zone:
+        name: "Name"
+        floor: "Floor"
+      locker_map_entry:
+        locker_number: "Locker number"
   admin:
     danger_zone:
       show:
@@ -61,6 +74,38 @@ en:
       update:
         saved: "Locker number format saved."
         cleared: "Locker number format removed: any locker number is accepted again."
+    # 031: the Locker Map screen and its two writes.
+    locker_map:
+      show:
+        title: "Locker Map"
+        new_zone_explanation: "Declare a zone on any floor. Once it exists, add the locker numbers physically in it below."
+        floor_heading: "Floor %{floor}"
+        no_zones: "No zones declared on this floor yet."
+        no_lockers: "No locker numbers declared in this zone yet."
+    zones:
+      form:
+        create_button: "Create zone"
+        rename_button: "Rename"
+        delete_button: "Delete zone"
+        delete_confirm: "Delete zone \"%{zone}\"? Its %{count} locker numbers will be deleted with it."
+        delete_confirm_empty: "Delete zone \"%{zone}\"?"
+      create:
+        saved: "Zone created."
+      update:
+        saved: "Zone renamed."
+        zone_gone: "That zone no longer exists."
+      destroy:
+        deleted: "Zone deleted."
+    locker_map_entries:
+      form:
+        add_button: "Add locker"
+        remove_button: "Remove"
+        remove_confirm: "Remove locker %{locker_number} from zone \"%{zone}\"?"
+      create:
+        saved: "Locker number added."
+        zone_gone: "That zone no longer exists."
+      destroy:
+        deleted: "Locker number removed."
     users:
       index:
         title: "Users"
@@ -201,6 +246,13 @@ en:
       required: "must list at least one floor"
       too_many: "can list at most %{count} floors"
       floor_too_long: "cannot include “%{floor}”: a floor is at most %{count} characters"
+  # 031: the Locker Map's two entities.
+  zone:
+    messages:
+      name_taken: "is already used by another zone on this floor"
+  locker_map_entry:
+    messages:
+      locker_taken: "is already claimed by zone \"%{zone}\" on this floor"
   allowed_email_domain:
     messages:
       invalid_domain: "must look like company.com"
@@ -370,6 +422,7 @@ en:
       proposal_history: "Proposal history"
       admin: "Admin"
       users: "Users"
+      locker_map: "Locker Map"
       danger_zone: "Danger Zone"
       log_out: "Log out"
   user:
