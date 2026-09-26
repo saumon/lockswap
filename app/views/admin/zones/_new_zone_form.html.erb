@@ -1,0 +1,26 @@
+<%# locals: (zone:) %>
+
+<%# research.md R2's correction (finding C1): this is the only place
+    shared/_floor_field is rendered for a zone — a real, free-text-capable
+    floor picker, not one bound to a pre-existing floor section, so an admin
+    can declare a zone on any floor, including a brand-new one nothing knows
+    about yet. %>
+<div id="new-zone-form" class="card stack-tight">
+  <p class="meta"><%= t("admin.locker_map.show.new_zone_explanation") %></p>
+
+  <%= render "devise/shared/error_messages", resource: zone %>
+
+  <%= form_with model: zone, url: admin_zones_path, html: { class: "stack-tight", novalidate: true } do |f| %>
+    <div class="field">
+      <%= f.label :floor, class: "field-label" %>
+      <%= render "shared/floor_field", form: f %>
+    </div>
+
+    <div class="field">
+      <%= f.label :name, class: "field-label" %>
+      <%= f.text_field :name, autocomplete: "off", class: "field-input" %>
+    </div>
+
+    <%= f.submit t("admin.zones.form.create_button"), class: "btn btn-primary" %>
+  <% end %>
+</div>

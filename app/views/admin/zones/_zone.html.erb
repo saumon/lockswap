@@ -1,0 +1,73 @@
+<%# locals: (zone:, locker_map_entry:) %>
+
+<%# .persisted? excludes a failed, unsaved add-locker submission — building
+    it through the `zone.locker_map_entries` association (in the controller,
+    so its errors render below) also appends it in memory to this very
+    collection, and it has no id to link a Remove control to. %>
+<% saved_entries = zone.locker_map_entries.select(&:persisted?) %>
+
+<%# US3, FR-006, research.md R4: deleting a non-empty zone cascades to every
+    locker in it, in one action — the confirmation names the zone and, when
+    it has entries, how many will go with it (finding matches revoke_admin's
+    "confirmation lives in the view" posture). %>
+<% delete_message = if saved_entries.any?
+     t("admin.zones.form.delete_confirm", zone: zone.name, count: saved_entries.size)
+   else
+     t("admin.zones.form.delete_confirm_empty", zone: zone.name)
+   end %>
+
+<%# CLAUDE.md: the default (system, navy) hinge — a zone belongs to neither
+    side of the swap axis, so it never carries --you/--them. Densified
+    (031): a zone used to run five stacked blocks tall, mostly the
+    whitespace two full-width forms carry; the heading, the rename control
+    and the delete control now share one wrapping row, and the lockers
+    themselves are a wrapped run of chips rather than one full-width line
+    each — the difference between one zone and the eighteen a real building
+    has. %>
+<div id="zone-<%= zone.id %>" class="card stack-tight">
+  <%= render "devise/shared/error_messages", resource: zone %>
+
+  <div class="row">
+    <h3 class="section-title"><%= zone.name %></h3>
+
+    <%= form_with model: zone, url: admin_zone_path(zone), method: :patch,
+                  html: { class: "row", novalidate: true } do |f| %>
+      <%= f.text_field :name, autocomplete: "off", class: "field-input field-input-compact",
+            aria: { label: t("activerecord.attributes.zone.name") } %>
+      <%= f.submit t("admin.zones.form.rename_button"), class: "btn btn-secondary btn-sm" %>
+    <% end %>
+
+    <%= button_to t("admin.zones.form.delete_button"), admin_zone_path(zone), method: :delete,
+          class: "btn btn-destructive btn-sm", data: { confirm: delete_message, turbo_confirm: delete_message } %>
+  </div>
+
+  <% if saved_entries.any? %>
+    <ul class="row">
+      <% saved_entries.each do |entry| %>
+        <%# Guarded the same way deleting the zone itself is (research.md R4's
+            "confirmation lives in the view" posture) — a single click that
+            removes real data gets a confirmation naming exactly what goes,
+            whether it takes the rest of the zone with it or not. %>
+        <% remove_message = t("admin.locker_map_entries.form.remove_confirm", locker_number: entry.locker_number, zone: zone.name) %>
+        <li id="locker-map-entry-<%= entry.id %>" class="chip">
+          <span><%= entry.locker_number %></span>
+          <%= button_to admin_zone_locker_map_entry_path(zone, entry), method: :delete,
+                class: "chip-remove",
+                data: { confirm: remove_message, turbo_confirm: remove_message },
+                aria: { label: "#{t("admin.locker_map_entries.form.remove_button")} #{entry.locker_number}" } do %>×<% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="detail-value-empty"><%= t("admin.locker_map.show.no_lockers") %></p>
+  <% end %>
+
+  <%= render "devise/shared/error_messages", resource: locker_map_entry %>
+
+  <%= form_with model: locker_map_entry, url: admin_zone_locker_map_entries_path(zone),
+                html: { class: "row", novalidate: true } do |f| %>
+    <%= f.text_field :locker_number, autocomplete: "off", class: "field-input field-input-compact data-value",
+          aria: { label: t("activerecord.attributes.locker_map_entry.locker_number") } %>
+    <%= f.submit t("admin.locker_map_entries.form.add_button"), class: "btn btn-primary btn-sm" %>
+  <% end %>
+</div>

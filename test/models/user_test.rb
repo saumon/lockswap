@@ -1039,4 +1039,82 @@ class UserTest < ActiveSupport::TestCase
 
     assert_equal recorded, proposal.reload.attributes.slice(*recorded.keys)
   end
+  # --- 031 User Story 2: locker numbers must be known to the Locker Map ------
+
+  test "an undeclared floor + locker number pair is refused, a declared one is accepted" do
+    Zone.create!(floor: "2", name: "Aile Nord").locker_map_entries.create!(locker_number: "203")
+    user = users(:alice)
+
+    user.floor = "2"
+    user.locker_number = "999"
+    assert_not user.valid?(:locker_profile_update)
+    assert_includes user.errors[:locker_number], I18n.t("errors.messages.locker_number_unknown")
+
+    user.locker_number = "203"
+    assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
+  end
+
+  # FR-013: a pair already on file keeps validating when nothing about it is
+  # moving, even once the map is in active use elsewhere — the grandfather
+  # rule. (Declaring an unrelated entry makes the map non-empty, so this
+  # exercises the "unchanged" skip itself, not merely FR-013a's permissive
+  # empty-map baseline.)
+  test "an already-saved pair stays valid when left unchanged, whatever else changes" do
+    Zone.create!(floor: "9", name: "Elsewhere").locker_map_entries.create!(locker_number: "1")
+    user = users(:carol)
+    user.update_columns(floor: "2", locker_number: "201")
+
+    user.floor = "2"
+    user.locker_number = "201"
+    assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
+
+    user.email = "carol.renamed@example.com"
+    assert user.save, user.errors.full_messages.to_sentence
+  end
+
+  # US2 acceptance scenario 4, research.md R3: the pair, not either half
+  # alone, is what has to be known — changing only the floor while the
+  # locker-number text stays the same still re-checks the pair.
+  test "changing only the floor re-checks the pair, even though the locker number text is unchanged" do
+    Zone.create!(floor: "2", name: "Aile Nord").locker_map_entries.create!(locker_number: "203")
+    user = users(:carol)
+    user.update_columns(floor: "2", locker_number: "203")
+
+    user.floor = "3"
+    assert_not user.valid?(:locker_profile_update)
+    assert_includes user.errors[:locker_number], I18n.t("errors.messages.locker_number_unknown")
+  end
+
+  test "changing only the locker number re-checks the pair, even though the floor is unchanged" do
+    Zone.create!(floor: "2", name: "Aile Nord").locker_map_entries.create!(locker_number: "203")
+    user = users(:carol)
+    user.update_columns(floor: "2", locker_number: "203")
+
+    user.locker_number = "999"
+    assert_not user.valid?(:locker_profile_update)
+  end
+
+  # FR-013a, research.md R8: the map's own "not configured" baseline — every
+  # pair is accepted while nothing has ever been declared anywhere on the
+  # site, exactly as before this feature existed. Found during implementation:
+  # a strict empty-map reading broke every pre-existing save path.
+  test "with nothing declared in the map at all, any locker number is accepted" do
+    user = users(:alice)
+
+    user.floor = "2"
+    user.locker_number = "999"
+    assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
+
+    user.locker_number = "   "
+    assert_nil user.locker_number
+    assert user.valid?(:locker_profile_update), user.errors.full_messages.to_sentence
+  end
+
+  test "the known-locker rule does not apply outside the locker profile save path" do
+    user = users(:carol)
+    user.update_columns(floor: "2", locker_number: "999")
+    user.email = "carol.again@example.com"
+
+    assert user.save, user.errors.full_messages.to_sentence
+  end
 end

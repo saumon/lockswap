@@ -511,4 +511,48 @@ class LockerProfileTest < ApplicationSystemTestCase
 
     within("#locker_number_hint") { assert_no_text "Required format" }
   end
+
+  # --- 031 User Story 2: only a known locker can be saved --------------------
+
+  # FR-009: unchanged from before this feature — still a plain text box.
+  test "the locker number field stays free text, whether or not the map is in use" do
+    Zone.create!(floor: "2", name: "Aile Nord").locker_map_entries.create!(locker_number: "203")
+    log_in_as users(:carol)
+    open_locker_editor
+
+    assert_selector "input[type='text']#user_locker_number"
+  end
+
+  test "saving an undeclared locker number is refused" do
+    Zone.create!(floor: "2", name: "Aile Nord").locker_map_entries.create!(locker_number: "203")
+    log_in_as users(:carol)
+    open_locker_editor
+
+    save_locker_details "Floor" => "2", "Locker number" => "999"
+
+    within("#error_explanation") { assert_text I18n.t("errors.messages.locker_number_unknown") }
+    assert_nil users(:carol).reload.locker_number
+  end
+
+  test "saving a declared locker number succeeds" do
+    Zone.create!(floor: "2", name: "Aile Nord").locker_map_entries.create!(locker_number: "203")
+    log_in_as users(:carol)
+    open_locker_editor
+
+    save_locker_details "Floor" => "2", "Locker number" => "203"
+
+    assert_selector "#locker-profile-locker-number", text: "203"
+  end
+
+  # US2 acceptance scenario 4: the pair, not either half alone, is checked.
+  test "changing only the floor to one where the same locker number is not declared is refused" do
+    Zone.create!(floor: "2", name: "Aile Nord").locker_map_entries.create!(locker_number: "203")
+    users(:carol).update_columns(floor: "2", locker_number: "203")
+    log_in_as users(:carol)
+    open_locker_editor
+
+    save_locker_details "Floor" => "3"
+
+    within("#error_explanation") { assert_text I18n.t("errors.messages.locker_number_unknown") }
+  end
 end

@@ -110,4 +110,17 @@ class Admin::UserLockerProfilesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_nil users(:carol).reload.locker_number
   end
+
+  # 031 FR-010, US2 acceptance scenario 3: the admin's edit is held to the
+  # same known-locker rule, once the map is in use.
+  test "an undeclared locker is refused even for an administrator's edit" do
+    Zone.create!(floor: "2", name: "Aile Nord").locker_map_entries.create!(locker_number: "203")
+    sign_in users(:frank)
+
+    patch admin_user_locker_profile_path(users(:carol)),
+      params: { user: { floor: "2", locker_number: "999" } }
+
+    assert_response :unprocessable_entity
+    assert_nil users(:carol).reload.locker_number
+  end
 end

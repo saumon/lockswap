@@ -159,7 +159,7 @@ class AdminDangerZoneTest < ApplicationSystemTestCase
     log_in_as @administrator
     visit admin_danger_zone_path
 
-    accept_confirm do
+    accept_confirm_reliably do
       within("#allowed-email-domain-row-#{domain.id}") { click_button "Remove" }
     end
 
@@ -175,7 +175,7 @@ class AdminDangerZoneTest < ApplicationSystemTestCase
     log_in_as @administrator
     visit admin_danger_zone_path
 
-    accept_confirm { within("#allowed-email-domain-row-#{domain.id}") { click_button "Remove" } }
+    accept_confirm_reliably { within("#allowed-email-domain-row-#{domain.id}") { click_button "Remove" } }
     assert_selector "#danger-zone-allowed-domains-empty"
 
     click_on "Log out"

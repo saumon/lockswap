@@ -1,0 +1,33 @@
+<% content_for :title, t(".title") %>
+
+<%# 031 User Story 1: the site's single source of truth for which locker
+    numbers exist and where — zones grouped by floor, each holding the
+    locker numbers physically in it. %>
+<div class="stack">
+  <div class="page-head">
+    <h1 class="page-title"><%= t(".title") %></h1>
+  </div>
+
+  <%# finding C1: one standalone form, not nested in any floor section — this
+      is what lets an admin declare the very first zone on a floor nothing
+      else knows about yet (research.md R2's correction). %>
+  <%= render "admin/zones/new_zone_form", zone: @new_zone %>
+
+  <% @floors.each do |floor| %>
+    <div class="stack-tight">
+      <h2 class="section-title"><%= t(".floor_heading", floor: floor) %></h2>
+
+      <% zones = @zones_by_floor[floor] || [] %>
+      <% if zones.empty? %>
+        <p class="detail-value-empty"><%= t(".no_zones") %></p>
+      <% else %>
+        <% zones.each do |zone| %>
+          <%# A rejected add-locker submission re-appears on the zone it was
+              submitted to, with its error — everywhere else, a blank form. %>
+          <% failed_entry = @locker_map_entry if @locker_map_entry&.zone_id == zone.id %>
+          <%= render "admin/zones/zone", zone: zone, locker_map_entry: failed_entry || zone.locker_map_entries.new %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

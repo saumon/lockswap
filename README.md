@@ -172,6 +172,7 @@ changes, and whatever is already on file stays as it is until it is next edited.
 | **028 — Admin rights controls on the user detail screen** | ✅ Shipped |
 | **029 — Super admin role and exclusive Danger Zone access** | ✅ Shipped |
 | **030 — Configurable floors and locker number format** | ✅ Shipped |
+| **031 — Locker map (zones and known lockers)** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -1044,6 +1045,38 @@ What feature 030 adds — see
   number and blocks nothing; a number that does not follow it is kept until it is next changed, and the
   change has to follow it. Past swap proposals keep the floor and number they were recorded with.
 
+What feature 031 adds — see
+[`specs/031-locker-map-zones/spec.md`](specs/031-locker-map-zones/spec.md):
+
+* **an admin-only Locker Map screen says which lockers actually exist, and where.** Reachable from the
+  same Admin menu entry as *Users* — no narrower than that, unlike the Danger Zone — it lets an
+  administrator declare, floor by floor, the **zones** the building is divided into and, inside each
+  one, the exact locker numbers physically in it;
+* **a zone is a name and a floor, and the floor is fixed the moment it is created.** Relocating one
+  means deleting it and starting again on the right floor rather than editing it into place — a zone is
+  a physical location, not a label free to drift. Its name has to be unique among the zones on that one
+  floor and nowhere else: the same name is free to reuse a floor up;
+* **the floor + locker number pair is still the whole of what makes a locker unique** — 006's rule,
+  untouched. The zone a locker sits in is a label attached to that pair, not part of its identity, so
+  the same number can never be declared twice on one floor whichever zone the second attempt names —
+  it is refused, naming the zone that already holds it;
+* **every existing locker-number field keeps taking anything typed into it, but only accepts what the
+  map already recognises.** Your own locker details and an administrator's edit of somebody else's are
+  both checked against it now — and not the locker number in isolation either: changing only your floor
+  re-checks the whole pair, since the same digits on a different floor are a different locker that may
+  not be declared there;
+* **nothing changes until the first locker is ever declared, anywhere on the site.** A fresh instance,
+  or one updated to this version, keeps accepting any floor and locker number exactly as it always has —
+  the same "inert until switched on" posture 030 gave the floor list and the locker format. The moment
+  an administrator declares one locker, in one zone, on one floor, the check goes live everywhere at
+  once;
+* **removing a locker, or deleting a zone outright, strands nobody already on it.** An account's saved
+  floor and locker number keep displaying exactly as before — deleting a zone cascades to every locker
+  it held, in one action, with no separate emptying step required — but re-saving that same pair
+  afterward is treated as new and refused until a zone declares it again;
+* **the field stays free text everywhere.** No dropdown, no list to choose from while typing — the only
+  thing that changed is what a save is willing to accept.
+
 ## 👤 Roles
 
 Three roles exist on a LockSwap instance, and every registered account holds exactly one:
@@ -1051,7 +1084,7 @@ Three roles exist on a LockSwap instance, and every registered account holds exa
 | Role | Who holds it | Can do |
 | --- | --- | --- |
 | **Standard** | Everyone who registers, by default | Manage their own floor and locker, declare a locker wish, send and answer swap proposals — everything an employee needs to swap lockers. |
-| **Admin** | Granted by an existing administrator, to any number of accounts ([015](specs/015-grant-admin-rights/spec.md)) | Everything a standard account can, plus the **Users** directory ([013](specs/013-admin-user-directory/spec.md)): view, edit floor/locker, and cancel a search on anyone's behalf ([027](specs/027-admin-user-detail-view/spec.md)), and grant or revoke administrator rights on any other account ([015](specs/015-grant-admin-rights/spec.md), [028](specs/028-move-admin-grant-button/spec.md)). |
+| **Admin** | Granted by an existing administrator, to any number of accounts ([015](specs/015-grant-admin-rights/spec.md)) | Everything a standard account can, plus the **Users** directory ([013](specs/013-admin-user-directory/spec.md)): view, edit floor/locker, and cancel a search on anyone's behalf ([027](specs/027-admin-user-detail-view/spec.md)), grant or revoke administrator rights on any other account ([015](specs/015-grant-admin-rights/spec.md), [028](specs/028-move-admin-grant-button/spec.md)), and declare the site's zones and known locker numbers on the **Locker Map** ([031](specs/031-locker-map-zones/spec.md)). |
 | **Super Admin** | Exactly one account, always: whichever one registered first on the site ([013](specs/013-admin-user-directory/spec.md), named explicitly by [029](specs/029-super-admin-role/spec.md)) | Everything an admin can, plus exclusive access to the **Danger Zone** ([016](specs/016-danger-zone-email-domains/spec.md)) — the allowed email domains, the site's language ([025](specs/025-multilingual-support/spec.md)), and the site's floor list and locker number format ([030](specs/030-configurable-floors-locker-format/spec.md)). |
 
 What makes the super admin different is not a bigger set of permissions layered on top — it is that
@@ -1157,6 +1190,17 @@ visitor, signed in or not, on their very next page load.
 ```sh
 bundle install
 bin/rails db:prepare
+```
+
+`db/seeds.rb` seeds a ready-to-use **development** database: the Danger Zone set to French, with floors
+**RdC, 1, 2, 3, 4, 5** and a three-digit locker number format (`\d{3}`, "3 chiffres, ex. 042."), and the
+Locker Map populated with three zones per floor — *Casiers 001 à 040*, *041 à 080*, *081 à 120* — each
+already holding its own zero-padded locker numbers (18 zones, 720 lockers in total). It only runs in
+development — production's floors, format and zones are the real building's, entered by hand — and it is
+idempotent, so it is safe to run again at any point:
+
+```sh
+bin/rails db:seed
 ```
 
 ## ▶️ Run
@@ -1355,7 +1399,14 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   cleaned up on the way in, each floor form turning into a choice from it in the order typed, a removed
   floor kept and marked rather than lost, a locker number format with its description refusing a number
   that does not follow it and accepting one that does, an invalid pattern refused with the old format
-  still in force, and a granted administrator refused both settings.
+  still in force, and a granted administrator refused both settings;
+* [`specs/031-locker-map-zones/quickstart.md`](specs/031-locker-map-zones/quickstart.md) —
+  declaring a zone with three locker numbers from the Locker Map, a duplicate zone name on the same
+  floor refused and the same name accepted on another, a locker number already claimed by a different
+  zone refused with that zone named, the screen itself refused to a standard account, an undeclared
+  locker refused on both the self-service form and the admin editor, changing only the floor re-checking
+  a pair whose locker number text never moved, and deleting a non-empty zone to watch its lockers go
+  with it while an account already on one of them keeps displaying it but cannot re-save it.
 
 ## 🚢 Deploy
 
