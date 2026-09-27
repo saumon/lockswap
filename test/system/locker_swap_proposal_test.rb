@@ -250,32 +250,36 @@ class LockerSwapProposalTest < ApplicationSystemTestCase
     assert_no_selector "#swap-proposals-declined"
   end
 
-  # User Story 4, Acceptance Scenarios 1 and 2 (FR-013): accepted, then actually
-  # swapped — the two accounts end up holding each other's lockers.
-  test "the recipient can confirm the exchange and both lockers change hands" do
+  # 033 User Story 3 (FR-011..FR-013): once accepted, the exchange is services
+  # généraux's to finalize. Neither party is offered a control; both read the
+  # same words, saying who it now rests with.
+  test "the recipient of an accepted exchange is told it awaits validation, with nothing to press" do
     LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob), status: :accepted)
 
     log_in_as users(:bob)
 
     within "#swap-exchange-in-progress" do
       assert_text users(:dave).email
-      click_on "Confirm exchange completed"
+      assert_selector "h2", text: "Awaiting validation"
+      # Says what was accepted — the proposal — so it cannot be read as the
+      # exchange itself being settled while it still awaits validation.
+      assert_selector ".badge", text: "Proposal accepted"
+      assert_text I18n.t("home.swap_exchange_in_progress.pending_admin_validation")
+      assert_no_selector "button, input[type=submit]"
     end
-
-    assert_text "Exchange confirmed"
-    assert_equal [ "4", "D07" ], [ users(:bob).reload.floor, users(:bob).locker_number ]
-    assert_equal [ "3", "B12" ], [ users(:dave).reload.floor, users(:dave).locker_number ]
+    assert_no_text "Exchange in progress"
   end
 
-  # Acceptance Scenario 3 / FR-012: the requester watches, they do not confirm.
-  test "the requester sees the exchange but is offered no confirmation" do
+  test "the requester of an accepted exchange is told the same, with nothing to press" do
     LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob), status: :accepted)
 
     log_in_as users(:dave)
 
     within "#swap-exchange-in-progress" do
       assert_text users(:bob).email
-      assert_no_selector "input[value='Confirm exchange completed']"
+      assert_selector "h2", text: "Awaiting validation"
+      assert_text I18n.t("home.swap_exchange_in_progress.pending_admin_validation")
+      assert_no_selector "button, input[type=submit]"
     end
   end
 
@@ -341,6 +345,18 @@ class LockerSwapProposalTest < ApplicationSystemTestCase
     visit locker_swap_proposals_path
 
     within("#swap-proposal-history-row-#{proposal.id}") { assert_text "Completed" }
+  end
+
+  # 033 research.md R12: the history says the same thing the homepage does about
+  # an accepted exchange, not the retired "in progress".
+  test "the history shows an accepted exchange as awaiting validation" do
+    proposal = LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob),
+                                          status: :accepted)
+
+    log_in_as users(:dave)
+    visit locker_swap_proposals_path
+
+    within("#swap-proposal-history-row-#{proposal.id}-status") { assert_text "Awaiting validation" }
   end
 
   # Acceptance Scenario 4: never having proposed anything is not an error.

@@ -245,44 +245,20 @@ class LockerSwapProposalsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Found another swap", locker_swap_proposals(:dave_declined_to_carol).reload.decline_comment
   end
 
-  # FR-012, FR-013: the recipient's confirmation is what moves the lockers.
-  test "the recipient can confirm an exchange and both lockers move" do
+  # 033 FR-011, research.md R8: finalizing an exchange is an administrator's
+  # decision now (Admin::SwapValidationsController). The self-service route is
+  # gone rather than guarded, so either party arriving at it — a bookmark, an
+  # old tab — finds nothing there, and nothing moves.
+  test "the retired confirm path no longer exists" do
     proposal = LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob),
                                           status: :accepted)
     sign_in users(:bob)
 
-    patch confirm_locker_swap_proposal_path(proposal)
-
-    assert_redirected_to root_path
-    assert_predicate proposal.reload, :completed?
-    assert_equal [ "3", "B12" ], [ users(:dave).reload.floor, users(:dave).locker_number ]
-    assert_equal [ "4", "D07" ], [ users(:bob).reload.floor, users(:bob).locker_number ]
-  end
-
-  # Acceptance Scenario 3 / FR-012: the requester has no confirmation to give.
-  test "the requester cannot confirm the exchange" do
-    proposal = LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob),
-                                          status: :accepted)
-    sign_in users(:dave)
-
-    patch confirm_locker_swap_proposal_path(proposal)
+    patch "/locker_swap_proposals/#{proposal.id}/confirm"
 
     assert_response :not_found
     assert_predicate proposal.reload, :accepted?
-    assert_equal "D07", users(:dave).reload.locker_number
-  end
-
-  # Acceptance Scenario 4 / FR-014: confirming twice would swap the lockers back.
-  test "an exchange that has been confirmed cannot be confirmed again" do
-    proposal = LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob),
-                                          status: :accepted)
-    proposal.confirm!
-    sign_in users(:bob)
-
-    patch confirm_locker_swap_proposal_path(proposal)
-
-    assert_response :not_found
-    assert_equal [ "3", "B12" ], [ users(:dave).reload.floor, users(:dave).locker_number ]
+    assert_equal "B12", users(:bob).reload.locker_number
   end
 
   # FR-016 for the verbs a browser cannot issue on its own, mirroring how 003
@@ -301,16 +277,6 @@ class LockerSwapProposalsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to new_user_session_path
     assert_predicate locker_swap_proposals(:alice_pending_to_bob).reload, :pending?
-  end
-
-  test "an anonymous visitor cannot confirm an exchange" do
-    proposal = LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob),
-                                          status: :accepted)
-
-    patch confirm_locker_swap_proposal_path(proposal)
-
-    assert_redirected_to new_user_session_path
-    assert_predicate proposal.reload, :accepted?
   end
 
   test "an anonymous visitor cannot accept or decline a proposal" do

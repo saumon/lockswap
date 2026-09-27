@@ -1,5 +1,6 @@
 # The swap proposal lifecycle (004): proposing, withdrawing, accepting,
-# declining, confirming, and the history screen. Deliberately separate from
+# declining, and the history screen. Finalizing an accepted exchange moved to
+# Admin::SwapValidationsController (033). Deliberately separate from
 # LockerWishesController and HomeController — those two only surface proposals,
 # the state transitions all live here and on the model.
 class LockerSwapProposalsController < ApplicationController
@@ -55,15 +56,6 @@ class LockerSwapProposalsController < ApplicationController
     pending_received_proposal.decline!(params.dig(:locker_swap_proposal, :decline_comment))
 
     redirect_to root_path, notice: t(".declined")
-  end
-
-  # FR-012, FR-013: only the recipient who accepted can say the swap actually
-  # happened. Scoping to their own accepted received proposals is what enforces
-  # that — to the requester it is simply not there to confirm (FR-014).
-  def confirm
-    current_user.received_swap_proposals.accepted.find(params[:id]).confirm!
-
-    redirect_to root_path, notice: t(".confirmed")
   end
 
   private

@@ -5,10 +5,14 @@
 class LockerSwapProposal < ApplicationRecord
   belongs_to :requester, class_name: "User"
   belongs_to :recipient, class_name: "User"
+  # 033 FR-014: the administrator who validated or refused this proposal. Nil
+  # for a decision either party made about their own exchange.
+  belongs_to :admin_decided_by, class_name: "User", optional: true
 
   # Mutually exclusive by construction: separate booleans would allow
-  # combinations like declined and completed at once. "accepted" is the spec's
-  # "exchange in progress".
+  # combinations like declined and completed at once. "accepted" is 004's
+  # "exchange in progress", which 033 turned into "awaiting an administrator's
+  # validation" — the same state, only who may settle it changed.
   enum :status, { pending: 0, accepted: 1, declined: 2, withdrawn: 3, completed: 4 }
 
   # All four rules decide whether a proposal may be *created*; none of them
@@ -64,17 +68,21 @@ class LockerSwapProposal < ApplicationRecord
   # FR-007, FR-008: the recipient's no, with their reasons if they gave any.
   # requester_acknowledged_at stays nil, which is what puts it on the requester's
   # homepage the next time they look (FR-009).
-  def decline!(comment = nil)
-    return false unless pending?
+  #
+  # 033 FR-005: also an administrator's refusal of an exchange already accepted —
+  # which controller may reach which status is decided by its scope, not here.
+  def decline!(comment = nil, by: nil)
+    return false unless pending? || accepted?
 
     update!(status: :declined, decided_at: Time.current, decline_comment: comment.presence,
-            **resolution_snapshot)
+            admin_decided_by: by, **resolution_snapshot)
   end
 
   # FR-013: the exchange has happened in the building, so the records catch up —
-  # the two lockers change hands and both wishes are satisfied. Only the recipient
-  # gets here (the controller scopes it), and only once (FR-012, FR-014).
-  def confirm!
+  # the two lockers change hands and both wishes are satisfied. Only once
+  # (FR-014); since 033, only an administrator gets here
+  # (Admin::SwapValidationsController), recorded as `by`.
+  def confirm!(by: nil)
     return false unless accepted?
 
     transaction do
@@ -83,7 +91,7 @@ class LockerSwapProposal < ApplicationRecord
       # (005 FR-009).
       snapshot = resolution_snapshot
       swap_lockers
-      update!(status: :completed, completed_at: Time.current, **snapshot)
+      update!(status: :completed, completed_at: Time.current, admin_decided_by: by, **snapshot)
       requester.locker_wish&.destroy
       recipient.locker_wish&.destroy
     end

@@ -391,4 +391,70 @@ class LockerSwapProposalTest < ActiveSupport::TestCase
     assert_not completed.confirm!
     assert_equal [ "3", "B12" ], [ users(:dave).reload.floor, users(:dave).locker_number ]
   end
+
+  # --- 033: an administrator decides an accepted exchange --------------------
+
+  # 033 FR-005, research.md R4: refusal reaches an exchange already accepted,
+  # and moves nobody's locker.
+  test "an accepted proposal can be declined, not only a pending one" do
+    proposal = LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob),
+                                          status: :accepted)
+
+    assert proposal.decline!("Physical swap did not happen")
+
+    assert_predicate proposal.reload, :declined?
+    assert_equal "Physical swap did not happen", proposal.decline_comment
+    assert_equal [ "4", "D07" ], [ users(:dave).reload.floor, users(:dave).locker_number ]
+    assert_equal [ "3", "B12" ], [ users(:bob).reload.floor, users(:bob).locker_number ]
+    assert_not LockerSwapProposal.in_progress_for?(users(:dave))
+    assert_not LockerSwapProposal.in_progress_for?(users(:bob))
+  end
+
+  test "a withdrawn or completed proposal still cannot be declined" do
+    withdrawn = locker_swap_proposals(:alice_withdrawn_to_carol)
+    assert_not withdrawn.decline!
+    assert_predicate withdrawn.reload, :withdrawn?
+
+    completed = LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob),
+                                           status: :accepted)
+    completed.confirm!
+    assert_not completed.decline!
+    assert_predicate completed.reload, :completed?
+  end
+
+  # 033 FR-014, research.md R3/R5.
+  test "confirm! records which administrator decided it, when given one" do
+    proposal = LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob),
+                                          status: :accepted)
+
+    proposal.confirm!(by: users(:grace))
+
+    assert_equal users(:grace), proposal.reload.admin_decided_by
+  end
+
+  test "decline! records which administrator decided it, when given one" do
+    proposal = LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob),
+                                          status: :accepted)
+
+    proposal.decline!(nil, by: users(:grace))
+
+    assert_equal users(:grace), proposal.reload.admin_decided_by
+  end
+
+  test "a decision made without an administrator records none" do
+    assert locker_swap_proposals(:alice_pending_to_bob).decline!
+    assert_nil locker_swap_proposals(:alice_pending_to_bob).reload.admin_decided_by
+  end
+
+  # data-model.md: the record outlives the administrator who made it.
+  test "deleting the deciding administrator keeps the decision and clears only the administrator" do
+    proposal = LockerSwapProposal.create!(requester: users(:dave), recipient: users(:bob),
+                                          status: :accepted)
+    proposal.decline!(nil, by: users(:grace))
+
+    users(:grace).destroy
+
+    assert_predicate proposal.reload, :declined?
+    assert_nil proposal.admin_decided_by_id
+  end
 end

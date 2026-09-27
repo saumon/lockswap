@@ -1,0 +1,71 @@
+<% content_for :title, t(".title") %>
+
+<%# 033 FR-001/FR-002: every exchange both parties have agreed to, waiting on
+    services généraux. The same act-on-one-item shape as the recipient's own
+    received proposals (home/_swap_proposals_received) — a primary action, and
+    refusing behind a <details> holding the optional comment, no JavaScript.
+
+    The tiles take no rail colour: an exchange belongs to neither side of the
+    swap axis from where an administrator stands (CLAUDE.md). %>
+<div class="stack">
+  <div class="page-head">
+    <h1 class="page-title"><%= t(".title") %></h1>
+  </div>
+
+  <div id="admin-swap-validations" class="card stack-tight">
+    <p class="card-lead"><%= t(".lead") %></p>
+
+    <% if @proposals.any? %>
+      <ul class="stack-tight">
+        <% @proposals.each do |proposal| %>
+          <li id="swap-validation-row-<%= proposal.id %>" class="tile">
+            <div class="tile-head">
+              <div class="stack-tight">
+                <% [ [ :requester, proposal.requester ], [ :recipient, proposal.recipient ] ].each do |role, party| %>
+                  <div>
+                    <p class="tile-line">
+                      <span class="meta"><%= t(".#{role}") %></span>
+                      <span class="strong data-value"><%= party.email %></span>
+                    </p>
+                    <p id="swap-validation-row-<%= proposal.id %>-<%= role %>-details" class="meta">
+                      <%= t(".locker_details", floor: party.floor.presence || t(".not_set"),
+                            locker: party.locker_number.presence || t(".none_assigned")) %>
+                      <%= render "shared/zone_label", zone_name: @zone_names[[ party.floor, party.locker_number ]] %>
+                    </p>
+                  </div>
+                <% end %>
+                <p class="meta"><%= t(".accepted_at", accepted_at: l(proposal.decided_at, format: :numeric_at)) if proposal.decided_at %></p>
+              </div>
+
+              <%= button_to t(".validate_button"), validate_admin_swap_validation_path(proposal), method: :patch,
+                    class: "btn btn-primary btn-sm",
+                    aria: { label: t(".validate_aria_label", requester: proposal.requester.email,
+                                     recipient: proposal.recipient.email) },
+                    form: { data: { turbo_submits_with: t(".validating") } } %>
+            </div>
+
+            <details class="tile-disclosure">
+              <summary class="tile-disclosure-summary"><%= t(".refuse") %></summary>
+
+              <%= form_with url: refuse_admin_swap_validation_path(proposal), method: :patch,
+                            class: "stack-tight tile-disclosure-body" do |f| %>
+                <% comment_field_id = "refuse-comment-#{proposal.id}" %>
+                <div class="field">
+                  <%= f.label :"locker_swap_proposal[decline_comment]", t(".refuse_comment_label"),
+                        for: comment_field_id, class: "field-label" %>
+                  <%= f.text_area :"locker_swap_proposal[decline_comment]", rows: 2,
+                        id: comment_field_id, class: "field-input" %>
+                </div>
+
+                <%= f.submit t(".confirm_refuse"), class: "btn btn-secondary btn-sm",
+                      data: { turbo_submits_with: t(".refusing") } %>
+              <% end %>
+            </details>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p id="admin-swap-validations-empty" class="empty-state"><%= t(".empty") %></p>
+    <% end %>
+  </div>
+</div>
