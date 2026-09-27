@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_213603) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_120000) do
   create_table "allowed_email_domains", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "domain", null: false
@@ -36,6 +36,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_213603) do
   end
 
   create_table "locker_swap_proposals", force: :cascade do |t|
+    t.integer "admin_decided_by_id"
     t.datetime "completed_at"
     t.datetime "created_at", null: false
     t.datetime "decided_at"
@@ -49,6 +50,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_213603) do
     t.string "requester_locker_number_at_resolution"
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.index ["admin_decided_by_id"], name: "index_locker_swap_proposals_on_admin_decided_by_id"
     t.index ["recipient_id"], name: "index_locker_swap_proposals_on_recipient_id"
     t.index ["recipient_id"], name: "index_swap_proposals_accepted_recipient", unique: true, where: "status = 1"
     t.index ["requester_id", "recipient_id"], name: "index_swap_proposals_pending_pair", unique: true, where: "status = 0"
@@ -110,6 +112,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_213603) do
   end
 
   add_foreign_key "locker_map_entries", "zones"
+  add_foreign_key "locker_swap_proposals", "users", column: "admin_decided_by_id"
   add_foreign_key "locker_swap_proposals", "users", column: "recipient_id"
   add_foreign_key "locker_swap_proposals", "users", column: "requester_id"
   add_foreign_key "locker_wishes", "users"

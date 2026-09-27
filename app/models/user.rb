@@ -46,6 +46,12 @@ class User < ApplicationRecord
   has_many :search_cancellations_made, class_name: "User", foreign_key: :search_cancelled_by_id,
            dependent: :nullify, inverse_of: :search_cancelled_by
 
+  # 033 FR-014: the swap proposals this administrator validated or refused.
+  # :nullify for the same reason as the three above — the decision outlives the
+  # account that made it.
+  has_many :swap_decisions_made, class_name: "LockerSwapProposal", foreign_key: :admin_decided_by_id,
+           dependent: :nullify, inverse_of: :admin_decided_by
+
   # "No locker" must reach the database as NULL, never "": a unique index treats
   # NULLs as distinct, but two empty strings would collide (002 FR-002, FR-011).
   #

@@ -1,8 +1,8 @@
-<%# 004 FR-012/FR-013: the swap this user is committed to. The confirmation is
-    the recipient's to give — they are the one who accepted — so the requester
-    sees the same status without a control, and is told who it rests with. %>
+<%# 004 FR-012: the swap this user is committed to. 033 FR-011..FR-013: since
+    finalizing it became an administrator's decision, neither party has a
+    control here — requester and recipient read the same words, saying who the
+    exchange now rests with. %>
 <% counterpart = @exchange_in_progress.requester_id == current_user.id ? @exchange_in_progress.recipient : @exchange_in_progress.requester %>
-<% viewer_is_recipient = @exchange_in_progress.recipient_id == current_user.id %>
 
 <div id="swap-exchange-in-progress" class="card card--them stack-tight">
   <div class="row">
@@ -22,17 +22,5 @@
           zone_name: LockerMapEntry.zone_name_for(counterpart.saved_floor, counterpart.saved_locker_number) %>
   </div>
 
-  <% if viewer_is_recipient %>
-    <p class="card-lead">
-      <%= t(".confirm_instructions") %>
-    </p>
-
-    <%= button_to t(".confirm_button"),
-          confirm_locker_swap_proposal_path(@exchange_in_progress), method: :patch,
-          class: "btn btn-primary", form: { data: { turbo_submits_with: t(".confirming") } } %>
-  <% else %>
-    <p class="card-lead">
-      <%= t(".waiting_for_their_confirmation", email: counterpart.email) %>
-    </p>
-  <% end %>
+  <p class="card-lead"><%= t(".pending_admin_validation") %></p>
 </div>

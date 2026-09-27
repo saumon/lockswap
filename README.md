@@ -54,7 +54,7 @@ An employee can:
 3. browse the lockers available for a swap;
 4. offer a swap to a colleague;
 5. accept or decline an offer;
-6. confirm the completed swap.
+6. hand the lockers over, and let facilities services validate the swap once the badges follow.
 
 The application then keeps locker assignments up to date automatically, and keeps the history of every change.
 
@@ -84,7 +84,7 @@ The locker is only the starting point.
 
 The project started with the foundations — without user accounts, no locker swap is possible — and
 now carries the swap through end to end: declare what you are looking for, offer a swap, answer one,
-and confirm it once the lockers have actually changed hands. The details being negotiated are held
+and have facilities services validate it once the lockers have actually changed hands. The details being negotiated are held
 still while that plays out, and the history says what each proposal was about without anyone having
 had to write it down. Locker numbers are counted per floor, the way they are on the doors. What the
 application says back — saved, sent, refused — shows itself for a few seconds and then gets out of
@@ -139,7 +139,18 @@ decide rather than whatever each person happens to type: the super admin lists t
 actually has, and every floor field becomes a choice from that list — so "1", "01" and "1st" can no
 longer be three different floors that never match — and can set the format a locker number must follow,
 with examples on the same screen of what each pattern accepts and refuses. Until either is set, nothing
-changes, and whatever is already on file stays as it is until it is next edited.
+changes, and whatever is already on file stays as it is until it is next edited. And the site now
+knows which lockers actually exist: an administrator draws the building's zones floor by floor on a
+Locker Map and lists the locker numbers physically in each one, and from the first locker declared
+onwards, a floor and locker number only save if the map recognises them — until then, nothing is
+checked, exactly as before. Where a locker sits is no longer something to remember, either: its zone
+appears everywhere its floor and number already do — your own locker card, the locker search list, a
+proposal received, an exchange under way, and the admin screens — read fresh each time, and simply
+absent for a locker nobody has mapped. And the last step of a
+swap now belongs to the people who can actually carry it out: once both colleagues have agreed, the
+exchange waits on facilities services — who re-associate the badges in their own system — and an
+administrator validates it, or refuses it with a reason, from a queue of their own. Neither colleague
+can close it themselves any more; both are told plainly who it rests with.
 
 | Feature | Status |
 | --- | --- |
@@ -174,6 +185,7 @@ changes, and whatever is already on file stays as it is until it is next edited.
 | **030 — Configurable floors and locker number format** | ✅ Shipped |
 | **031 — Locker map (zones and known lockers)** | ✅ Shipped |
 | **032 — Locker zone visibility across screens** | ✅ Shipped |
+| **033 — Administrator validation of locker swaps** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -238,7 +250,9 @@ What feature 004 adds — see
 * nobody can be in two exchanges at once, and a wish stops being listed while its owner is mid-swap:
   the need is spoken for, so it is no longer an open invitation;
 * **only the recipient who accepted** confirms that the swap actually happened; confirming swaps the
-  floor and locker number between the two accounts and clears both wishes, the need now being settled;
+  floor and locker number between the two accounts and clears both wishes, the need now being settled.
+  **Superseded by 033**: neither party confirms any more — an administrator validates the exchange,
+  with exactly the same effect, or refuses it;
 * a **Proposal history** page lists every proposal you sent or received — direction, the other person,
   the date, where it ended up, and any decline comment — read-only, because the homepage is where
   proposals are acted on and this is where they are looked back at.
@@ -1109,14 +1123,43 @@ What feature 032 adds — see
   `Zone`/`LockerMapEntry` tables — one query per screen, never one per row, whatever the size of the
   list it is answering for.
 
+What feature 033 adds — see
+[`specs/033-admin-swap-validation/spec.md`](specs/033-admin-swap-validation/spec.md):
+
+* **finalizing a swap is now facilities services' call, not the two colleagues'.** Swapping lockers
+  means re-associating badges in a system LockSwap does not reach, so the swap is only real once the
+  people who do that have done it. Once a proposal is accepted, the exchange waits for an administrator;
+* **an admin-only Swap validations screen lists every exchange waiting on that decision**, oldest first
+  so nothing waits indefinitely, each naming both people with their floor, locker and zone. It sits in
+  the Admin menu beside *Users* and the *Locker Map*, open to every administrator — not narrowed to the
+  super admin the way the Danger Zone is;
+* **validating does exactly what the old self-confirmation did**: the two accounts' floor and locker
+  number are swapped, both wishes are cleared, and the exchange reads as completed in both histories;
+* **refusing moves nobody's locker**, takes an optional reason that both people see the same way they
+  see any other decline comment, and releases both of them at once to propose or accept a different
+  swap;
+* **every decision records which administrator made it.** The record outlives the administrator's
+  own account: cancelling it later clears the name, never the decision;
+* **two administrators acting on the same exchange cannot both win.** Whoever is second is told it has
+  already been validated or refused, and nothing is applied twice;
+* **an administrator may settle an exchange they are part of**, like any other — the screen makes no
+  exception based on who is signed in;
+* **neither colleague has a control any more.** The *Confirm exchange completed* button and its route
+  are gone rather than hidden; both people see the exchange as **Awaiting validation**
+  (*En attente de validation*) and are told to see facilities services to swap the lockers physically and
+  finalize the request. The proposal history's status badge says the same thing, so the two screens
+  never contradict each other;
+* **nothing to migrate.** An exchange already accepted before this version, still waiting on the
+  confirmation that no longer exists, simply appears in the queue like any other.
+
 ## 👤 Roles
 
 Three roles exist on a LockSwap instance, and every registered account holds exactly one:
 
 | Role | Who holds it | Can do |
 | --- | --- | --- |
-| **Standard** | Everyone who registers, by default | Manage their own floor and locker, declare a locker wish, send and answer swap proposals — everything an employee needs to swap lockers. |
-| **Admin** | Granted by an existing administrator, to any number of accounts ([015](specs/015-grant-admin-rights/spec.md)) | Everything a standard account can, plus the **Users** directory ([013](specs/013-admin-user-directory/spec.md)): view, edit floor/locker, and cancel a search on anyone's behalf ([027](specs/027-admin-user-detail-view/spec.md)), grant or revoke administrator rights on any other account ([015](specs/015-grant-admin-rights/spec.md), [028](specs/028-move-admin-grant-button/spec.md)), and declare the site's zones and known locker numbers on the **Locker Map** ([031](specs/031-locker-map-zones/spec.md)). |
+| **Standard** | Everyone who registers, by default | Manage their own floor and locker, declare a locker wish, send and answer swap proposals — everything an employee needs to agree a swap, which an administrator then validates ([033](specs/033-admin-swap-validation/spec.md)). |
+| **Admin** | Granted by an existing administrator, to any number of accounts ([015](specs/015-grant-admin-rights/spec.md)) | Everything a standard account can, plus the **Users** directory ([013](specs/013-admin-user-directory/spec.md)): view, edit floor/locker, and cancel a search on anyone's behalf ([027](specs/027-admin-user-detail-view/spec.md)), grant or revoke administrator rights on any other account ([015](specs/015-grant-admin-rights/spec.md), [028](specs/028-move-admin-grant-button/spec.md)), declare the site's zones and known locker numbers on the **Locker Map** ([031](specs/031-locker-map-zones/spec.md)), and validate or refuse accepted swaps on **Swap validations** ([033](specs/033-admin-swap-validation/spec.md)). |
 | **Super Admin** | Exactly one account, always: whichever one registered first on the site ([013](specs/013-admin-user-directory/spec.md), named explicitly by [029](specs/029-super-admin-role/spec.md)) | Everything an admin can, plus exclusive access to the **Danger Zone** ([016](specs/016-danger-zone-email-domains/spec.md)) — the allowed email domains, the site's language ([025](specs/025-multilingual-support/spec.md)), and the site's floor list and locker number format ([030](specs/030-configurable-floors-locker-format/spec.md)). |
 
 What makes the super admin different is not a bigger set of permissions layered on top — it is that
@@ -1305,8 +1348,8 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   other people see it, and cancelling;
 * [`specs/004-locker-swap-proposal/quickstart.md`](specs/004-locker-swap-proposal/quickstart.md) —
   proposing a swap, the refusals (yourself, a duplicate, someone already mid-swap), answering one
-  either way, withdrawing, confirming the exchange and watching both lockers change hands, and the
-  history screen;
+  either way, withdrawing, confirming the exchange and watching both lockers change hands (confirming
+  is an administrator's step since 033 — see its quickstart below), and the history screen;
 * [`specs/005-swap-lock-history-comment/quickstart.md`](specs/005-swap-lock-history-comment/quickstart.md) —
   the edit control giving way while a proposal is outstanding, first-time details still accepted from
   someone who has none, the hold lifting once the swap is settled, and a history summary that stays
@@ -1446,7 +1489,14 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   received proposal, an exchange in progress, and both admin screens, an undeclared locker showing
   nothing extra on any of them, renaming the zone or removing the locker from it and watching every
   screen catch up on its next render with no separate step, and the swap-history screens confirmed to
-  show none of it at all.
+  show none of it at all;
+* [`specs/033-admin-swap-validation/quickstart.md`](specs/033-admin-swap-validation/quickstart.md) —
+  finding an accepted exchange in the Admin menu's Swap validations queue and validating it to watch both
+  lockers change hands, refusing another with and without a reason and seeing nobody's locker move, both
+  colleagues seeing *Awaiting validation* with nothing to press and the old confirm address
+  answering 404, an exchange accepted before the upgrade showing up with no migration step, an
+  administrator settling their own exchange, and a second administrator told the exchange was already
+  decided.
 
 ## 🚢 Deploy
 

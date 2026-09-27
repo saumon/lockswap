@@ -45,6 +45,9 @@
           R7). %>
       <%= link_to t(".locker_map"), admin_locker_map_path, class: "site-nav-link",
             "aria-current": ("page" if current_page?(admin_locker_map_path)) %>
+      <%# 033 FR-001: every administrator's, like the two above. %>
+      <%= link_to t(".swap_validations"), admin_swap_validations_path, class: "site-nav-link",
+            "aria-current": ("page" if current_page?(admin_swap_validations_path)) %>
       <%# 016 FR-001/FR-002: the second administrator destination. As above, that
           is presentation only: the refusal that matters is the guard on the
           controllers behind it.

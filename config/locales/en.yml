@@ -116,6 +116,30 @@ en:
         zone_gone: "That zone no longer exists."
       destroy:
         deleted: "Locker number removed."
+    swap_validations:
+      index:
+        title: "Swap validations"
+        lead: "Exchanges both people have agreed to. Validate one once the lockers have physically changed hands and the badges are updated — their locker details are swapped at that moment."
+        requester: "Requester"
+        recipient: "Recipient"
+        locker_details: "Floor %{floor}, locker %{locker}"
+        not_set: "not set"
+        none_assigned: "none assigned"
+        accepted_at: "Accepted %{accepted_at}"
+        validate_button: "Validate"
+        validate_aria_label: "Validate the exchange between %{requester} and %{recipient}"
+        validating: "Validating…"
+        refuse: "Refuse"
+        refuse_comment_label: "Reason (optional)"
+        confirm_refuse: "Confirm refusal"
+        refusing: "Refusing…"
+        empty: "No exchange is waiting for validation."
+      validate:
+        validated: "Exchange validated — the locker details have been swapped."
+        already_decided: "That exchange has already been validated or refused."
+      refuse:
+        refused: "Exchange refused."
+        already_decided: "That exchange has already been validated or refused."
     users:
       index:
         title: "Users"
@@ -295,16 +319,13 @@ en:
       no_locker_lead: "You don't have a locker yet. Say which floor you're looking on so people know you're waiting for one."
       want_a_locker: "I want a locker! 🙏"
     swap_exchange_in_progress:
-      title: "Exchange in progress"
-      accepted: "Accepted"
+      title: "Awaiting validation"
+      accepted: "Proposal accepted"
       swapping_with_html: "You are swapping lockers with %{email}."
       not_set: "not set"
       none_assigned: "none assigned"
       counterpart_details: "They have floor %{floor}, locker %{locker}."
-      confirm_instructions: "Once you have actually exchanged lockers, confirm it here and both sets of details will be swapped."
-      confirm_button: "Confirm exchange completed"
-      confirming: "Confirming…"
-      waiting_for_their_confirmation: "%{email} will confirm once the exchange has taken place."
+      pending_admin_validation: "Your exchange request is awaiting validation. Get in touch with facilities services to swap the lockers physically and so finalize the request."
     swap_proposals_declined:
       title: "Proposals that were declined"
       declined: "Declined"
@@ -359,8 +380,6 @@ en:
       cannot_accept: "That proposal can no longer be accepted — someone involved already has an exchange in progress."
     decline:
       declined: "Swap proposal declined."
-    confirm:
-      confirmed: "Exchange confirmed — your locker details have been swapped."
     index:
       title: "Proposal history"
       heading: "Your swap proposals"
@@ -372,7 +391,7 @@ en:
       locker_details_header: "Locker details"
       sent: "Sent"
       received: "Received"
-      exchange_in_progress: "Exchange in progress"
+      exchange_in_progress: "Awaiting validation"
       status:
         pending: "Pending"
         declined: "Declined"
@@ -446,6 +465,7 @@ en:
       admin: "Admin"
       users: "Users"
       locker_map: "Locker Map"
+      swap_validations: "Swap validations"
       danger_zone: "Danger Zone"
       log_out: "Log out"
   user:

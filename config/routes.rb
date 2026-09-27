@@ -28,14 +28,16 @@ Rails.application.routes.draw do
   resource :locker_wish, only: [ :new, :create, :destroy ]
 
   # 004: proposing a swap (:create), withdrawing one still pending (:destroy),
-  # and the read-only history screen (:index). The three decisions are member
+  # and the read-only history screen (:index). The decisions are member
   # actions rather than a status param, so each one's own authorization and
-  # state rules stay separate (FR-001, FR-005, FR-012, FR-015, FR-019).
+  # state rules stay separate (FR-001, FR-005, FR-015, FR-019).
+  #
+  # 033: :confirm is gone — finalizing an accepted exchange is an
+  # administrator's decision now (admin/swap_validations below).
   resources :locker_swap_proposals, only: [ :create, :destroy, :index ] do
     member do
       patch :accept
       patch :decline
-      patch :confirm
     end
   end
 
@@ -108,6 +110,17 @@ Rails.application.routes.draw do
     # (mirrors admin/locker_profile's nesting under admin/users).
     resources :zones, only: [ :create, :update, :destroy ] do
       resources :locker_map_entries, only: [ :create, :destroy ]
+    end
+
+    # 033 FR-001/FR-004/FR-005: the queue of accepted exchanges, and the two
+    # decisions an administrator takes on one. Member actions rather than a
+    # status param, for the reason locker_swap_proposals routes accept/decline
+    # the same way — each decision keeps its own authorization and rules.
+    resources :swap_validations, only: :index do
+      member do
+        patch :validate
+        patch :refuse
+      end
     end
   end
 

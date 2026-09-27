@@ -162,6 +162,30 @@ fr:
         zone_gone: "Cette zone n'existe plus."
       destroy:
         deleted: "Numéro de casier retiré."
+    swap_validations:
+      index:
+        title: "Validation des échanges"
+        lead: "Les échanges acceptés par les deux personnes. Validez-en un une fois les casiers physiquement échangés et les badges mis à jour — leurs détails de casier sont alors échangés."
+        requester: "Demandeur"
+        recipient: "Destinataire"
+        locker_details: "Étage %{floor}, casier %{locker}"
+        not_set: "non défini"
+        none_assigned: "aucun attribué"
+        accepted_at: "Accepté le %{accepted_at}"
+        validate_button: "Valider"
+        validate_aria_label: "Valider l'échange entre %{requester} et %{recipient}"
+        validating: "Validation…"
+        refuse: "Refuser"
+        refuse_comment_label: "Motif (facultatif)"
+        confirm_refuse: "Confirmer le refus"
+        refusing: "Refus…"
+        empty: "Aucun échange n'est en attente de validation."
+      validate:
+        validated: "Échange validé — les détails des casiers ont été échangés."
+        already_decided: "Cet échange a déjà été validé ou refusé."
+      refuse:
+        refused: "Échange refusé."
+        already_decided: "Cet échange a déjà été validé ou refusé."
     users:
       index:
         title: "Utilisateurs"
@@ -341,16 +365,13 @@ fr:
       no_locker_lead: "Vous n'avez pas encore de casier. Indiquez l'étage recherché pour que les autres sachent que vous en attendez un."
       want_a_locker: "Je veux un casier ! 🙏"
     swap_exchange_in_progress:
-      title: "Échange en cours"
-      accepted: "Accepté"
+      title: "En attente de validation"
+      accepted: "Proposition acceptée"
       swapping_with_html: "Vous échangez votre casier avec %{email}."
       not_set: "non défini"
       none_assigned: "aucun attribué"
       counterpart_details: "Cette personne a l'étage %{floor}, casier %{locker}."
-      confirm_instructions: "Une fois que vous avez réellement échangé vos casiers, confirmez-le ici et les deux jeux de détails seront échangés."
-      confirm_button: "Confirmer l'échange terminé"
-      confirming: "Confirmation en cours…"
-      waiting_for_their_confirmation: "%{email} confirmera une fois l'échange effectué."
+      pending_admin_validation: "Votre demande d'échange est en attente de validation. Rapprochez-vous des services généraux pour l'échange physique des casiers et ainsi finaliser la demande."
     swap_proposals_declined:
       title: "Propositions refusées"
       declined: "Refusée"
@@ -405,8 +426,6 @@ fr:
       cannot_accept: "Cette proposition ne peut plus être acceptée — une des personnes concernées a déjà un échange en cours."
     decline:
       declined: "Proposition d'échange refusée."
-    confirm:
-      confirmed: "Échange confirmé — vos détails de casier ont été échangés."
     index:
       title: "Historique des propositions"
       heading: "Vos propositions d'échange"
@@ -418,7 +437,7 @@ fr:
       locker_details_header: "Détails du casier"
       sent: "Envoyée"
       received: "Reçue"
-      exchange_in_progress: "Échange en cours"
+      exchange_in_progress: "En attente de validation"
       status:
         pending: "En attente"
         declined: "Refusée"
@@ -484,6 +503,7 @@ fr:
       admin: "Admin"
       users: "Utilisateurs"
       locker_map: "Cartographie des casiers"
+      swap_validations: "Validation des échanges"
       danger_zone: "Zone de danger"
       log_out: "Se déconnecter"
   user:
