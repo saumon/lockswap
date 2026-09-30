@@ -13,9 +13,10 @@
 fr:
   devise:
     confirmations:
-      confirmed: "Votre adresse e-mail a été confirmée avec succès."
+      confirmed: "Votre compte est activé. Vous pouvez vous connecter."
+      email_changed: "Votre nouvelle adresse e-mail est confirmée."
       send_instructions: "Vous allez recevoir un e-mail avec les instructions pour confirmer votre adresse e-mail dans quelques minutes."
-      send_paranoid_instructions: "Si votre adresse e-mail existe dans notre base de données, vous allez recevoir un e-mail avec les instructions pour confirmer votre adresse e-mail dans quelques minutes."
+      send_paranoid_instructions: "Si cette adresse correspond à un compte pas encore activé, nous lui avons envoyé un nouveau lien d'activation."
     failure:
       already_authenticated: "Vous êtes déjà connecté(e)."
       inactive: "Votre compte n'est pas encore activé."
@@ -29,7 +30,22 @@ fr:
       last_attempt: "E-mail ou mot de passe invalide."
       timeout: "Votre session a expiré. Veuillez vous reconnecter pour continuer."
       unauthenticated: "Vous devez vous connecter ou vous inscrire avant de continuer."
-      unconfirmed: "Vous devez confirmer votre adresse e-mail avant de continuer."
+      unconfirmed: "Votre compte n'est pas encore activé. Suivez le lien de l'e-mail que nous vous avons envoyé, ou demandez-en un nouveau ci-dessous."
+    # 034: devise.en.yml now overrides these, so their French lives here rather
+    # than in devise-i18n's generic wording.
+    mailer:
+      confirmation_instructions:
+        subject: "Activez votre compte LockSwap"
+      reset_password_instructions:
+        subject: "Réinitialisez votre mot de passe LockSwap"
+      password_change:
+        subject: "Votre mot de passe LockSwap a été modifié"
+    passwords:
+      send_paranoid_instructions: "Si un compte existe pour cette adresse, nous lui avons envoyé un lien pour choisir un nouveau mot de passe."
+      updated: "Votre mot de passe a été modifié. Vous êtes connecté."
+    registrations:
+      signed_up_but_unconfirmed: "Votre compte est créé. Nous vous avons envoyé un e-mail : suivez son lien pour activer votre compte, puis connectez-vous."
+      update_needs_confirmation: "Votre compte est mis à jour. Nous avons envoyé un lien à votre nouvelle adresse : votre e-mail changera une fois ce lien suivi."
   errors:
     messages:
       not_saved:
@@ -45,6 +61,7 @@ fr:
         # impérative du formulaire à l'humanisation générique de devise-i18n
         # ("Confirmation du mot de passe"), pour rester cohérente avec le champ.
         password_confirmation: "Confirmer le mot de passe"
+        reset_password_token: "Ce lien"
     errors:
       models:
         user:

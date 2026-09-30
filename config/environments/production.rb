@@ -53,21 +53,31 @@ Rails.application.configure do
   config.active_job.queue_adapter = :solid_queue
   config.solid_queue.connects_to = { database: { writing: :queue } }
 
-  # Ignore bad email addresses and do not raise email delivery errors.
-  # Set this to true and configure the email server for immediate delivery to raise delivery errors.
-  # config.action_mailer.raise_delivery_errors = false
+  # 034 FR-031: a delivery the mail server refuses raises inside its job, so
+  # Solid Queue records it as a failed execution, with the error, instead of the
+  # email vanishing silently. The person already has their answer on screen
+  # (FR-028) and can ask for the email again.
+  config.action_mailer.raise_delivery_errors = true
 
-  # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "example.com" }
+  # 034 FR-027: links in emails point at the public site. APP_HOST (or the
+  # credentials' app.host) overrides it — contracts/mail-configuration.md.
+  config.action_mailer.default_url_options = Lockswap::MailerSettings.default_url_options(
+    default_host: "lockswap.saumon.cc", default_protocol: "https"
+  )
 
-  # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
-  # config.action_mailer.smtp_settings = {
-  #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
-  #   password: Rails.application.credentials.dig(:smtp, :password),
-  #   address: "smtp.example.com",
-  #   port: 587,
-  #   authentication: :plain
-  # }
+  # 034 FR-029: SMTP from SMTP_* (or the credentials' smtp.*), switched on only
+  # when address, port, user and password are all there and SMTP_ENABLED is not
+  # false. Without it there is no way for an account to activate, so say so
+  # loudly at boot — and say which of the two it is.
+  if Lockswap::MailerSettings.smtp_configured?
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.smtp_settings = Lockswap::MailerSettings.smtp_settings
+  else
+    reason = Lockswap::MailerSettings.smtp_enabled? ? "is not configured" : "is disabled (SMTP_ENABLED=false)"
+    config.after_initialize do
+      Rails.logger.warn("[account_mail] SMTP #{reason}; account emails will fail to deliver")
+    end
+  end
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).

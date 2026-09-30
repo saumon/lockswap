@@ -1,0 +1,11 @@
+<% scope = @resource.pending_reconfirmation? ? "mailer.reconfirmation_instructions" : "mailer.confirmation_instructions" -%>
+<%= t("#{scope}.heading") %>
+
+<%= t("#{scope}.why") %>
+<%= t("#{scope}.what") %>
+
+<%= render "devise/mailer/action", label: t("#{scope}.button"),
+      url: confirmation_url(@resource, confirmation_token: @token),
+      validity: t("#{scope}.validity") %>
+
+<%= t("#{scope}.not_you") %>

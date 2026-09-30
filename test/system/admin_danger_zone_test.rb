@@ -188,7 +188,9 @@ class AdminDangerZoneTest < ApplicationSystemTestCase
       fill_in_reliably "Confirm password", with: VALID_PASSWORD
       click_on "Create account"
 
-      assert_text "Welcome to LockSwap"
+      # 034: signup creates the account and asks for activation rather than
+      # signing in; the account existing is what this scenario is about.
+      assert_text I18n.t("devise.registrations.signed_up_but_unconfirmed")
     end
   end
 
@@ -227,7 +229,9 @@ class AdminDangerZoneTest < ApplicationSystemTestCase
       fill_in_reliably "Confirm password", with: VALID_PASSWORD
       click_on "Create account"
 
-      assert_text "Welcome to LockSwap"
+      # 034: signup creates the account and asks for activation rather than
+      # signing in; the account existing is what this scenario is about.
+      assert_text I18n.t("devise.registrations.signed_up_but_unconfirmed")
     end
   end
   # --- 030 User Story 1: the site's floors ------------------------------------

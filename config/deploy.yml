@@ -40,10 +40,26 @@ registry:
 env:
   secret:
     - RAILS_MASTER_KEY
+    # 034: the SMTP account's credentials, read from .kamal/secrets. Uncomment
+    # both here and there once the mail account exists — or put them under
+    # smtp: in `bin/rails credentials:edit` instead; ENV wins when both are set
+    # (config/mailer_settings.rb, README → Deploy → Mail).
+    # - SMTP_USERNAME
+    # - SMTP_PASSWORD
   clear:
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
     # When you start using multiple servers, you should split out job processing to a dedicated machine.
+    # 034: this is also what delivers the account emails (activation, reset).
     SOLID_QUEUE_IN_PUMA: true
+
+    # 034: outgoing mail. SMTP is only used once address, port, user and
+    # password are all set; until then account emails fail to deliver and
+    # nobody new can activate. Links in emails use APP_HOST
+    # (default lockswap.saumon.cc, https).
+    # SMTP_ADDRESS: smtp.example.com
+    # SMTP_PORT: 587
+    # SMTP_SENDER: "LockSwap <no-reply@lockswap.saumon.cc>"
+    # APP_HOST: lockswap.saumon.cc
 
     # Set number of processes dedicated to Solid Queue (default: 1)
     # JOB_CONCURRENCY: 3

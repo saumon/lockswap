@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_090100) do
   create_table "allowed_email_domains", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "domain", null: false
@@ -82,6 +82,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_120000) do
     t.boolean "admin", default: false, null: false
     t.datetime "admin_granted_at"
     t.integer "admin_granted_by_id"
+    t.datetime "confirmation_sent_at"
+    t.string "confirmation_token"
+    t.datetime "confirmed_at"
+    t.integer "confirmed_by_id"
     t.datetime "created_at", null: false
     t.string "email", default: "", null: false, collation: "NOCASE"
     t.string "encrypted_password", default: "", null: false
@@ -92,14 +96,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_120000) do
     t.integer "locker_edited_by_id"
     t.string "locker_number"
     t.datetime "remember_created_at"
+    t.datetime "reset_password_sent_at"
+    t.string "reset_password_token"
     t.datetime "search_cancelled_at"
     t.integer "search_cancelled_by_id"
+    t.string "unconfirmed_email"
     t.datetime "updated_at", null: false
     t.index ["admin"], name: "index_users_on_bootstrap_admin", unique: true, where: "admin = 1 AND admin_granted_at IS NULL"
     t.index ["admin_granted_by_id"], name: "index_users_on_admin_granted_by_id"
+    t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
+    t.index ["confirmed_by_id"], name: "index_users_on_confirmed_by_id"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["floor", "locker_number"], name: "index_users_on_floor_and_locker_number", unique: true
     t.index ["locker_edited_by_id"], name: "index_users_on_locker_edited_by_id"
+    t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["search_cancelled_by_id"], name: "index_users_on_search_cancelled_by_id"
   end
 
@@ -117,6 +127,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_120000) do
   add_foreign_key "locker_swap_proposals", "users", column: "requester_id"
   add_foreign_key "locker_wishes", "users"
   add_foreign_key "users", "users", column: "admin_granted_by_id"
+  add_foreign_key "users", "users", column: "confirmed_by_id"
   add_foreign_key "users", "users", column: "locker_edited_by_id"
   add_foreign_key "users", "users", column: "search_cancelled_by_id"
 end

@@ -129,8 +129,10 @@ class Admin::UsersController < ApplicationController
   # find_by, not find: a vanished account is a message and a redirect back to
   # the list, the same as #grant_admin already treats one (FR-011-equivalent).
   def show
+    # 034 FR-036: :confirmed_by, so the activating administrator's email costs no
+    # second query.
     @user = User.includes(:admin_granted_by, :locker_edited_by, :search_cancelled_by,
-                           :locker_wish).find_by(id: params[:id])
+                           :confirmed_by, :locker_wish).find_by(id: params[:id])
 
     return redirect_to admin_users_path, alert: t(".account_gone") if @user.nil?
 

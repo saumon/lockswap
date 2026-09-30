@@ -31,14 +31,27 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
-  # Don't care if the mailer can't send.
-  config.action_mailer.raise_delivery_errors = false
-
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
 
-  # Set localhost to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
+  # 034 FR-027: links in emails point at the dev server. On the dev box, set
+  # APP_HOST (and APP_PORT / APP_PROTOCOL) to the address you reach it by.
+  config.action_mailer.default_url_options = Lockswap::MailerSettings.default_url_options(
+    default_host: "localhost", default_port: 3000, default_protocol: "http"
+  )
+
+  # 034 FR-029/FR-030: a real SMTP server when SMTP_* is set — then a refused
+  # delivery should be seen — and otherwise the web inbox at /letter_opener
+  # (research.md R12), where nothing can fail. SMTP_ENABLED=false forces the
+  # inbox even with a complete SMTP configuration in the credentials.
+  if Lockswap::MailerSettings.smtp_configured?
+    config.action_mailer.raise_delivery_errors = true
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.smtp_settings = Lockswap::MailerSettings.smtp_settings
+  else
+    config.action_mailer.raise_delivery_errors = false
+    config.action_mailer.delivery_method = :letter_opener_web
+  end
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log

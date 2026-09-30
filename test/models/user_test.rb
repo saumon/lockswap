@@ -1117,4 +1117,116 @@ class UserTest < ActiveSupport::TestCase
 
     assert user.save, user.errors.full_messages.to_sentence
   end
+
+  # 034 FR-028, research.md R8: Devise's emails go through the job queue, so no
+  # screen ever waits on the mail server.
+  test "account emails are queued, not delivered inline" do
+    assert_enqueued_jobs 1, only: ActionMailer::MailDeliveryJob do
+      users(:alice).send_reset_password_instructions
+    end
+
+    assert_empty ActionMailer::Base.deliveries
+  end
+
+  # 034 FR-001, FR-004, FR-005: a new account starts unactivated and is sent
+  # exactly one activation email.
+  test "a new account is not activated and is sent one activation email" do
+    user = nil
+
+    assert_enqueued_email_with UserMailer, :confirmation_instructions,
+                               args: ->(args) { args.first.email == "fresh@example.com" } do
+      user = User.create!(email: "fresh@example.com", password: VALID_PASSWORD)
+    end
+
+    assert_not_predicate user, :confirmed?
+    assert_not_predicate user, :active_for_authentication?
+    assert_enqueued_emails 1
+  end
+
+  # 034 FR-010 (clarified): the accounts that existed before this feature are
+  # activated — the fixtures stand in for them.
+  test "an existing account is activated" do
+    assert_predicate users(:alice), :confirmed?
+    assert_predicate users(:alice), :active_for_authentication?
+  end
+
+  # ---- 034: activating outside the activation link (data-model.md) ---------
+
+  test "activate! activates once and reports whether it did" do
+    user = User.create!(email: "pending@example.com", password: VALID_PASSWORD)
+    clear_enqueued_jobs
+
+    assert user.activate!
+    assert_predicate user, :confirmed?
+    assert_predicate user.reload, :confirmed?
+    stamped = user.confirmed_at
+
+    travel 1.minute do
+      assert_not user.activate!
+    end
+    assert_equal stamped, user.reload.confirmed_at
+    assert_no_enqueued_emails
+  end
+
+  # FR-036: by hand, it records who.
+  test "activate! records the administrator who did it" do
+    user = User.create!(email: "pending@example.com", password: VALID_PASSWORD)
+
+    user.activate!(by: users(:frank))
+
+    assert_equal users(:frank), user.reload.confirmed_by
+    assert_predicate user, :activated_by_admin?
+  end
+
+  # research.md R5: unlike Devise's own confirm, it never promotes a pending
+  # new address — only the address already on the account is activated.
+  test "activate! leaves a pending address change alone" do
+    user = User.create!(email: "pending@example.com", password: VALID_PASSWORD)
+    user.update_columns(unconfirmed_email: "elsewhere@example.com")
+
+    user.activate!
+
+    user.reload
+    assert_equal "pending@example.com", user.email
+    assert_equal "elsewhere@example.com", user.unconfirmed_email
+  end
+
+  # FR-036: the activation outlives the administrator who made it.
+  test "deleting the activating administrator keeps the activation" do
+    grace = users(:grace)
+    user = User.create!(email: "pending@example.com", password: VALID_PASSWORD)
+    user.activate!(by: grace)
+
+    grace.destroy
+
+    user.reload
+    assert_predicate user, :confirmed?
+    assert_nil user.confirmed_by_id
+  end
+
+  # ---- 034: a fresh token on every resend (FR-012, research.md R17) --------
+
+  # Fails against stock Devise, which re-sends the same unexpired token and
+  # leaves every earlier email working.
+  test "resend_activation! replaces the token so earlier links stop working" do
+    user = User.create!(email: "pending@example.com", password: VALID_PASSWORD)
+    old_token = user.confirmation_token
+    old_sent_at = user.confirmation_sent_at
+
+    travel 6.minutes do
+      user.resend_activation!
+    end
+
+    user.reload
+    assert_not_equal old_token, user.confirmation_token
+    assert_operator user.confirmation_sent_at, :>, old_sent_at
+    assert_predicate User.confirm_by_token(old_token).errors[:confirmation_token], :present?
+    assert_empty User.confirm_by_token(user.confirmation_token).errors
+  end
+
+  test "resend_activation! sends nothing for an active account" do
+    assert_no_enqueued_emails do
+      users(:alice).resend_activation!
+    end
+  end
 end

@@ -24,19 +24,25 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
               password_confirmation: VALID_PASSWORD }
     }
 
-    assert_redirected_to root_path
+    # 034 FR-003: signup no longer signs in; the account waits for activation.
+    assert_redirected_to new_user_session_path
     assert_predicate User.find_by(email: "founder@example.com"), :admin?
   end
 
-  # FR-003: and is shown the menu that goes with it.
-  test "the first signup lands on a homepage carrying the Admin menu" do
+  # FR-003: and is shown the menu that goes with it — once activated and signed
+  # in (034: signup itself no longer signs in, so the homepage comes after the
+  # activation link, not straight after the form).
+  test "the first signup, once activated, lands on a homepage carrying the Admin menu" do
     User.destroy_all
 
     post user_registration_path, params: {
       user: { email: "founder@example.com", password: VALID_PASSWORD,
               password_confirmation: VALID_PASSWORD }
     }
-    follow_redirect!
+    founder = User.find_by!(email: "founder@example.com")
+    founder.confirm
+    sign_in founder
+    get root_path
 
     assert_response :success
     assert_select "summary.site-submenu-toggle", text: "Admin"
@@ -50,7 +56,10 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
       user: { email: "newcomer@example.com", password: VALID_PASSWORD,
               password_confirmation: VALID_PASSWORD }
     }
-    follow_redirect!
+    newcomer = User.find_by!(email: "newcomer@example.com")
+    newcomer.confirm
+    sign_in newcomer
+    get root_path
 
     assert_response :success
     assert_not_predicate User.find_by(email: "newcomer@example.com"), :admin?
@@ -120,6 +129,22 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  # 034 analyze I1: the refusal lands back on the account page, still signed in,
+  # with its message intact — not on the sign-in page, which would bounce a
+  # signed-in person to the homepage and replace the refusal with "already
+  # signed in".
+  test "a refused cancellation returns to the account page with its message" do
+    users(:grace).destroy
+    sign_in users(:frank)
+
+    delete user_registration_path
+
+    assert_redirected_to edit_user_registration_path
+    follow_redirect!
+    assert_response :success
+    assert_equal I18n.t("user.messages.super_admin_uncancellable"), flash[:alert]
+  end
+
   # 029 FR-014: a granted administrator's own account is never restricted,
   # however many other admins remain — frank (the super admin) always does.
   test "a granted administrator can cancel while the super admin remains" do
@@ -168,8 +193,8 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # FR-005 acceptance scenario 3, SC-003: a permitted domain registers exactly as
-  # it always did — signed in, landed on the homepage, nothing about the flow
-  # changed by the restriction existing.
+  # any other signup does — nothing about the flow changed by the restriction
+  # existing. (034: which now means created, unactivated, sent to sign in.)
   test "a signup on an allowed domain proceeds as it always did" do
     AllowedEmailDomain.create!(domain: "allowed.example")
 
@@ -180,7 +205,7 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
       }
     end
 
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # FR-007 through the real form: the address is folded before it is compared, so
@@ -210,7 +235,7 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
       }
     end
 
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # FR-010: the restriction gates registration, not the people already through it.

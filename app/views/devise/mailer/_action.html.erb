@@ -1,0 +1,24 @@
+<%# locals: (label:, url:, validity:) %>
+<%#
+  034 FR-025: the part every email that carries a link shares — the link as a
+  button, the same link as plain text that can be copied, and how long it works.
+
+  The button is a solid --color-link fill with white text (6.45:1). The site's
+  gradient accent is not used: gradients render unreliably across mail clients,
+  and white on that gradient is the design contract's one known contrast
+  exception, which should not be copied into a second medium (research.md R13).
+  A table cell rather than a styled <a> alone, so clients that ignore padding
+  on inline elements still draw a button.
+%>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
+  <tr>
+    <td style="background-color: <%= mail_color(:link) %>; border-radius: 8px;">
+      <a href="<%= url %>" style="display: inline-block; padding: 12px 20px; font-family: <%= MailerHelper::MAIL_FONT_MEASURED %>; font-size: 15px; font-weight: 600; color: <%= mail_color(:surface) %>; text-decoration: none;"><%= label %></a>
+    </td>
+  </tr>
+</table>
+
+<p style="margin: 0 0 8px 0; font-size: 14px; color: <%= mail_color(:ink_muted) %>;"><%= t("mailer.shared.copy_link") %></p>
+<p style="margin: 0 0 16px 0; font-family: <%= MailerHelper::MAIL_FONT_MEASURED %>; font-size: 13px; word-break: break-all;"><a href="<%= url %>" style="color: <%= mail_color(:link) %>;"><%= url %></a></p>
+
+<p style="margin: 0 0 16px 0;"><%= validity %></p>

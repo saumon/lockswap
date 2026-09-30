@@ -1,0 +1,58 @@
+<% content_for :title, t(".title") %>
+<% content_for :hide_site_header, true %>
+
+<%# 034 User Story 3, FR-017: choose the new password. The pair of fields is the
+    signup form's own — the same partial, the same hint, the same live mismatch
+    message — so the rules read identically in both places (014). %>
+<div class="auth-page">
+  <%= render "shared/brand_stacked" %>
+
+  <div class="card stack">
+    <h1 class="page-title"><%= t(".title") %></h1>
+
+    <%= render "devise/shared/error_messages", resource: resource %>
+
+    <%# FR-020: a link that is expired, used, or unknown can only be fixed by a
+        new one, so the way to get it sits right under the explanation. %>
+    <% if resource.errors.include?(:reset_password_token) %>
+      <p class="meta"><%= link_to t(".request_new"), new_user_password_path, class: "auth-link" %></p>
+    <% end %>
+
+    <%= form_for(resource, as: resource_name, url: password_path(resource_name),
+                 html: { method: :put, class: "stack-tight", novalidate: true,
+                         data: { controller: "password-confirmation" } }) do |f| %>
+      <%= f.hidden_field :reset_password_token %>
+
+      <div class="field">
+        <%# Named for what it is on this screen: the old password is gone. %>
+        <%= f.label :password, t(".password_label"), class: "field-label" %>
+        <%= render "devise/shared/password_field", f: f, attribute: :password,
+              subject: t(".password_subject"),
+              aria: { describedby: "password_hint" },
+              data: { password_confirmation_target: "password",
+                      action: "input->password-confirmation#recheck" } %>
+        <p id="password_hint" class="field-hint">
+          <%= t("devise.shared.password_hint", count: @minimum_password_length) %>
+        </p>
+      </div>
+
+      <div class="field">
+        <%= f.label :password_confirmation, t(".password_confirmation_label"), class: "field-label" %>
+        <%= render "devise/shared/password_field", f: f, attribute: :password_confirmation,
+              subject: t(".password_confirmation_subject"),
+              aria: { describedby: "password_confirmation_hint" },
+              data: { password_confirmation_target: "confirmation",
+                      action: "blur->password-confirmation#confirm " \
+                              "input->password-confirmation#recheck" } %>
+        <p id="password_confirmation_hint" class="field-error" hidden
+           data-password-confirmation-target="hint">
+          <%= resource.errors.full_message(
+                :password_confirmation,
+                t("activerecord.errors.models.user.attributes.password_confirmation.confirmation")) %>
+        </p>
+      </div>
+
+      <%= f.submit t(".submit"), class: "btn btn-primary w-full", data: { turbo_submits_with: t(".submitting") } %>
+    <% end %>
+  </div>
+</div>

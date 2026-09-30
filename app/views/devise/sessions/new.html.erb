@@ -31,5 +31,11 @@
       <%= t(".no_account") %>
       <%= link_to t(".sign_up"), new_user_registration_path, class: "auth-link" %>
     </p>
+
+    <%# 034 FR-014, FR-011: the two ways back in are always on this screen. The
+        notices that send people here are toasts that dismiss themselves, so the
+        links cannot live only inside them (research.md R7). %>
+    <p class="meta"><%= link_to t(".forgot_password"), new_user_password_path, class: "auth-link" %></p>
+    <p class="meta"><%= link_to t(".no_activation_email"), new_user_confirmation_path, class: "auth-link" %></p>
   </div>
 </div>
