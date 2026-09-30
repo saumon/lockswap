@@ -4,7 +4,15 @@ class User < ApplicationRecord
   # :rememberable            — persistent session across browser restarts, 30 days (FR-007)
   # :lockable                — lock after 5 consecutive failures for 15 minutes (FR-011)
   # :validatable             — email format/uniqueness and the 8-character password minimum (FR-002)
-  devise :database_authenticatable, :registerable,
+  # :recoverable             — 034: password reset by emailed link (FR-014 to FR-020)
+  # :confirmable             — 034: activation by emailed link, and reconfirmation of a
+  #                            changed address (FR-001 to FR-012, FR-021)
+  #
+  # 034 FR-006 needs no code: Devise's DatabaseAuthenticatable strategy checks the
+  # password before it ever consults active_for_authentication?, so an unactivated
+  # account with a wrong password fails as :invalid — the same generic message as
+  # any other bad login — and only the right password earns :unconfirmed.
+  devise :database_authenticatable, :registerable, :recoverable, :confirmable,
          :rememberable, :lockable, :validatable
 
   # 003: the locker this user is looking for, once they have declared a wish.
@@ -52,6 +60,13 @@ class User < ApplicationRecord
   has_many :swap_decisions_made, class_name: "LockerSwapProposal", foreign_key: :admin_decided_by_id,
            dependent: :nullify, inverse_of: :admin_decided_by
 
+  # 034 FR-036: the administrator who activated this account by hand. :nullify
+  # for the same reason as the pairs above — the activation outlives the
+  # administrator who performed it.
+  belongs_to :confirmed_by, class_name: "User", optional: true, inverse_of: :activations_made
+  has_many :activations_made, class_name: "User", foreign_key: :confirmed_by_id,
+           dependent: :nullify, inverse_of: :confirmed_by
+
   # "No locker" must reach the database as NULL, never "": a unique index treats
   # NULLs as distinct, but two empty strings would collide (002 FR-002, FR-011).
   #
@@ -75,6 +90,64 @@ class User < ApplicationRecord
   # before_create, so an update never revisits it. exists? rather than a count —
   # the question is whether anybody is already here, not how many.
   before_create :claim_administrator_if_first
+
+  # 034 FR-028, research.md R8: every Devise email goes through the job queue,
+  # so signup, resend and reset answer at once and never fail because the mail
+  # server is slow or down. (Devise's README documents this hook for Active Job.)
+  #
+  # FR-032, research.md R16: one support log line per email, carrying the
+  # account id — never the address, never the token.
+  def send_devise_notification(notification, *args)
+    Rails.logger.info("[account_mail] event=#{DEVISE_NOTIFICATION_EVENTS.fetch(notification, notification)} user_id=#{id}")
+    devise_mailer.send(notification, self, *args).deliver_later
+  end
+
+  # 034, data-model.md: activation by any route other than the activation link —
+  # a completed password reset (FR-019, by: nil) or an administrator (FR-035,
+  # by: that administrator). Returns whether this call did the activating.
+  #
+  # One conditional UPDATE, so an administrator's click and the holder's own link
+  # landing at the same moment cannot both activate: whichever arrives second
+  # changes nothing and reports false (spec US7 edge case). Unlike Devise's
+  # #confirm, it never promotes a pending unconfirmed_email — only the address
+  # already on the account is activated (research.md R5). It sends no email.
+  #
+  # The in-memory record is brought up to date too: the reset path hands this
+  # same object to Devise's sign_in straight afterwards, and Warden would refuse
+  # it as inactive if it still read confirmed_at as nil (analyze A1).
+  def activate!(by: nil)
+    now = Time.current
+    activated = User.where(id: id, confirmed_at: nil)
+                    .update_all(confirmed_at: now, confirmed_by_id: by&.id, updated_at: now) == 1
+
+    self.confirmed_at, self.confirmed_by_id = User.where(id: id).pick(:confirmed_at, :confirmed_by_id)
+    clear_attribute_changes(%i[confirmed_at confirmed_by_id])
+    activated
+  end
+
+  # FR-036: whether there is an administrator to name for this activation.
+  def activated_by_admin? = confirmed_at.present? && confirmed_by_id.present?
+
+  # 034 FR-012, research.md R17: a new activation email with a new link, so
+  # every earlier one stops working. Devise's resend_confirmation_instructions
+  # alone re-sends the *same* token while it is unexpired (devise 5.0.4,
+  # Confirmable#generate_confirmation_token), without moving
+  # confirmation_sent_at either. Blanking the token forces its fresh-token
+  # branch. Devise's own pending_any_confirmation guard makes this a no-op for
+  # an account that is already active.
+  def resend_activation!
+    # Both copies: Devise also caches the raw token on the instance that issued
+    # it, and send_confirmation_instructions reuses that cache when present.
+    self.confirmation_token = nil
+    @raw_confirmation_token = nil
+    resend_confirmation_instructions
+  end
+
+  DEVISE_NOTIFICATION_EVENTS = {
+    confirmation_instructions: "activation_sent",
+    reset_password_instructions: "reset_sent",
+    password_change: "password_change_notified"
+  }.freeze
 
   # 013 FR-002, research.md R2: the index is what actually guarantees one
   # *bootstrap* administrator, so this is where losing to it is handled. 015

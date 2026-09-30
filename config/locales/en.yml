@@ -36,6 +36,12 @@ en:
       locker_map_entry:
         locker_number: "Locker number"
   admin:
+    # 034 User Story 7: activating an account by hand.
+    user_activations:
+      create:
+        activated: "%{email} is now activated."
+        already_active: "%{email} was already activated."
+        account_gone: "That account no longer exists."
     danger_zone:
       show:
         title: "Danger Zone"
@@ -142,6 +148,8 @@ en:
         already_decided: "That exchange has already been validated or refused."
     users:
       index:
+        # 034 FR-034
+        not_activated: "Not activated"
         title: "Users"
         heading: "Registered users"
         current_floor_label: "Current floor"
@@ -176,6 +184,14 @@ en:
         self_forbidden: "You cannot revoke your own administrator rights."
         super_admin_forbidden: "The super admin's rights cannot be revoked."
       show:
+        # 034 FR-034 to FR-036
+        activation_label: "Activation"
+        not_activated: "Not activated"
+        activated_on: "Activated on %{date}"
+        activated_by: "Activated by %{email} on %{date}"
+        activate_button: "Activate account"
+        activate_aria_label: "Activate the account %{email}"
+        activate_confirm: "Activate %{email}? They will be able to sign in without the email."
         account_gone: "That account no longer exists."
         joined_label: "Joined"
         role_label: "Role"
@@ -236,6 +252,40 @@ en:
         submitting: "Logging in…"
         no_account: "Don't have an account?"
         sign_up: "Sign up"
+        # 034 FR-014, FR-011: the two ways back in, always on this screen — the
+        # notices that point here are toasts that dismiss themselves.
+        forgot_password: "Forgot your password?"
+        no_activation_email: "Didn't receive the activation email?"
+    # 034 User Story 4 (and the landing page of a refused activation link, FR-008).
+    confirmations:
+      new:
+        title: "Resend the activation email"
+        lead: "Enter the address you signed up with and we will send a new activation link."
+        submit: "Send the link"
+        submitting: "Sending…"
+        sign_in: "Sign in"
+        back: "Back to sign in"
+        outcome:
+          expired: "This activation link has expired. Request a new one below."
+          already_active: "This account is already active. You can sign in."
+          unrecognised: "This activation link is not valid. Request a new one below."
+    # 034 User Story 3.
+    passwords:
+      new:
+        title: "Forgot your password?"
+        lead: "Enter your address and we will email you a link to choose a new password."
+        submit: "Send the link"
+        submitting: "Sending…"
+        back: "Back to sign in"
+      edit:
+        title: "Choose a new password"
+        password_label: "New password"
+        password_confirmation_label: "Confirm new password"
+        password_subject: "new password"
+        password_confirmation_subject: "confirm new password"
+        submit: "Save my new password"
+        submitting: "Saving…"
+        request_new: "Request a new link"
     registrations:
       new:
         title: "Create your account"
@@ -475,3 +525,36 @@ en:
       locked_by_swap: "cannot be changed while you have an active swap proposal"
       super_admin_uncancellable: "The super admin account can never be cancelled."
       email_domain_not_allowed: "Your email address domain is not allowed"
+  # 034 contracts/emails.md: the bodies of the account emails. Subjects are
+  # Devise's own keys, in devise.en.yml.
+  mailer:
+    layout:
+      footer: "LockSwap — locker swaps"
+    shared:
+      copy_link: "If the button does not work, copy this address into your browser:"
+    confirmation_instructions:
+      heading: "Activate your account"
+      why: "Someone — hopefully you — created a LockSwap account with this address."
+      what: "Follow the link below to activate it. You can then sign in."
+      button: "Activate my account"
+      validity: "This link works for 24 hours."
+      not_you: "If you did not create this account, ignore this email: it will never be activated."
+    reconfirmation_instructions:
+      subject: "Confirm your new LockSwap email address"
+      heading: "Confirm your new address"
+      why: "This address was entered as the new email of a LockSwap account."
+      what: "Follow the link below to confirm it. Until then, the account keeps its previous address."
+      button: "Confirm this address"
+      validity: "This link works for 24 hours."
+      not_you: "If you did not ask for this, ignore this email: nothing will change."
+    reset_password_instructions:
+      heading: "Choose a new password"
+      why: "Someone asked to reset the password of the LockSwap account for this address."
+      what: "Follow the link below to choose a new one."
+      button: "Choose a new password"
+      validity: "This link works for 6 hours, and only once."
+      not_you: "If you did not ask for this, ignore this email: your password will not change."
+    password_change:
+      heading: "Your password was changed"
+      body_html: "The password of your LockSwap account was changed on %{time}."
+      not_you: "If you did not do this, contact an administrator right away."

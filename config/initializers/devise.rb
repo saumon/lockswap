@@ -24,13 +24,20 @@ Devise.setup do |config|
   # Configure the e-mail address which will be shown in Devise::Mailer,
   # note that it will be overwritten if you use your own mailer class
   # with default "from" parameter.
-  config.mailer_sender = "please-change-me-at-config-initializers-devise@example.com"
+  #
+  # 034 FR-029: SMTP_SENDER / MAILER_SENDER or the credentials, else a
+  # per-environment default (contracts/mail-configuration.md).
+  config.mailer_sender = Lockswap::MailerSettings.mailer_sender(
+    default: "LockSwap <no-reply@#{Rails.env.production? ? "lockswap.saumon.cc" : "localhost"}>"
+  )
 
-  # Configure the class responsible to send e-mails.
-  # config.mailer = 'Devise::Mailer'
+  # 034: UserMailer exists only to give the email-change confirmation its own
+  # subject line (contracts/emails.md).
+  config.mailer = "UserMailer"
 
-  # Configure the parent class responsible to send e-mails.
-  # config.parent_mailer = 'ActionMailer::Base'
+  # 034 research.md R8/R9: ApplicationMailer carries the layout, the sender and
+  # the site-language switch every Devise email needs.
+  config.parent_mailer = "ApplicationMailer"
 
   # ==> ORM configuration
   # Load and configure the ORM. Supports :active_record (default) and
@@ -90,7 +97,14 @@ Devise.setup do |config|
   # It will change confirmation, password recovery and other workflows
   # to behave the same regardless if the e-mail provided was right or wrong.
   # Does not affect registerable.
-  # config.paranoid = true
+  #
+  # 034 research.md R2: on. It changes no message anyone sees — 001 FR-006
+  # already made "locked" and "not found" read exactly like "invalid" (see
+  # config/locales/devise.*.yml) — and it closes the timing difference between
+  # signing in with an unknown address and with a known one. The resend and
+  # reset screens own their generic answers too (Users::ConfirmationsController,
+  # Users::PasswordsController), so that stays true even if this is ever off.
+  config.paranoid = true
 
   # By default Devise will store the user in session. You can skip storage for
   # particular strategies by setting this option.
@@ -132,7 +146,10 @@ Devise.setup do |config|
   # config.send_email_changed_notification = false
 
   # Send a notification email when the user's password is changed.
-  # config.send_password_change_notification = false
+  #
+  # 034 FR-039: after every password change — reset link or account page — the
+  # holder hears about it, so a takeover is never silent.
+  config.send_password_change_notification = true
 
   # ==> Configuration for :confirmable
   # A period that the user is allowed to access the website even without
@@ -151,7 +168,9 @@ Devise.setup do |config|
   # their account can't be confirmed with the token any more.
   # Default is nil, meaning there is no restriction on how long a user can take
   # before confirming their account.
-  # config.confirm_within = 3.days
+  #
+  # 034 FR-007: an activation link works for 24 hours from when it was issued.
+  config.confirm_within = 24.hours
 
   # If true, requires any email changes to be confirmed (exactly the same way as
   # initial account confirmation) to be applied. Requires additional unconfirmed_email
@@ -160,6 +179,9 @@ Devise.setup do |config|
   # Also, when used in conjunction with `send_email_changed_notification`,
   # the notification is sent to the original email when the change is requested,
   # not when the unconfirmed email is confirmed.
+  #
+  # 034 FR-021: a changed address only takes effect once confirmed from the new
+  # mailbox. email_changed notifications to the old address stay off.
   config.reconfirmable = true
 
   # Defines which key will be used when confirming an account
@@ -230,6 +252,8 @@ Devise.setup do |config|
   # Time interval you can reset your password with a reset password key.
   # Don't put a too small interval or your users won't have the time to
   # change their passwords.
+  #
+  # 034 FR-018: a reset link works for 6 hours, once.
   config.reset_password_within = 6.hours
 
   # When set to false, does not sign a user in automatically after their password is

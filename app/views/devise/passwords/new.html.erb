@@ -1,0 +1,26 @@
+<% content_for :title, t(".title") %>
+<% content_for :hide_site_header, true %>
+
+<%# 034 User Story 3, FR-014: ask for a reset link. The answer is the same
+    whether or not the address has an account (FR-016). %>
+<div class="auth-page">
+  <%= render "shared/brand_stacked" %>
+
+  <div class="card stack">
+    <h1 class="page-title"><%= t(".title") %></h1>
+
+    <p class="card-lead"><%= t(".lead") %></p>
+
+    <%= form_for(resource, as: resource_name, url: password_path(resource_name),
+                 html: { method: :post, class: "stack-tight", novalidate: true }) do |f| %>
+      <div class="field">
+        <%= f.label :email, class: "field-label" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "field-input" %>
+      </div>
+
+      <%= f.submit t(".submit"), class: "btn btn-primary w-full", data: { turbo_submits_with: t(".submitting") } %>
+    <% end %>
+
+    <p class="meta"><%= link_to t(".back"), new_user_session_path, class: "auth-link" %></p>
+  </div>
+</div>

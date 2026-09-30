@@ -82,6 +82,12 @@ fr:
       locker_number_unknown: "n'est pas un casier reconnu — demandez à un administrateur de l'ajouter à la cartographie"
 
   admin:
+    # 034 User Story 7
+    user_activations:
+      create:
+        activated: "%{email} est maintenant activé."
+        already_active: "%{email} était déjà activé."
+        account_gone: "Ce compte n'existe plus."
     danger_zone:
       show:
         title: "Zone de danger"
@@ -188,6 +194,8 @@ fr:
         already_decided: "Cet échange a déjà été validé ou refusé."
     users:
       index:
+        # 034 FR-034
+        not_activated: "Non activé"
         title: "Utilisateurs"
         heading: "Utilisateurs enregistrés"
         current_floor_label: "Étage actuel"
@@ -222,6 +230,14 @@ fr:
         self_forbidden: "Vous ne pouvez pas révoquer vos propres droits d'administrateur."
         super_admin_forbidden: "Les droits du super administrateur ne peuvent pas être révoqués."
       show:
+        # 034 FR-034 à FR-036
+        activation_label: "Activation"
+        not_activated: "Non activé"
+        activated_on: "Activé le %{date}"
+        activated_by: "Activé par %{email} le %{date}"
+        activate_button: "Activer le compte"
+        activate_aria_label: "Activer le compte %{email}"
+        activate_confirm: "Activer %{email} ? Cette personne pourra se connecter sans l'e-mail."
         account_gone: "Ce compte n'existe plus."
         joined_label: "Inscrit le"
         role_label: "Rôle"
@@ -282,6 +298,39 @@ fr:
         submitting: "Connexion en cours…"
         no_account: "Vous n'avez pas de compte ?"
         sign_up: "S'inscrire"
+        # 034 FR-014, FR-011
+        forgot_password: "Mot de passe oublié ?"
+        no_activation_email: "Vous n'avez pas reçu l'e-mail d'activation ?"
+    # 034 User Story 4
+    confirmations:
+      new:
+        title: "Renvoyer l'e-mail d'activation"
+        lead: "Saisissez l'adresse utilisée à l'inscription : nous vous enverrons un nouveau lien d'activation."
+        submit: "Envoyer le lien"
+        submitting: "Envoi…"
+        sign_in: "Se connecter"
+        back: "Retour à la connexion"
+        outcome:
+          expired: "Ce lien d'activation a expiré. Demandez-en un nouveau ci-dessous."
+          already_active: "Ce compte est déjà actif. Vous pouvez vous connecter."
+          unrecognised: "Ce lien d'activation n'est pas valide. Demandez-en un nouveau ci-dessous."
+    # 034 User Story 3
+    passwords:
+      new:
+        title: "Mot de passe oublié ?"
+        lead: "Saisissez votre adresse : nous vous enverrons un lien pour choisir un nouveau mot de passe."
+        submit: "Envoyer le lien"
+        submitting: "Envoi…"
+        back: "Retour à la connexion"
+      edit:
+        title: "Choisissez un nouveau mot de passe"
+        password_label: "Nouveau mot de passe"
+        password_confirmation_label: "Confirmer le nouveau mot de passe"
+        password_subject: "nouveau mot de passe"
+        password_confirmation_subject: "confirmation du nouveau mot de passe"
+        submit: "Enregistrer"
+        submitting: "Enregistrement…"
+        request_new: "Demander un nouveau lien"
     registrations:
       new:
         title: "Créer votre compte"
@@ -513,3 +562,35 @@ fr:
       locked_by_swap: "ne peut pas être modifié tant que vous avez une proposition d'échange active"
       super_admin_uncancellable: "Le compte du super administrateur ne peut jamais être annulé."
       email_domain_not_allowed: "Votre domaine d'adresse e-mail n'est pas autorisé"
+  # 034 contracts/emails.md
+  mailer:
+    layout:
+      footer: "LockSwap — échanges de casiers"
+    shared:
+      copy_link: "Si le bouton ne fonctionne pas, copiez cette adresse dans votre navigateur :"
+    confirmation_instructions:
+      heading: "Activez votre compte"
+      why: "Quelqu'un — vous, espérons-le — a créé un compte LockSwap avec cette adresse."
+      what: "Suivez le lien ci-dessous pour l'activer. Vous pourrez ensuite vous connecter."
+      button: "Activer mon compte"
+      validity: "Ce lien est valable 24 heures."
+      not_you: "Si vous n'avez pas créé ce compte, ignorez cet e-mail : il ne sera jamais activé."
+    reconfirmation_instructions:
+      subject: "Confirmez votre nouvelle adresse e-mail LockSwap"
+      heading: "Confirmez votre nouvelle adresse"
+      why: "Cette adresse a été saisie comme nouvel e-mail d'un compte LockSwap."
+      what: "Suivez le lien ci-dessous pour la confirmer. D'ici là, le compte conserve son adresse précédente."
+      button: "Confirmer cette adresse"
+      validity: "Ce lien est valable 24 heures."
+      not_you: "Si vous n'avez rien demandé, ignorez cet e-mail : rien ne changera."
+    reset_password_instructions:
+      heading: "Choisissez un nouveau mot de passe"
+      why: "Quelqu'un a demandé à réinitialiser le mot de passe du compte LockSwap associé à cette adresse."
+      what: "Suivez le lien ci-dessous pour en choisir un nouveau."
+      button: "Choisir un nouveau mot de passe"
+      validity: "Ce lien est valable 6 heures, une seule fois."
+      not_you: "Si vous n'avez rien demandé, ignorez cet e-mail : votre mot de passe ne changera pas."
+    password_change:
+      heading: "Votre mot de passe a été modifié"
+      body_html: "Le mot de passe de votre compte LockSwap a été modifié le %{time}."
+      not_you: "Si ce n'est pas vous, contactez immédiatement un administrateur."

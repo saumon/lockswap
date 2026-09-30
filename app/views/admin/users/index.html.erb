@@ -86,10 +86,30 @@
                   #admin-user-directory-list turbo-frame, so without it Turbo
                   would look for a matching frame in the detail screen's response
                   (there is none) and silently do nothing. %>
-              <td class="strong data-value" role="cell" data-label="<%= t(".email_header") %>">
-                <%= link_to user.email, admin_user_path(user), id: "admin-user-row-#{user.id}-detail-link",
-                      data: { turbo_frame: "_top" } %>
-              </td>
+              <%# 034 FR-034: an account that never activated says so under its
+                  address, in words (008 FR-025: the tint decorates the word, it
+                  does not replace it). Activated accounts render as before.
+                  confirmed_at is a column of the row already loaded, so this
+                  costs no query.
+
+                  The address's classes move from the cell to the link in that
+                  case: .badge sets no face of its own, and inside a .data-value
+                  cell it would come out in bold mono, unlike every other badge
+                  on the site (the Role column's, for one). %>
+              <% if user.confirmed_at.nil? %>
+                <td role="cell" data-label="<%= t(".email_header") %>">
+                  <div class="cell-stack">
+                    <%= link_to user.email, admin_user_path(user), id: "admin-user-row-#{user.id}-detail-link",
+                          class: "strong data-value", data: { turbo_frame: "_top" } %>
+                    <span class="badge badge-neutral"><%= t(".not_activated") %></span>
+                  </div>
+                </td>
+              <% else %>
+                <td class="strong data-value" role="cell" data-label="<%= t(".email_header") %>">
+                  <%= link_to user.email, admin_user_path(user), id: "admin-user-row-#{user.id}-detail-link",
+                        data: { turbo_frame: "_top" } %>
+                </td>
+              <% end %>
               <td class="meta data-value" role="cell" data-label="<%= t(".joined_header") %>"><%= l user.created_at, format: :long %></td>
 
               <%# 020 FR-001: the same floor the account's own homepage shows.

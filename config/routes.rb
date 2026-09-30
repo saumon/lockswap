@@ -1,5 +1,16 @@
 Rails.application.routes.draw do
-  devise_for :users, controllers: { registrations: "registrations" }
+  # 034: the activation link and its resend screen, and password reset — both
+  # Devise's own, overridden only where the spec asks for more
+  # (specs/034-email-confirmation-password-reset/contracts/routes-and-screens.md).
+  devise_for :users, controllers: {
+    registrations: "registrations",
+    confirmations: "users/confirmations",
+    passwords: "users/passwords"
+  }
+
+  # 034 FR-030: the development inbox, when no SMTP server is configured
+  # (research.md R12). Never mounted in production or test.
+  mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -65,6 +76,11 @@ Rails.application.routes.draw do
 
       resource :locker_profile, only: :update, controller: "user_locker_profiles"
       resource :locker_wish, only: :destroy, controller: "user_locker_wishes"
+
+      # 034 FR-035, research.md R14: activating an account by hand. A nested
+      # singular resource like the two above — its own controller and rules,
+      # never a general #update on accounts (015 FR-014).
+      resource :activation, only: :create, controller: "user_activations"
     end
 
     # 016 FR-001: the Danger Zone screen. Singular — a screen that shows (and, as

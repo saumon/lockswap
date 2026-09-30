@@ -6,6 +6,9 @@ require "rails/all"
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+# 034: read by the environment files and the Devise initializer.
+require_relative "mailer_settings"
+
 module Lockswap
   class Application < Rails::Application
     # 007 FR-003: how long a flash notification stays on screen before it takes

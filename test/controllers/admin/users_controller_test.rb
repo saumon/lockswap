@@ -206,7 +206,9 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     User.insert_all!([ {
       email: "shortlocker@example.com",
       encrypted_password: Devise::Encryptor.digest(User, VALID_PASSWORD),
-      floor: "3", locker_number: "1", created_at: Time.current, updated_at: Time.current
+      floor: "3", locker_number: "1", created_at: Time.current, updated_at: Time.current,
+      # 034: an ordinary, activated account — like every fixture.
+      confirmed_at: Time.current
     } ])
 
     get admin_users_path, params: { current_locker: "1" }

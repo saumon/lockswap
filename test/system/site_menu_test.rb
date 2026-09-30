@@ -197,6 +197,10 @@ class SiteMenuTest < ApplicationSystemTestCase
   # the bar, because the panel is where the email now lives on a phone.
   test "a long email truncates rather than pushing anything off screen" do
     long = users(:dave)
+    # 034: a changed address normally waits for confirmation from the new
+    # mailbox (reconfirmable); this is test data, not a change made through the
+    # account page, so it is applied directly.
+    long.skip_reconfirmation!
     long.update!(email: "a-really-quite-long-address-for-testing@example.com")
     log_in_as long
 

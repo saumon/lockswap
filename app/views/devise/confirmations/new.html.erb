@@ -1,0 +1,39 @@
+<% content_for :title, t(".title") %>
+<% content_for :hide_site_header, true %>
+
+<%# 034 User Story 4: ask for a new activation email (FR-011). Also where a link
+    that could not activate anything lands (FR-008), with what went wrong said
+    above the form that fixes it. %>
+<div class="auth-page">
+  <%= render "shared/brand_stacked" %>
+
+  <div class="card stack">
+    <h1 class="page-title"><%= t(".title") %></h1>
+
+    <% if @outcome %>
+      <div id="confirmation-outcome" role="alert" class="form-errors">
+        <p><%= t(".outcome.#{@outcome}") %></p>
+        <% if @outcome == :already_active %>
+          <p><%= link_to t(".sign_in"), new_user_session_path, class: "auth-link" %></p>
+        <% end %>
+      </div>
+    <% end %>
+
+    <p class="card-lead"><%= t(".lead") %></p>
+
+    <%# novalidate, as on sign-in and sign-up: every answer comes from the server,
+        in one voice — and here it is always the same answer (FR-013). %>
+    <%= form_for(resource, as: resource_name, url: confirmation_path(resource_name),
+                 html: { method: :post, class: "stack-tight", novalidate: true }) do |f| %>
+      <div class="field">
+        <%= f.label :email, class: "field-label" %>
+        <%= f.email_field :email, autocomplete: "email", class: "field-input",
+              value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email) %>
+      </div>
+
+      <%= f.submit t(".submit"), class: "btn btn-primary w-full", data: { turbo_submits_with: t(".submitting") } %>
+    <% end %>
+
+    <p class="meta"><%= link_to t(".back"), new_user_session_path, class: "auth-link" %></p>
+  </div>
+</div>

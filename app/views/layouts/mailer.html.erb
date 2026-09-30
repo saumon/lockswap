@@ -1,13 +1,48 @@
+<%#
+  034 contracts/emails.md: one layout for every account email.
+
+  Mail clients strip <style> blocks and ignore CSS custom properties, so every
+  rule is inline and the layout is tables. Colours come from mail_color (the
+  stylesheet's tokens, by name — CLAUDE.md allows no colour literal in a
+  template). The card follows the site's contract: a border, a 3px hinge down
+  the leading edge in the reader's own colour, and no shadow.
+%>
 <!DOCTYPE html>
-<html>
+<html lang="<%= I18n.locale %>">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <style>
-      /* Email styles need to be inline */
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= message.subject %></title>
   </head>
 
-  <body>
-    <%= yield %>
+  <body style="margin: 0; padding: 0; background-color: <%= mail_color(:canvas) %>;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="background-color: <%= mail_color(:canvas) %>;">
+      <tr>
+        <td align="center" style="padding: 32px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                 style="max-width: 560px;">
+            <tr>
+              <%# The wordmark as text, like the site's: navy "Lock", brand-green
+                  "Swap". The green is below 4.5:1 and legal only as a brand
+                  name (WCAG 2.1 SC 1.4.3), exactly as on the site. %>
+              <td style="padding: 0 0 16px 0; font-family: <%= MailerHelper::MAIL_FONT_WRITTEN %>; font-size: 22px; font-weight: 800; letter-spacing: -0.02em;">
+                <span style="color: <%= mail_color(:ink) %>;">Lock</span><span style="color: <%= mail_color(:brand_green) %>;">Swap</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="background-color: <%= mail_color(:surface) %>; border: 1px solid <%= mail_color(:border) %>; border-left: 3px solid <%= mail_color(:rail_you) %>; border-radius: 12px; padding: 24px; font-family: <%= MailerHelper::MAIL_FONT_WRITTEN %>; font-size: 16px; line-height: 1.5; color: <%= mail_color(:ink) %>;">
+                <%= yield %>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 16px 0 0 0; font-family: <%= MailerHelper::MAIL_FONT_WRITTEN %>; font-size: 13px; color: <%= mail_color(:ink_muted) %>;">
+                <%= t("mailer.layout.footer") %>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>

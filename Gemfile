@@ -57,6 +57,13 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+
+  # 034 FR-030, research.md R12: with no SMTP server configured, development
+  # mail lands in a web inbox served by the app itself (/letter_opener).
+  # Development runs on a remote box, so an inbox reachable through the app's
+  # own URL is the one that works — a local-browser opener or files on the
+  # server's disk would not.
+  gem "letter_opener_web"
 end
 
 group :test do

@@ -535,4 +535,43 @@ class AccessibilityTest < ApplicationSystemTestCase
       assert_axe_clean
     end
   end
+
+  # --- 034: the account-email screens ----------------------------------------
+
+  test "the forgot-password screen is accessible" do
+    visit new_user_password_path
+    assert_axe_clean
+  end
+
+  test "the new-password screen is accessible, with and without an error" do
+    token = users(:carol).send_reset_password_instructions
+    visit edit_user_password_path(reset_password_token: token)
+    assert_axe_clean
+
+    visit edit_user_password_path(reset_password_token: "not-a-real-token")
+    fill_in_reliably "New password", with: "brand-new-pass"
+    fill_in_reliably "Confirm new password", with: "brand-new-pass"
+    click_on I18n.t("devise.passwords.edit.submit")
+    assert_selector "#error_explanation"
+    assert_axe_clean
+  end
+
+  test "the resend-activation screen is accessible, and so is a refused link" do
+    visit new_user_confirmation_path
+    assert_axe_clean
+
+    visit user_confirmation_path(confirmation_token: "not-a-real-token")
+    assert_selector "#confirmation-outcome"
+    assert_axe_clean
+  end
+
+  test "the account-email screens are accessible at the phone width" do
+    with_viewport(:phone) do
+      visit new_user_password_path
+      assert_axe_clean
+
+      visit new_user_confirmation_path
+      assert_axe_clean
+    end
+  end
 end

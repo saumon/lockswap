@@ -1,0 +1,17 @@
+<%#
+  034 contracts/emails.md. One Devise action, two emails: activating a new
+  account (User Story 1), or confirming a changed address (User Story 6) —
+  Devise sends the latter to the new address while the change is pending.
+%>
+<% scope = @resource.pending_reconfirmation? ? "mailer.reconfirmation_instructions" : "mailer.confirmation_instructions" %>
+
+<h1 style="margin: 0 0 16px 0; font-size: 22px; line-height: 1.25; letter-spacing: -0.02em; color: <%= mail_color(:ink) %>;"><%= t("#{scope}.heading") %></h1>
+
+<p style="margin: 0 0 12px 0;"><%= t("#{scope}.why") %></p>
+<p style="margin: 0;"><%= t("#{scope}.what") %></p>
+
+<%= render "devise/mailer/action", label: t("#{scope}.button"),
+      url: confirmation_url(@resource, confirmation_token: @token),
+      validity: t("#{scope}.validity") %>
+
+<p style="margin: 0; font-size: 14px; color: <%= mail_color(:ink_muted) %>;"><%= t("#{scope}.not_you") %></p>

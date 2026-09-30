@@ -8,7 +8,10 @@ class SignupTest < ApplicationSystemTestCase
   # tests below assert the real message rather than a paraphrase of it.
   MISMATCH_MESSAGE = "doesn't match the password above".freeze
 
-  test "a visitor creates an account and lands on the homepage" do
+  # 034 — a breaking change to 001 US1: signup no longer signs in. The account
+  # is created unactivated, and the visitor is sent to sign in with a notice
+  # telling them to activate it from the email first (034 FR-003).
+  test "a visitor creates an account and is asked to activate it" do
     assert_difference -> { User.count }, 1 do
       visit new_user_registration_path
 
@@ -17,22 +20,25 @@ class SignupTest < ApplicationSystemTestCase
       fill_in "Confirm password", with: "password123"
       click_on "Create account"
 
-      assert_current_path root_path
+      assert_current_path new_user_session_path
     end
 
-    assert_text "Welcome to LockSwap"
-    assert_text "new.person@example.com"
+    assert_text I18n.t("devise.registrations.signed_up_but_unconfirmed")
+    assert_no_text "Welcome to LockSwap"
   end
 
-  # FR-007: the account created by signup gets the same 30-day persistent
-  # session a normal login does — no second trip through the login form.
-  test "a new account is signed in persistently" do
+  # FR-007: the 30-day persistent session now starts at the first real sign-in,
+  # after activation, rather than at signup (034).
+  test "an activated account gets the persistent session" do
     visit new_user_registration_path
     fill_in "Email", with: "new.person@example.com"
     fill_in "Password", with: "password123"
     fill_in "Confirm password", with: "password123"
     click_on "Create account"
-    assert_text "Welcome to LockSwap"
+    assert_text I18n.t("devise.registrations.signed_up_but_unconfirmed")
+
+    visit link_from_last_email(/confirmation_token=/)
+    log_in_as User.find_by!(email: "new.person@example.com")
 
     restart_browser_session
     visit root_path
@@ -178,9 +184,10 @@ class SignupTest < ApplicationSystemTestCase
       fill_in_reliably "Confirm password", with: "password123"
       click_on "Create account"
 
-      assert_current_path root_path
+      # 034: through means created — and asked to activate, not signed in.
+      assert_current_path new_user_session_path
     end
 
-    assert_text "Welcome to LockSwap"
+    assert_text I18n.t("devise.registrations.signed_up_but_unconfirmed")
   end
 end
