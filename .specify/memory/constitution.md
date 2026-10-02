@@ -73,6 +73,25 @@ Modified sections:
 Raised by the user directly (not by /speckit-analyze) while feature 025 was
 mid-implementation, asking whether the constitution should describe the new
 French/English capability.
+
+Amendment 2026-10-02
+====================
+Version change: 1.1.0 → 1.2.0 (MINOR)
+Reason: README.md had grown to 1 969 lines because every feature appended its
+own section to it. It was restructured into a short landing page with the
+reference material under docs/. Keeping it that way is an ongoing obligation
+for every future feature, so it becomes a gate rather than a one-off fact.
+
+Modified sections:
+  - Quality Gates — added the "Documentation gate", naming
+    test/documentation_links_test.rb as its automated enforcement
+
+Templates updated:
+  - .specify/templates/tasks-template.md — the Polish phase now has an explicit
+    docs/features.md task
+
+Raised by the user directly, asking whether CLAUDE.md should explain how to
+maintain the README.
 -->
 
 # LockSwap Constitution
@@ -187,6 +206,12 @@ diligence alone:
   diffs `config/locales/en.yml`/`fr.yml` (and the Devise locale pair)
   directly rather than relying on incidental view coverage from other tests
   (User Experience Consistency).
+- **Documentation gate**: blocks merge if a shipped feature has no entry in
+  `docs/features.md`, or if a relative link in `README.md`, `CONTRIBUTING.md`
+  or `docs/*.md` is broken; the link check is enforced by
+  `test/documentation_links_test.rb`. `README.md` stays a landing page: where
+  each kind of change is documented is set out in `CLAUDE.md`
+  ("Documentation: where a feature gets written down").
 
 A gate MAY only be bypassed with an explicit, written exception approved by
 a maintainer and recorded in the pull request; silent bypasses are a
@@ -233,4 +258,4 @@ compliance or amending the constitution with a documented rationale. There
 is no grandfathering of non-compliant code beyond the pull request in which
 the non-compliance is identified.
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-12 | **Last Amended**: 2026-09-21
+**Version**: 1.2.0 | **Ratified**: 2026-09-12 | **Last Amended**: 2026-10-02

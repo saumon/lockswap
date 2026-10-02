@@ -224,3 +224,28 @@ a new session will drift back into:
 - a dark mode (the theme is light, framed by one dark-ish glass bar)
 - a white header separated from a white page by a grey hairline
 - a flat vivid green as the only accent, with white text on it
+
+---
+
+## Documentation: where a feature gets written down
+
+README.md is a landing page, not a changelog. It stays around 200 lines. A new
+feature never adds a section or a paragraph to it — that is how it reached 1 969.
+
+| What changed | Where it goes |
+|---|---|
+| Any shipped feature | one row in the table and a short entry in `docs/features.md` |
+| User-visible capability a newcomer should know | one bullet under "Features" in README.md, only if it changes the pitch |
+| New or changed role/permission | `docs/roles.md` (and the README roles table if a role is added) |
+| New environment variable or SMTP setting | the README "Configuration" table, details in `docs/email.md` or `docs/deployment.md` |
+| New command, test rule or dev convention | `docs/development.md` |
+| Behaviour of the swap flow itself | the Mermaid diagram in README.md |
+
+- The spec in `specs/NNN-…/` is the source of truth; `docs/features.md`
+  summarises it and links to it.
+- When a feature supersedes another, edit the older entry ("Superseded by NNN")
+  instead of leaving both as current.
+- Update the README's Ruby/Rails badges and "Tech stack" when `.ruby-version` or
+  the Gemfile moves.
+- Relative links in `docs/` start with `../`. Check them after moving anything.
+- The README is in English; the UI strings are the only French.
