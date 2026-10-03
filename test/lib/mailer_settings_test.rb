@@ -162,12 +162,19 @@ class MailerSettingsTest < ActiveSupport::TestCase
     original = Rails.application.method(:credentials)
     Rails.application.define_singleton_method(:credentials) { broken }
 
+    # The warning is once per process; reset it so this test sees it, and
+    # capture it so it does not leak into the test run's output.
+    Settings.instance_variable_set(:@undecryptable_credentials_warned, nil)
+
     with_env do
-      assert_nil Settings.credential(:smtp, :address)
-      assert_not_predicate Settings, :smtp_configured?
-      assert_equal "fallback@example.com", Settings.mailer_sender(default: "fallback@example.com")
+      assert_output(nil, /could not be decrypted/) do
+        assert_nil Settings.credential(:smtp, :address)
+        assert_not_predicate Settings, :smtp_configured?
+        assert_equal "fallback@example.com", Settings.mailer_sender(default: "fallback@example.com")
+      end
     end
   ensure
     Rails.application.define_singleton_method(:credentials, original)
+    Settings.instance_variable_set(:@undecryptable_credentials_warned, nil)
   end
 end
