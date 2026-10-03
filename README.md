@@ -17,6 +17,7 @@
 </p>
 
 <p align="center">
+  <a href="https://saumon.github.io/lockswap/">Website</a> ·
   <a href="#quick-start">Quick start</a> ·
   <a href="#features">Features</a> ·
   <a href="#how-a-swap-works">How a swap works</a> ·

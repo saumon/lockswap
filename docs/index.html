@@ -1,0 +1,2438 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LockSwap — Swap your locker, not your day</title>
+  <meta name="description" content="LockSwap lets colleagues find each other and agree a locker swap directly, then lets facilities validate it. A self-hosted Rails application: one SQLite file, no Node, no external services.">
+  <meta name="theme-color" content="#F4F7FA">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="LockSwap — Swap your locker, not your day">
+  <meta property="og:description" content="Colleagues agree a locker swap directly; facilities validate it once the badges have moved.">
+  <meta property="og:image" content="assets/brand-mark.png">
+  <link rel="icon" type="image/svg+xml" href="assets/brand-mark.svg">
+  <link rel="preload" href="assets/fonts/nunito-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/jetbrains-mono-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
+
+  <!--
+    The LockSwap landing page, served by GitHub Pages from /docs.
+
+    Static on purpose: no build step, no framework, nothing fetched from a third
+    party. The tokens below are copied from app/assets/tailwind/application.css,
+    which stays the source of truth — if a value changes there, change it here.
+    CLAUDE.md is the design contract this page follows: the swap axis (blue is
+    yours, green is somebody else's), Nunito for what is written, JetBrains Mono
+    for what is measured, cards on a hinge with no shadow, no uppercase.
+
+    Motion is richer than the application's 400ms budget allows, because this is
+    a page people visit once rather than a tool they use all day. The same rules
+    still hold: transform and opacity wherever possible, every animation declared
+    inside prefers-reduced-motion: no-preference, and content that is readable
+    whether or not anything runs.
+  -->
+  <style>
+    @font-face {
+      font-family: "Nunito";
+      font-style: normal;
+      font-weight: 200 1000;
+      font-display: swap;
+      src: url("assets/fonts/nunito-latin-variable.woff2") format("woff2");
+    }
+
+    @font-face {
+      font-family: "JetBrains Mono";
+      font-style: normal;
+      font-weight: 400 700;
+      font-display: swap;
+      src: url("assets/fonts/jetbrains-mono-latin-variable.woff2") format("woff2");
+    }
+
+    /* --- Tokens (from app/assets/tailwind/application.css) ----------------- */
+    :root {
+      --color-brand-navy: #0E2A47;
+      --color-brand-green: #0AB486;
+      --color-locker-blue: #2588F3;
+      --color-locker-green: #41D5A5;
+
+      --color-ink: #0A1F38;
+      --color-ink-muted: #50607A;
+      --color-accent: #07795A;
+      --color-link: #0A5AC2;
+      --color-canvas: #F4F7FA;
+      --color-surface: #FFFFFF;
+      --color-border: #DCE4EC;
+      --color-border-strong: #C3D0DE;
+
+      --color-status-success: #07795A;
+      --color-status-success-tint: #E6F7F1;
+      --color-status-info: #0A5AC2;
+      --color-status-info-tint: #E3EDFD;
+      --color-status-neutral: #0E2A47;
+      --color-status-neutral-tint: #EEF2F6;
+
+      --color-rail-you: #0A77F1;
+      --color-rail-them: #0AB486;
+      --color-rail-system: #0A1F38;
+
+      --color-action-from: #3499FD;
+      --color-action-to: #41D5A5;
+      --color-action-ink: #FFFFFF;
+      --gradient-action: linear-gradient(100deg,
+        var(--color-action-from) 0%,
+        var(--color-action-to) 50%,
+        var(--color-action-from) 100%);
+      --gradient-axis-down: linear-gradient(to bottom, var(--color-rail-you), var(--color-rail-them));
+      --gradient-axis-across: linear-gradient(to right, var(--color-rail-you), var(--color-rail-them));
+
+      --color-bar: #FFFFFF94;
+      --color-bar-blur: blur(24px) saturate(180%);
+      --size-bar: 4.25rem;
+      --color-grid: #0A1F380C;
+      --color-grid-lit: #0A77F155;
+      --color-row-hover: #F4F7FA;
+
+      --font-brand: "Nunito", ui-rounded, "Segoe UI", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
+
+      --text-h1: 1.875rem;
+      --text-h2: 1.25rem;
+      --text-h3: 1rem;
+      --text-body: 1rem;
+      --text-sm: 0.875rem;
+      --text-label: 0.875rem;
+      --text-data: 0.8125rem;
+
+      --spacing-1: 0.25rem;
+      --spacing-2: 0.5rem;
+      --spacing-3: 0.75rem;
+      --spacing-4: 1rem;
+      --spacing-5: 1.5rem;
+      --spacing-6: 2rem;
+      --spacing-7: 3rem;
+      --spacing-8: 4rem;
+
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --shadow-lg: 0 18px 40px -12px rgb(10 31 56 / 0.35);
+
+      --motion-fast: 120ms;
+      --motion-base: 180ms;
+      --motion-brand-spin: 4000ms;
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* --- Base -------------------------------------------------------------- */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: calc(var(--size-bar) + var(--spacing-4));
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      background-color: var(--color-canvas);
+      background-image:
+        linear-gradient(to right, var(--color-grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--color-grid) 1px, transparent 1px);
+      background-size: 1.5rem 1.5rem;
+      color: var(--color-ink);
+      font-family: var(--font-brand);
+      font-size: var(--text-body);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    img, svg { display: block; }
+    h1, h2, h3, p, ul, ol, figure { margin: 0; }
+    ul, ol { padding: 0; list-style: none; }
+    a { color: var(--color-link); text-underline-offset: 0.18em; }
+    code { font-family: var(--font-mono); font-size: 0.92em; }
+
+    :where(a, button, [tabindex]):focus-visible {
+      outline: 2px solid var(--color-link);
+      outline-offset: 2px;
+      border-radius: var(--radius-sm);
+    }
+
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0 0 0 0);
+      white-space: nowrap; border: 0;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: var(--spacing-4);
+      top: -3rem;
+      z-index: 100;
+      padding: var(--spacing-2) var(--spacing-4);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-strong);
+      border-radius: var(--radius-md);
+      font-weight: 700;
+    }
+    .skip-link:focus { top: var(--spacing-3); }
+
+    .wrap {
+      width: 100%;
+      max-width: 68rem;
+      margin-inline: auto;
+      padding-inline: var(--spacing-4);
+    }
+
+    @media (min-width: 48rem) {
+      .wrap { padding-inline: var(--spacing-6); }
+    }
+
+    /* --- Brand ------------------------------------------------------------- */
+    .brand-lockup {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-3);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+    }
+
+    .brand-mark { width: auto; height: 2rem; aspect-ratio: 649 / 547; }
+
+    .brand-mark-spin { display: inline-flex; }
+
+    .brand-wordmark {
+      font-size: var(--text-h2);
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .brand-wordmark-lock { color: var(--color-brand-navy); }
+    /* 2.66:1 on white — legal only because WCAG 2.1 SC 1.4.3 exempts a brand
+       name. Green text anywhere else is --color-accent. */
+    .brand-wordmark-swap { color: var(--color-brand-green); }
+
+    /* --- Header: frosted glass -------------------------------------------- */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    /* The glass is on the pseudo-element, not on the header, exactly as in the
+       application — see CLAUDE.md, "Three couplings that break silently". */
+    .site-header::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background-color: var(--color-bar);
+      -webkit-backdrop-filter: var(--color-bar-blur);
+      backdrop-filter: var(--color-bar-blur);
+    }
+
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .site-header::before { background-color: var(--color-surface); }
+    }
+
+    .site-header::after {
+      content: "";
+      position: absolute;
+      inset-inline: 0;
+      bottom: 0;
+      height: 2px;
+      background-image: var(--gradient-axis-across);
+    }
+
+    /* The page's reading progress, drawn over the hairline: the same gradient
+       at full strength, scaled across as the reader goes down the page. */
+    .scroll-progress {
+      position: absolute;
+      inset-inline: 0;
+      bottom: 0;
+      height: 2px;
+      background-image: var(--gradient-axis-across);
+      filter: saturate(140%) brightness(0.85);
+      transform: scaleX(0);
+      transform-origin: left;
+    }
+
+    .site-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--spacing-4);
+      min-height: var(--size-bar);
+    }
+
+    .site-nav-links {
+      display: none;
+      align-items: center;
+      gap: var(--spacing-5);
+    }
+
+    @media (min-width: 48rem) {
+      .site-nav-links { display: flex; }
+    }
+
+    .site-nav-link {
+      position: relative;
+      color: var(--color-ink-muted);
+      font-size: var(--text-label);
+      font-weight: 600;
+      text-decoration: none;
+      transition: color var(--motion-fast) var(--ease-in-out);
+    }
+
+    .site-nav-link::after {
+      content: "";
+      position: absolute;
+      inset-inline: 0;
+      bottom: -0.3rem;
+      height: 2px;
+      border-radius: 2px;
+      background-image: var(--gradient-axis-across);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform var(--motion-base) var(--ease-out);
+    }
+
+    .site-nav-link:hover,
+    .site-nav-link[aria-current="true"] { color: var(--color-ink); }
+
+    .site-nav-link:hover::after,
+    .site-nav-link[aria-current="true"]::after { transform: scaleX(1); }
+
+    .nav-actions { display: flex; align-items: center; gap: var(--spacing-3); }
+
+    /* --- Buttons: one accent fill, everywhere ----------------------------- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-2);
+      min-height: 2.75rem;
+      padding: var(--spacing-3) var(--spacing-5);
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      font-family: var(--font-mono);
+      font-size: var(--text-label);
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+      transition:
+        background-color var(--motion-fast) var(--ease-in-out),
+        background-position var(--motion-base) var(--ease-in-out),
+        border-color var(--motion-fast) var(--ease-in-out),
+        color var(--motion-fast) var(--ease-in-out),
+        transform var(--motion-base) var(--ease-in-out);
+    }
+
+    .btn:hover, .btn:focus-visible { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0) scale(0.97); }
+
+    .btn svg { width: 1.05em; height: 1.05em; flex: none; }
+
+    /* The fill does not brighten under the pointer — it reverses. Declared
+       blue → green → blue at 200% so the window can slide to green → blue. */
+    .btn-primary {
+      background-color: var(--color-action-from);
+      background-image: var(--gradient-action);
+      background-size: 200% 100%;
+      background-position: 0 0;
+      color: var(--color-action-ink);
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus-visible { background-position: 100% 0; }
+
+    .btn-secondary {
+      background-color: var(--color-surface);
+      border-color: var(--color-border-strong);
+      color: var(--color-ink);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--color-canvas);
+      border-color: var(--color-rail-you);
+    }
+
+    .site-header .btn-secondary { background-color: transparent; }
+    .site-header .btn-secondary:hover {
+      background-color: var(--color-surface);
+      border-color: var(--color-ink-muted);
+    }
+
+    .btn-sm {
+      min-height: 2.25rem;
+      padding: var(--spacing-2) var(--spacing-4);
+      font-size: var(--text-data);
+    }
+
+    a.btn-arrow::after {
+      content: "\2192";
+      transition: transform var(--motion-fast) var(--ease-out);
+    }
+
+    a.btn-arrow:hover::after,
+    a.btn-arrow:focus-visible::after { transform: translateX(3px); }
+
+    /* --- Cards on a hinge, no shadow -------------------------------------- */
+    .card {
+      position: relative;
+      overflow: hidden;
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-5);
+      padding-inline-start: calc(var(--spacing-5) + 3px);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: 0;
+      width: 3px;
+      background-color: var(--color-rail-system);
+      transform-origin: top;
+    }
+
+    .card--you::before  { background-color: var(--color-rail-you); }
+    .card--them::before { background-color: var(--color-rail-them); }
+    .card--axis::before { background-image: var(--gradient-axis-down); }
+
+    .card-title {
+      font-size: var(--text-h2);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+    }
+
+    .card-lead { color: var(--color-ink-muted); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-1);
+      padding: var(--spacing-1) var(--spacing-3);
+      border-radius: 9999px;
+      font-size: var(--text-label);
+      font-weight: 700;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+
+    .badge-success { background-color: var(--color-status-success-tint); color: var(--color-status-success); }
+    .badge-info    { background-color: var(--color-status-info-tint);    color: var(--color-status-info); }
+    .badge-neutral { background-color: var(--color-status-neutral-tint); color: var(--color-status-neutral); }
+
+    .data-value {
+      font-family: var(--font-mono);
+      font-size: var(--text-data);
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* --- Section heads: the axis as a rail, blue at the top, green below -- */
+    .section { padding-block: var(--spacing-8); }
+
+    .section-head {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-2);
+      max-width: 44rem;
+      margin-bottom: var(--spacing-6);
+      padding-inline-start: var(--spacing-4);
+      position: relative;
+    }
+
+    .section-head::before {
+      content: "";
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: 0;
+      width: 3px;
+      background-image: var(--gradient-axis-down);
+      transform-origin: top;
+    }
+
+    .section-title {
+      font-size: clamp(1.75rem, 1.2rem + 2vw, 2.5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    .section-lead {
+      color: var(--color-ink-muted);
+      font-size: 1.0625rem;
+    }
+
+    /* --- Hero ------------------------------------------------------------- */
+    .hero {
+      position: relative;
+      padding-block: var(--spacing-7) var(--spacing-8);
+    }
+
+    /* The grid, lit in the reader's own colour wherever the pointer is. The
+       overlay's grid is offset by the bar's height so its lines fall exactly on
+       the canvas's own — the hero starts directly under the bar. */
+    .grid-glow {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(to right, var(--color-grid-lit) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--color-grid-lit) 1px, transparent 1px);
+      background-size: 1.5rem 1.5rem;
+      background-position: 0 calc(-1 * var(--size-bar));
+      -webkit-mask-image: radial-gradient(16rem circle at var(--mx, 50%) var(--my, -50%), #000 0%, transparent 70%);
+      mask-image: radial-gradient(16rem circle at var(--mx, 50%) var(--my, -50%), #000 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 400ms var(--ease-out);
+    }
+
+    .hero.is-lit .grid-glow { opacity: 1; }
+
+    .hero-grid {
+      position: relative;
+      display: grid;
+      gap: var(--spacing-7);
+      align-items: center;
+    }
+
+    @media (min-width: 48rem) {
+      .hero { padding-block: var(--spacing-8) calc(var(--spacing-8) + var(--spacing-5)); }
+      .hero-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+    }
+
+    .hero-copy {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-5);
+    }
+
+    .hero-title-block {
+      position: relative;
+      padding-inline-start: var(--spacing-5);
+    }
+
+    .hero-title-block::before {
+      content: "";
+      position: absolute;
+      inset-block: 0.35rem;
+      inset-inline-start: 0;
+      width: 4px;
+      border-radius: 2px;
+      background-image: var(--gradient-axis-down);
+      transform-origin: top;
+    }
+
+    .hero-title {
+      font-size: clamp(2.5rem, 1.4rem + 4.6vw, 4.5rem);
+      font-weight: 900;
+      letter-spacing: -0.035em;
+      line-height: 1.02;
+    }
+
+    .hero-title .line { display: block; overflow: hidden; padding-bottom: 0.08em; }
+    .hero-title .line > span { display: inline-block; }
+
+    .hero-lead {
+      max-width: 34rem;
+      color: var(--color-ink-muted);
+      font-size: 1.125rem;
+      line-height: 1.6;
+    }
+
+    .hero-lead strong { color: var(--color-ink); }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-3);
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-2) var(--spacing-4);
+      color: var(--color-ink-muted);
+      font-family: var(--font-mono);
+      font-size: var(--text-data);
+    }
+
+    .hero-meta span { display: inline-flex; align-items: center; gap: var(--spacing-2); }
+    .hero-meta span + span::before {
+      content: "";
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--color-border-strong);
+      margin-inline-end: var(--spacing-2);
+    }
+
+    /* --- The locker bank: the logo, enacted ------------------------------- */
+    .bank {
+      padding: var(--spacing-5);
+      padding-inline-start: calc(var(--spacing-5) + 3px);
+    }
+
+    .bank-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--spacing-2) var(--spacing-4);
+      margin-bottom: var(--spacing-4);
+    }
+
+    .bank-title { font-weight: 800; letter-spacing: -0.02em; }
+
+    .legend {
+      display: flex;
+      gap: var(--spacing-3);
+      color: var(--color-ink-muted);
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+
+    .legend span { display: inline-flex; align-items: center; gap: var(--spacing-1); }
+    .legend i {
+      width: 0.7rem; height: 0.7rem;
+      border-radius: 3px;
+    }
+    .legend .you i  { background: var(--color-rail-you); }
+    .legend .them i { background: var(--color-rail-them); }
+
+    .bank-stage { position: relative; }
+
+    .bank-floor {
+      display: grid;
+      grid-template-columns: 2.25rem repeat(6, minmax(0, 1fr));
+      gap: var(--spacing-2);
+      align-items: stretch;
+    }
+
+    .bank-floor + .bank-floor { margin-top: var(--spacing-3); }
+
+    .floor-label {
+      align-self: center;
+      color: var(--color-ink-muted);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    /* A locker door: two vent slats at the top, a handle, its number. */
+    .locker {
+      position: relative;
+      height: 3.5rem;
+      border: 1px solid var(--color-border-strong);
+      border-radius: var(--radius-sm);
+      background: linear-gradient(to bottom, #FFFFFF, var(--color-canvas));
+      transition: opacity 300ms var(--ease-out);
+    }
+
+    .locker::before {
+      content: "";
+      position: absolute;
+      top: 0.45rem;
+      inset-inline: 22%;
+      height: 0.55rem;
+      background-image: linear-gradient(to bottom,
+        var(--color-border-strong) 0 2px, transparent 2px 0.35rem,
+        var(--color-border-strong) 0.35rem 0.55rem);
+      border-radius: 1px;
+    }
+
+    .locker::after {
+      content: "";
+      position: absolute;
+      inset-inline-end: 0.35rem;
+      top: 46%;
+      width: 2px;
+      height: 0.65rem;
+      border-radius: 2px;
+      background: var(--color-ink-muted);
+      opacity: 0.45;
+    }
+
+    .locker-number {
+      position: absolute;
+      inset-inline: 0;
+      bottom: 0.3rem;
+      text-align: center;
+      color: var(--color-ink-muted);
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .locker.is-taken { opacity: 0.25; }
+
+    .token {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 0.3rem;
+      border-radius: var(--radius-sm);
+      color: var(--color-ink);
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      box-shadow: 0 10px 22px -10px rgb(10 31 56 / 0.55);
+      will-change: transform, opacity;
+      opacity: 0;
+    }
+
+    .token::before {
+      content: "";
+      position: absolute;
+      top: 0.45rem;
+      inset-inline: 22%;
+      height: 0.55rem;
+      background-image: linear-gradient(to bottom,
+        rgb(10 31 56 / 0.55) 0 2px, transparent 2px 0.35rem,
+        rgb(10 31 56 / 0.55) 0.35rem 0.55rem);
+    }
+
+    .token-who {
+      font-family: var(--font-brand);
+      font-size: 0.6875rem;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .token--you  { background: linear-gradient(to bottom, #3499FD, var(--color-locker-blue)); }
+    .token--them { background: linear-gradient(to bottom, #56E4AC, #34CEA0); }
+
+    /* The "held still" ring once a swap is accepted. */
+    .token::after {
+      content: "";
+      position: absolute;
+      inset: -4px;
+      border-radius: calc(var(--radius-sm) + 4px);
+      border: 2px solid currentColor;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity 300ms var(--ease-out), transform 300ms var(--ease-out);
+    }
+    .token--you::after  { color: var(--color-rail-you); }
+    .token--them::after { color: var(--color-rail-them); }
+    .token.is-held::after { opacity: 1; transform: scale(1); }
+
+    .swap-arcs {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .swap-arcs > path {
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      opacity: 0;
+    }
+
+    .bubble {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 3;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      font-size: 0.75rem;
+      box-shadow: 0 6px 16px -8px rgb(10 31 56 / 0.4);
+    }
+
+    .bubble-wish {
+      padding: var(--spacing-1) var(--spacing-2);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+      border: 1px solid var(--color-rail-you);
+      color: var(--color-ink);
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .bank-steps {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--spacing-2);
+      margin-top: var(--spacing-5);
+      padding-top: var(--spacing-4);
+      border-top: 1px solid var(--color-border);
+    }
+
+    .bank-step {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-2);
+      color: var(--color-ink-muted);
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      line-height: 1.3;
+      transition: color 300ms var(--ease-out);
+    }
+
+    .bank-step::before {
+      content: "";
+      height: 3px;
+      border-radius: 3px;
+      background: var(--color-border);
+      background-image: var(--gradient-axis-across);
+      background-size: 0% 100%;
+      background-repeat: no-repeat;
+      transition: background-size 500ms var(--ease-out);
+    }
+
+    .bank-step.is-on { color: var(--color-ink); }
+    .bank-step.is-on::before { background-size: 100% 100%; }
+
+    .bank-status {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-2);
+      min-height: 2rem;
+      margin-top: var(--spacing-3);
+      color: var(--color-ink-muted);
+      font-size: var(--text-sm);
+    }
+
+    .bank-status .badge { transition: opacity 250ms var(--ease-out), transform 250ms var(--ease-out); }
+    .bank-status .badge.is-hidden { opacity: 0; transform: translateY(4px); }
+
+    /* --- The idea --------------------------------------------------------- */
+    .idea {
+      display: grid;
+      gap: var(--spacing-6);
+      align-items: center;
+    }
+
+    @media (min-width: 48rem) {
+      .idea { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
+    }
+
+    .idea-mark {
+      position: relative;
+      display: grid;
+      place-items: center;
+      padding: var(--spacing-6);
+    }
+
+    .idea-mark .brand-mark { height: clamp(9rem, 26vw, 15rem); }
+
+    /* Two faint orbits behind the big mark, turning in opposite directions:
+       the circular arrows, continued off the artwork. */
+    .orbit {
+      position: absolute;
+      width: min(90%, 22rem);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 2px dashed var(--color-border-strong);
+    }
+
+    .orbit--b {
+      width: min(80%, 17rem);
+      border-style: dotted;
+      border-color: rgb(10 119 241 / 0.3);
+    }
+
+    .idea-cards {
+      display: grid;
+      gap: var(--spacing-4);
+    }
+
+    .axis-key {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--spacing-3);
+      flex-wrap: wrap;
+    }
+
+    .axis-swatch {
+      font-family: var(--font-mono);
+      font-size: var(--text-data);
+      color: var(--color-ink-muted);
+    }
+
+    .idea-note {
+      color: var(--color-ink-muted);
+      font-size: var(--text-sm);
+      padding-inline-start: var(--spacing-1);
+    }
+
+    /* --- Features --------------------------------------------------------- */
+    .feature-grid {
+      display: grid;
+      gap: var(--spacing-4);
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    }
+
+    .feature-card {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-4);
+      transition: transform 300ms var(--ease-out), border-color 300ms var(--ease-out);
+    }
+
+    .feature-card:hover { transform: translateY(-4px); border-color: var(--color-border-strong); }
+
+    .feature-who {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-3);
+    }
+
+    .feature-icon {
+      display: grid;
+      place-items: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: var(--radius-md);
+      background: var(--color-status-neutral-tint);
+      color: var(--color-rail-system);
+    }
+
+    .card--you .feature-icon { background: var(--color-status-info-tint); color: var(--color-rail-you); }
+    .feature-icon svg { width: 1.25rem; height: 1.25rem; }
+
+    .feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-3);
+      color: var(--color-ink);
+      font-size: 0.9375rem;
+      line-height: 1.5;
+    }
+
+    .feature-list li {
+      position: relative;
+      padding-inline-start: var(--spacing-5);
+    }
+
+    .feature-list li::before {
+      content: "";
+      position: absolute;
+      inset-inline-start: 0.2rem;
+      top: 0.55em;
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 2px;
+      background: var(--color-rail-system);
+    }
+
+    .card--you .feature-list li::before { background: var(--color-rail-you); }
+
+    /* --- Demo wish list ---------------------------------------------------- */
+    .demo-card { padding: 0; padding-inline-start: 3px; }
+
+    .demo-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--spacing-3);
+      padding: var(--spacing-5) var(--spacing-5) var(--spacing-4);
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--spacing-2);
+    }
+
+    .filters-label {
+      color: var(--color-ink-muted);
+      font-size: var(--text-label);
+      font-weight: 600;
+      margin-inline-end: var(--spacing-1);
+    }
+
+    .filter-choice {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2rem;
+      padding: var(--spacing-1) var(--spacing-3);
+      border: 1px solid var(--color-border-strong);
+      border-radius: var(--radius-sm);
+      background-color: var(--color-surface);
+      font-family: var(--font-mono);
+      font-size: var(--text-data);
+      line-height: 1.5;
+      color: var(--color-ink);
+      white-space: nowrap;
+      cursor: pointer;
+      transition:
+        background-position var(--motion-base) var(--ease-in-out),
+        border-color var(--motion-fast) var(--ease-in-out),
+        color var(--motion-fast) var(--ease-in-out),
+        transform var(--motion-base) var(--ease-in-out);
+    }
+
+    .filter-choice:hover { border-color: var(--color-rail-you); }
+    .filter-choice:active { transform: scale(0.97); }
+
+    .filter-choice[aria-pressed="true"] {
+      background-color: var(--color-action-from);
+      background-image: var(--gradient-action);
+      background-size: 200% 100%;
+      background-position: 0 0;
+      border-color: transparent;
+      color: var(--color-action-ink);
+      font-weight: 700;
+    }
+
+    .filter-choice[aria-pressed="true"]:hover { background-position: 100% 0; }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      text-align: left;
+    }
+
+    .data-table th {
+      padding: var(--spacing-2) var(--spacing-4) var(--spacing-2) 0;
+      border-bottom: 1px solid var(--color-border-strong);
+      border-top: 1px solid var(--color-border);
+      color: var(--color-ink-muted);
+      font-family: var(--font-mono);
+      font-size: var(--text-data);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: var(--spacing-3) var(--spacing-4) var(--spacing-3) 0;
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: middle;
+      transition: background-color var(--motion-fast) var(--ease-in-out), border-color var(--motion-fast) var(--ease-in-out);
+    }
+
+    .data-table tr:last-child td { border-bottom: 0; }
+
+    .data-table tr > *:first-child {
+      border-inline-start: 2px solid transparent;
+      padding-inline-start: calc(var(--spacing-5) - 2px);
+    }
+
+    .data-table tr > *:last-child { padding-inline-end: var(--spacing-5); }
+
+    .data-table tbody tr:hover > *:first-child { border-inline-start-color: var(--color-rail-them); }
+    .data-table tbody tr:hover > * { background-color: var(--color-row-hover); }
+    .data-table tbody tr[data-rail="you"] > *:first-child { border-inline-start-color: var(--color-rail-you); }
+
+    .swap-cell { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-2); }
+    .you-note { color: var(--color-link); font-weight: 700; font-size: var(--text-label); }
+
+    .demo-foot {
+      padding: var(--spacing-3) var(--spacing-5);
+      border-top: 1px solid var(--color-border);
+      color: var(--color-ink-muted);
+      font-size: var(--text-sm);
+    }
+
+    .demo-empty {
+      padding: var(--spacing-5);
+      color: var(--color-ink-muted);
+    }
+
+    /* Below the breakpoint each row becomes a labelled card, and the rail
+       becomes its leading edge — the same treatment the application uses. */
+    @media (max-width: 47.999rem) {
+      .data-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+      .data-table, .data-table tbody { display: block; }
+      .data-table tbody { padding: 0 var(--spacing-4) var(--spacing-4); }
+      .data-table tr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-2) var(--spacing-4);
+        padding: var(--spacing-3) var(--spacing-4);
+        border: 1px solid var(--color-border);
+        border-inline-start: 2px solid var(--color-border);
+        border-radius: var(--radius-md);
+      }
+      .data-table tr + tr { margin-top: var(--spacing-3); }
+      .data-table tr[data-rail="you"] { border-inline-start-color: var(--color-rail-you); }
+      .data-table tbody tr:hover { border-inline-start-color: var(--color-rail-them); }
+      .data-table tbody tr[data-rail="you"]:hover { border-inline-start-color: var(--color-rail-you); }
+      .data-table td,
+      .data-table tr > *:first-child,
+      .data-table tr > *:last-child {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        padding: 0;
+        border: 0;
+      }
+      .data-table tbody tr:hover > * { background: transparent; }
+      .data-table td:first-child,
+      .data-table td:last-child { grid-column: 1 / -1; }
+      .data-table td .btn { align-self: flex-start; }
+      .data-table td::before {
+        content: attr(data-label);
+        color: var(--color-ink-muted);
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+      }
+      .data-table td:first-child::before { content: none; }
+    }
+
+    .data-table tr.is-leaving { opacity: 0; transform: translateX(-12px); }
+    .data-table tr { transition: opacity 220ms var(--ease-out), transform 260ms var(--ease-out); }
+
+    /* --- How a swap works -------------------------------------------------- */
+    .steps {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-5);
+      padding-inline-start: var(--spacing-7);
+    }
+
+    .steps-rail {
+      position: absolute;
+      inset-block: 1.25rem;
+      inset-inline-start: 1.05rem;
+      width: 3px;
+      border-radius: 3px;
+      background: var(--color-border);
+      overflow: hidden;
+    }
+
+    .steps-rail-fill {
+      position: absolute;
+      inset: 0;
+      background-image: var(--gradient-axis-down);
+      transform: scaleY(1);
+      transform-origin: top;
+    }
+
+    .step { position: relative; }
+
+    .step-dot {
+      position: absolute;
+      inset-inline-start: calc(-1 * var(--spacing-7) + 0.25rem);
+      top: 1.15rem;
+      display: grid;
+      place-items: center;
+      width: 1.9rem;
+      height: 1.9rem;
+      border-radius: 50%;
+      background: var(--color-surface);
+      border: 2px solid var(--color-border-strong);
+      color: var(--color-ink-muted);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      transition: border-color 300ms var(--ease-out), color 300ms var(--ease-out), transform 300ms var(--ease-out);
+    }
+
+    .step.is-active .step-dot {
+      border-color: var(--step-colour, var(--color-rail-system));
+      color: var(--color-ink);
+      transform: scale(1.12);
+    }
+
+    .step--you  { --step-colour: var(--color-rail-you); }
+    .step--them { --step-colour: var(--color-rail-them); }
+
+    .step-card {
+      display: grid;
+      gap: var(--spacing-2);
+    }
+
+    .step-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--spacing-2) var(--spacing-3);
+    }
+
+    .step-actor {
+      font-family: var(--font-mono);
+      font-size: var(--text-data);
+      color: var(--color-ink-muted);
+    }
+
+    .step-text { color: var(--color-ink-muted); }
+    .step-text strong { color: var(--color-ink); }
+
+    /* --- Numbers ----------------------------------------------------------- */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+      gap: var(--spacing-4);
+    }
+
+    .stat { display: flex; flex-direction: column; gap: var(--spacing-1); }
+
+    .stat-figure {
+      font-family: var(--font-mono);
+      font-size: clamp(2.25rem, 1.6rem + 2.4vw, 3.25rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      color: var(--color-ink);
+    }
+
+    .stat-figure small {
+      font-size: 0.45em;
+      letter-spacing: 0;
+      color: var(--color-ink-muted);
+      margin-inline-start: 0.15em;
+    }
+
+    .stat-label { color: var(--color-ink-muted); font-size: var(--text-sm); }
+
+    .stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-2);
+      margin-top: var(--spacing-6);
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: var(--spacing-1) var(--spacing-3);
+      border: 1px solid var(--color-border-strong);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+      font-family: var(--font-mono);
+      font-size: var(--text-data);
+      color: var(--color-ink);
+      white-space: nowrap;
+      transition: border-color var(--motion-fast) var(--ease-in-out), transform var(--motion-base) var(--ease-out);
+    }
+
+    .chip:hover { border-color: var(--color-rail-them); transform: translateY(-2px); }
+
+    /* --- Quick start ------------------------------------------------------- */
+    .start-grid {
+      display: grid;
+      gap: var(--spacing-5);
+    }
+
+    .terminal { padding: 0; padding-inline-start: 3px; }
+
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--spacing-3);
+      padding: var(--spacing-3) var(--spacing-4) var(--spacing-3) var(--spacing-5);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .terminal-dots { display: flex; gap: 6px; }
+    .terminal-dots i {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--color-border-strong);
+    }
+    .terminal-dots i:nth-child(1) { background: var(--color-rail-you); }
+    .terminal-dots i:nth-child(2) { background: var(--color-rail-them); }
+
+    .terminal-title {
+      color: var(--color-ink-muted);
+      font-family: var(--font-mono);
+      font-size: var(--text-data);
+    }
+
+    .terminal pre {
+      margin: 0;
+      padding: var(--spacing-5);
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      line-height: 1.75;
+      color: var(--color-ink);
+      min-height: 13.5rem;
+    }
+
+    .terminal .prompt { color: var(--color-link); user-select: none; }
+    .terminal .comment { color: var(--color-ink-muted); }
+    .terminal .ok { color: var(--color-accent); font-weight: 700; }
+
+    .caret {
+      display: inline-block;
+      width: 0.55em;
+      height: 1.1em;
+      margin-inline-start: 1px;
+      vertical-align: -0.18em;
+      background: var(--color-rail-you);
+    }
+
+    .start-notes {
+      display: grid;
+      gap: var(--spacing-4);
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    }
+
+    .start-notes .card p { color: var(--color-ink-muted); font-size: 0.9375rem; }
+    .start-notes .card h3 { font-size: var(--text-h3); font-weight: 800; margin-bottom: var(--spacing-1); }
+
+    /* --- Closing call ------------------------------------------------------ */
+    .closing {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-5);
+      align-items: flex-start;
+      padding: var(--spacing-7) var(--spacing-6);
+      padding-inline-start: calc(var(--spacing-6) + 3px);
+    }
+
+    .closing .section-title { max-width: 30rem; }
+
+    .licence {
+      color: var(--color-ink-muted);
+      font-size: var(--text-sm);
+      max-width: 44rem;
+    }
+
+    /* --- Footer ------------------------------------------------------------ */
+    .site-footer {
+      position: relative;
+      padding-block: var(--spacing-6) var(--spacing-7);
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-border);
+    }
+
+    .site-footer::before {
+      content: "";
+      position: absolute;
+      inset-inline: 0;
+      top: -1px;
+      height: 2px;
+      background-image: var(--gradient-axis-across);
+    }
+
+    .footer-grid {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--spacing-4);
+    }
+
+    .footer-tagline { color: var(--color-ink-muted); font-size: var(--text-sm); margin-top: var(--spacing-2); }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-2) var(--spacing-5);
+      font-size: var(--text-label);
+      font-weight: 600;
+    }
+
+    .footer-links a { color: var(--color-ink-muted); text-decoration: none; }
+    .footer-links a:hover { color: var(--color-ink); text-decoration: underline; }
+
+    /* --- Toast (the demo's "Propose") ------------------------------------- */
+    .toast-layer {
+      position: fixed;
+      right: var(--spacing-4);
+      bottom: var(--spacing-4);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: var(--spacing-3);
+      max-width: calc(100vw - (2 * var(--spacing-4)));
+      pointer-events: none;
+    }
+
+    .toast {
+      max-width: 24rem;
+      padding: var(--spacing-3) var(--spacing-4);
+      padding-inline-start: calc(var(--spacing-4) + 3px);
+      box-shadow: var(--shadow-lg);
+      font-size: var(--text-sm);
+      pointer-events: auto;
+    }
+
+    .toast strong { display: block; font-size: var(--text-label); }
+
+    /* =======================================================================
+       Motion. Declared only when motion is welcome; nothing here is what makes
+       content visible — every hidden starting state is behind .js as well, so
+       a failed script leaves a complete, static page.
+       ======================================================================= */
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes line-up {
+      from { transform: translateY(105%); }
+      to   { transform: translateY(0); }
+    }
+
+    @keyframes draw-down {
+      from { transform: scaleY(0); }
+      to   { transform: scaleY(1); }
+    }
+
+    @keyframes brand-spin {
+      0%   { transform: rotate(0deg); }
+      45%  { transform: rotate(360deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes turn { to { transform: rotate(360deg); } }
+    @keyframes turn-back { to { transform: rotate(-360deg); } }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    @keyframes toast-enter {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes toast-leave {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(8px); }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .site-header .brand-mark-spin {
+        animation: brand-spin var(--motion-brand-spin) var(--ease-in-out) infinite;
+      }
+
+      .idea-mark .brand-mark-spin {
+        animation: brand-spin calc(var(--motion-brand-spin) * 1.5) var(--ease-in-out) infinite;
+      }
+
+      .orbit   { animation: turn 40s linear infinite; }
+      .orbit--b { animation: turn-back 28s linear infinite; }
+
+      .caret { animation: blink 1s steps(1) infinite; }
+
+      /* The hero assembles: the rail is drawn, the two lines of the title come
+         up out of their own baselines, then everything under them rises. */
+      .hero-title-block::before { animation: draw-down 700ms var(--ease-out) 100ms both; }
+      .hero-title .line > span { animation: line-up 900ms var(--ease-out) both; }
+      .hero-title .line:nth-child(1) > span { animation-delay: 150ms; }
+      .hero-title .line:nth-child(2) > span { animation-delay: 280ms; }
+      .hero-copy > :not(.hero-title-block) { animation: rise 700ms var(--ease-out) both; }
+      .hero-lead    { animation-delay: 450ms !important; }
+      .hero-actions { animation-delay: 560ms !important; }
+      .hero-meta    { animation-delay: 660ms !important; }
+      .hero-visual  { animation: rise 900ms var(--ease-out) 400ms both; }
+      .site-header  { animation: rise 600ms var(--ease-out) both; }
+
+      /* Scroll reveal. */
+      .js [data-reveal] {
+        opacity: 0;
+        transform: translateY(28px);
+        transition:
+          opacity 700ms var(--ease-out),
+          transform 800ms var(--ease-out);
+        transition-delay: calc(var(--i, 0) * 90ms);
+      }
+
+      .js [data-reveal].is-in { opacity: 1; transform: none; }
+
+      .js .card[data-reveal]::before,
+      .js .section-head[data-reveal]::before {
+        transform: scaleY(0);
+        transition: transform 600ms var(--ease-out);
+        transition-delay: calc(var(--i, 0) * 90ms + 300ms);
+      }
+
+      .js .card[data-reveal].is-in::before,
+      .js .section-head[data-reveal].is-in::before { transform: scaleY(1); }
+
+      /* The feature card's lift needs its own transition once revealed, or the
+         reveal's 800ms would make the hover feel sluggish. */
+      .js .feature-card[data-reveal].is-in {
+        transition: transform 300ms var(--ease-out), border-color 300ms var(--ease-out);
+        transition-delay: 0ms;
+      }
+
+      .toast { animation: toast-enter 240ms var(--ease-out) both; }
+      .toast.is-leaving { animation: toast-leave 240ms ease-in both; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        transition-duration: 0.01ms !important;
+        transition-delay: 0ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false">
+    <!-- The mark, traced from the artwork: app/views/shared/_brand_mark.html.erb. -->
+    <defs><linearGradient id="ls-blue-door" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3499FD"/><stop offset="1" stop-color="#2588F3"/>
+    </linearGradient>
+    <linearGradient id="ls-green-door" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#56E4AC"/><stop offset="1" stop-color="#34CEA0"/>
+    </linearGradient>
+    <linearGradient id="ls-arrow-blue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1496F6"/><stop offset="1" stop-color="#0671F1"/>
+    </linearGradient>
+    <linearGradient id="ls-arrow-green" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0" stop-color="#0DB588"/><stop offset="1" stop-color="#0AB287"/>
+    </linearGradient></defs>
+    <symbol id="ls-mark" viewBox="0 0 649 547"><g transform="translate(0,547) scale(0.1,-0.1)">
+<path fill="#014DA6" d="M730 4456 c-19 -8 -89 -44 -155 -81 -66 -37 -196 -110 -290 -162 -192 -107 -218 -128 -251 -198 l-24 -50 0 -1290 0 -1290 24 -50 c13 -27 34 -60 47 -72 13 -12 155 -77 315 -146 237 -102 302 -126 355 -131 60 -5 62 -5 34 8 -43 21 -82 65 -100 115 -13 38 -15 226 -15 1615 l0 1571 25 54 c14 30 41 69 61 88 38 35 31 40 -26 19z M1240 3912 c-31 -10 -50 -36 -50 -67 0 -56 24 -73 150 -105 231 -60 863 -210 885 -210 53 0 76 87 33 127 -17 16 -136 49 -483 133 -253 61 -473 114 -490 119 -16 4 -37 6 -45 3z M1212 3590 c-37 -35 -28 -101 17 -124 14 -7 244 -64 509 -127 453 -106 485 -112 510 -98 21 11 28 24 30 53 4 50 -24 81 -87 95 -25 6 -245 58 -488 116 -243 58 -448 105 -456 105 -7 0 -23 -9 -35 -20z M984 2640 c0 -140 2 -198 3 -127 2 70 2 184 0 255 -1 70 -3 12 -3 -128z M1244 2760 c0 -58 1 -81 3 -52 2 28 2 76 0 105 -2 28 -3 5 -3 -53z M1244 2465 c0 -99 2 -138 3 -87 2 51 2 132 0 180 -1 48 -3 6 -3 -93z M983 2235 c0 -33 2 -45 4 -27 2 18 2 45 0 60 -2 15 -4 0 -4 -33z"/>
+<path fill="#04776E" d="M5722 4207 c19 -19 46 -57 59 -83 l24 -49 0 -1545 0 -1545 -26 -50 c-29 -54 -48 -74 -94 -98 l-30 -16 40 5 c59 8 131 33 205 70 36 18 157 77 270 132 158 76 213 107 238 136 66 76 62 -17 62 1350 0 800 -4 1254 -10 1277 -20 72 -58 108 -180 171 -319 164 -528 266 -559 273 l-34 7 35 -35z M4840 3610 c-168 -38 -395 -88 -504 -112 -121 -26 -208 -49 -222 -60 -52 -41 -35 -128 26 -128 32 0 167 28 700 145 190 41 358 81 374 87 39 16 61 69 44 106 -21 44 -75 39 -418 -38z M5175 3373 c-11 -2 -177 -37 -370 -78 -192 -41 -424 -90 -515 -109 -143 -30 -168 -38 -187 -61 -26 -29 -28 -42 -13 -80 19 -49 34 -48 401 30 189 40 423 89 519 110 212 45 227 50 246 86 31 60 -14 116 -81 102z M5225 2305 c0 -192 1 -270 2 -172 2 98 2 256 0 350 -1 95 -3 15 -2 -178z"/>
+<path fill="url(#ls-blue-door)" d="M2745 5419 c15 -7 10 -8 -20 -4 -25 3 -35 1 -26 -4 11 -7 10 -10 -5 -14 -10 -3 -1 -3 21 -1 62 8 73 13 55 24 -8 6 -22 9 -30 9 -10 0 -9 -3 5 -10z M2466 5338 c4 -6 -2 -8 -17 -4 -21 6 -22 6 -5 -5 12 -7 25 -8 39 -2 l21 10 -22 5 c-14 4 -20 2 -16 -4z M2139 5193 c-1 -5 -1 -12 0 -17 1 -5 -5 -6 -13 -3 -9 4 -13 0 -12 -11 2 -9 8 -17 14 -17 7 0 11 4 10 8 -2 4 4 12 12 17 11 7 11 10 2 10 -7 0 -10 5 -7 10 3 6 4 10 1 10 -3 0 -7 -3 -7 -7z M3083 4993 c15 -2 37 -2 50 0 12 2 0 4 -28 4 -27 0 -38 -2 -22 -4z M2336 4858 c5 -8 2 -9 -10 -5 -11 5 -15 3 -10 -5 5 -7 2 -9 -8 -6 -8 4 -15 0 -15 -7 0 -11 6 -11 31 2 40 20 40 20 21 27 -11 4 -14 2 -9 -6z M2222 4810 c-18 -11 -30 -25 -27 -30 4 -6 11 -8 16 -4 5 3 6 10 3 16 -5 8 -1 9 10 5 11 -5 15 -3 10 5 -5 7 -2 9 8 6 9 -4 15 0 15 8 0 8 -1 14 -1 14 -1 0 -16 -9 -34 -20z M1669 4773 c-13 -16 -17 -22 -9 -15 17 14 34 16 25 2 -3 -5 3 -10 14 -10 28 0 37 20 12 27 -11 3 -18 9 -15 14 11 18 -3 8 -27 -18z M1600 4721 c-5 -11 -10 -26 -9 -33 0 -7 4 -4 9 7 7 17 9 17 9 3 1 -10 5 -18 10 -18 9 0 22 -28 27 -58 5 -26 12 -23 19 7 9 41 -2 71 -26 71 -13 0 -18 4 -13 12 5 7 3 8 -6 3 -10 -6 -12 -4 -7 8 9 23 0 21 -13 -2z M1993 4638 c-9 -10 -12 -18 -8 -18 5 0 -3 -13 -18 -28 -25 -26 -77 -42 -77 -23 0 9 -38 26 -50 24 -3 -1 -11 5 -18 13 -7 8 -8 14 -2 14 5 0 10 6 10 12 0 7 -11 0 -26 -15 -24 -26 -25 -47 -3 -47 6 0 17 -6 25 -14 12 -13 10 -15 -13 -19 -16 -3 0 -4 35 -4 34 1 62 5 62 10 0 4 4 6 8 3 5 -3 34 21 66 53 34 34 51 58 42 58 -9 0 -23 -9 -33 -19z M825 4480 c-22 -4 -36 -8 -31 -9 5 0 -6 -11 -25 -24 -20 -13 -46 -47 -64 -82 l-30 -59 -3 -1550 c-1 -1016 1 -1569 8 -1605 13 -72 50 -125 102 -151 45 -21 87 -29 58 -10 -11 7 -7 8 15 4 24 -4 66 13 215 87 102 51 186 96 188 100 2 4 10 5 19 2 10 -4 14 -2 10 4 -4 6 -1 10 6 9 19 -2 257 97 252 105 -3 4 5 5 17 2 19 -4 21 -3 8 7 -13 10 -12 11 3 6 10 -3 111 26 225 65 162 55 247 88 135 53 -16 -5 -16 -4 2 7 10 7 40 13 65 14 25 1 126 24 225 50 99 26 235 60 302 75 141 32 171 50 207 122 l26 52 0 1076 0 1077 -23 43 c-42 80 -66 91 -352 163 -143 36 -528 132 -855 215 -643 162 -646 163 -705 152z m914 -679 c270 -66 499 -125 510 -130 11 -6 25 -27 31 -47 15 -44 -10 -87 -54 -92 -48 -6 -988 227 -1013 251 -31 28 -31 88 -1 117 12 11 25 20 29 20 5 0 229 -54 498 -119z m-181 -260 c158 -38 359 -86 447 -106 88 -20 177 -41 198 -47 72 -17 105 -78 70 -126 -27 -37 -58 -38 -182 -8 -161 39 -728 172 -796 187 -76 17 -105 44 -105 98 0 42 25 71 62 71 10 0 148 -31 306 -69z m-365 -573 c48 -25 52 -46 55 -323 6 -435 -5 -493 -93 -523 -69 -24 -111 -20 -142 11 l-28 27 0 374 c0 365 1 375 21 403 32 42 62 54 119 47 28 -3 58 -10 68 -16z m1162 -1417 c-11 -5 -36 -11 -55 -14 -35 -6 -34 -6 5 8 43 14 84 19 50 6z M4 3840 c0 -52 1 -74 3 -47 2 26 2 68 0 95 -2 26 -3 4 -3 -48z M4 2985 c0 -71 1 -99 3 -62 2 37 2 96 0 130 -2 34 -3 4 -3 -68z M3 2720 c0 -41 2 -58 4 -37 2 20 2 54 0 75 -2 20 -4 3 -4 -38z M3 1490 c0 -41 2 -58 4 -37 2 20 2 54 0 75 -2 20 -4 3 -4 -38z"/>
+<path fill="url(#ls-green-door)" d="M3022 5463 c37 -2 100 -2 140 0 40 1 10 3 -67 3 -77 0 -110 -1 -73 -3z M4345 5180 c-14 -27 -23 -50 -20 -50 2 0 16 23 30 50 14 28 23 50 20 50 -2 0 -16 -22 -30 -50z M1750 4893 l-105 -108 108 105 c99 97 112 110 104 110 -1 0 -50 -48 -107 -107z M2968 4993 c17 -2 47 -2 65 0 17 2 3 4 -33 4 -36 0 -50 -2 -32 -4z M3828 4659 c-21 -11 -38 -22 -38 -24 0 -5 79 32 89 41 12 11 -18 1 -51 -17z M1990 4606 c-35 -36 -76 -70 -92 -77 -16 -6 -27 -14 -24 -16 10 -10 65 30 126 91 35 36 62 66 59 66 -2 0 -33 -29 -69 -64z M1750 4520 c30 -10 69 -19 85 -19 21 1 13 5 -25 13 -106 25 -115 25 -60 6z M678 4446 c3 -5 -3 -6 -14 -2 -10 4 -15 4 -11 0 4 -4 -1 -13 -11 -21 -9 -8 3 -4 28 8 56 27 57 27 27 25 -14 0 -23 -5 -19 -10z M4085 4310 c17 -4 41 -8 55 -8 22 0 22 1 -5 8 -16 4 -41 8 -55 8 -22 0 -22 -1 5 -8z M5445 4234 c-156 -37 -765 -173 -1268 -283 -251 -56 -470 -107 -485 -115 -52 -27 -99 -90 -112 -147 -8 -40 -10 -344 -8 -1129 l3 -1075 24 -48 c35 -73 80 -99 218 -131 483 -113 1002 -254 1503 -410 145 -46 260 -76 300 -79 36 -3 54 -2 40 2 -24 7 -24 8 11 19 40 14 78 50 105 102 18 34 19 95 22 1585 l2 1549 -25 53 c-15 29 -44 68 -66 87 l-41 34 44 -9 c46 -10 47 -10 426 -203 265 -134 281 -146 319 -232 17 -37 18 -115 17 -1285 -2 -1406 5 -1289 -80 -1374 l-39 -39 35 25 c19 15 49 52 65 84 l30 59 0 1245 0 1246 -23 51 c-13 28 -38 65 -55 81 -42 40 -612 329 -685 348 -78 21 -160 17 -277 -11z m-200 -569 c33 -32 32 -68 -2 -104 -25 -25 -46 -33 -173 -60 -80 -17 -322 -70 -539 -117 l-394 -86 -26 20 c-42 31 -41 99 2 126 12 8 220 58 462 111 242 53 476 105 520 115 107 25 122 24 150 -5z m0 -310 c61 -60 18 -118 -110 -146 -102 -22 -800 -171 -918 -196 -75 -16 -78 -16 -105 4 -19 14 -28 31 -30 56 -6 71 -1 73 465 172 230 48 465 98 523 111 135 29 146 29 175 -1z m221 -639 c19 -19 34 -42 34 -52 8 -664 5 -751 -28 -787 -63 -70 -230 -20 -247 76 -3 18 -5 189 -3 380 l3 349 37 34 c35 32 42 34 104 34 62 0 68 -2 100 -34z M4623 4223 c15 -2 37 -2 50 0 12 2 0 4 -28 4 -27 0 -38 -2 -22 -4z M2195 4161 c11 -4 36 -11 55 -15 24 -4 29 -3 15 3 -11 4 -36 11 -55 15 -24 4 -29 3 -15 -3z M118 4131 c-25 -16 -49 -34 -52 -40 -5 -8 88 50 103 65 12 12 -10 1 -51 -25z M2395 4109 c39 -10 74 -17 80 -16 11 4 -118 37 -137 36 -7 0 19 -9 57 -20z M2535 4074 c28 -7 57 -13 65 -13 8 0 -7 7 -35 15 -27 7 -57 13 -65 13 -8 0 8 -7 35 -15z M2765 2830 c0 -586 1 -825 2 -532 2 292 2 772 0 1065 -1 292 -2 53 -2 -533z M4 3570 c0 -74 1 -105 3 -67 2 37 2 97 0 135 -2 37 -3 6 -3 -68z M3 3330 c0 -41 2 -58 4 -37 2 20 2 54 0 75 -2 20 -4 3 -4 -38z M3 3180 c0 -41 2 -58 4 -37 2 20 2 54 0 75 -2 20 -4 3 -4 -38z M3 2500 c0 -36 2 -50 4 -32 2 17 2 47 0 65 -2 17 -4 3 -4 -33z M4 2240 c0 -80 2 -112 3 -72 2 39 2 105 0 145 -1 39 -3 7 -3 -73z M4 1840 c0 -85 2 -120 3 -77 2 42 2 112 0 155 -1 42 -3 7 -3 -78z M1 1402 c-1 -24 24 -92 34 -92 3 0 1 9 -5 19 -5 11 -14 37 -19 58 -6 24 -9 30 -10 15z M1797 1206 c-65 -24 -97 -67 -99 -134 -1 -31 167 -724 204 -842 25 -82 100 -119 166 -84 30 16 44 37 89 132 37 78 57 111 66 106 6 -4 46 -31 89 -60 225 -153 486 -257 771 -305 160 -28 448 -23 597 9 394 86 695 253 967 536 133 138 148 169 115 238 -25 51 -49 66 -153 98 -104 31 -132 25 -217 -51 -376 -335 -887 -447 -1387 -303 -153 43 -472 211 -448 235 4 4 49 29 98 54 111 58 112 59 126 105 24 80 -33 140 -149 158 -37 6 -170 27 -297 47 -126 20 -279 42 -340 50 -60 8 -121 17 -135 20 -14 2 -42 -2 -63 -9z m235 -27 c436 -62 664 -101 694 -117 30 -16 57 -77 49 -110 -10 -44 -24 -56 -133 -111 -57 -30 -101 -58 -99 -65 6 -17 145 -107 239 -153 318 -159 713 -192 1073 -88 181 52 389 169 532 299 92 83 115 88 231 52 95 -30 127 -53 141 -103 16 -56 -3 -92 -98 -194 -272 -292 -593 -466 -1021 -555 -107 -23 -436 -26 -550 -6 -290 52 -546 154 -775 308 -52 35 -99 64 -103 64 -5 0 -33 -51 -63 -113 -46 -95 -59 -115 -89 -129 -44 -22 -102 -9 -126 27 -22 33 -224 830 -224 883 0 81 50 131 132 132 26 0 111 -9 190 -21z M1078 1089 c-21 -11 -38 -22 -38 -24 0 -5 79 32 89 41 12 11 -18 1 -51 -17z M6220 1050 c-52 -27 -90 -49 -85 -49 6 0 53 22 105 49 52 27 91 49 85 49 -5 0 -53 -22 -105 -49z M5945 918 c-88 -44 -149 -76 -135 -73 31 9 319 154 305 154 -5 0 -82 -37 -170 -81z M5720 830 c-34 -7 -34 -7 -5 -8 17 0 39 3 50 8 24 10 4 10 -45 0z"/>
+<path fill="#102D4C" d="M1025 2955 c-14 -13 -25 -30 -25 -37 0 -7 -1 -181 -2 -385 -2 -301 0 -374 10 -378 7 -3 10 -10 6 -16 -4 -8 -3 -9 4 -5 7 4 12 2 12 -4 0 -6 5 -8 10 -5 6 3 10 1 10 -4 0 -6 11 -11 25 -11 14 0 25 5 25 11 0 6 9 8 21 4 15 -5 19 -4 15 4 -4 6 -3 11 3 11 5 0 17 3 27 7 13 5 15 3 9 -7 -5 -9 -4 -11 4 -6 6 4 9 11 6 16 -3 5 3 11 13 14 35 12 38 44 32 346 -4 162 -7 285 -8 273 -3 -34 -13 -53 -29 -53 -8 0 -11 5 -7 12 4 6 -1 17 -11 25 -11 7 -14 13 -8 13 6 0 15 15 18 33 10 44 15 50 30 37 10 -8 14 -4 18 17 3 15 2 32 -1 38 -4 5 -7 13 -7 17 0 15 -36 49 -45 43 -6 -3 -10 -1 -10 6 0 8 -4 8 -15 -1 -8 -7 -15 -17 -15 -23 0 -16 -32 -35 -52 -29 -10 2 -18 13 -18 23 0 11 -5 19 -11 19 -5 0 -7 5 -4 10 11 18 -6 10 -30 -15z m142 -241 c2 -7 -9 -22 -24 -34 -15 -13 -20 -20 -10 -17 24 9 21 -5 -4 -21 -12 -8 -18 -9 -15 -4 3 6 2 22 -4 37 -9 24 -8 26 10 20 11 -4 20 -2 20 4 0 6 -7 11 -16 11 -8 0 -13 4 -10 9 8 12 49 8 53 -5z M5267 2718 c-12 -11 -15 -16 -7 -12 12 6 13 4 3 -7 -21 -22 -15 -35 18 -34 18 0 35 8 40 18 6 9 7 17 3 17 -3 0 -1 6 5 14 20 24 -36 27 -62 4z M5410 2732 c-14 -6 -16 -19 -11 -61 1 -13 5 -13 68 2 7 2 16 7 20 12 5 4 2 5 -6 0 -11 -6 -13 -4 -8 8 4 11 -2 22 -16 32 -24 16 -25 17 -47 7z M5483 2500 c0 -36 2 -50 4 -32 2 17 2 47 0 65 -2 17 -4 3 -4 -33z M5243 2455 c0 -44 2 -61 4 -37 2 23 2 59 0 80 -2 20 -4 1 -4 -43z M983 2340 c0 -30 2 -43 4 -27 2 15 2 39 0 55 -2 15 -4 2 -4 -28z M5484 2280 c0 -63 1 -89 3 -57 2 31 2 83 0 115 -2 31 -3 5 -3 -58z M5240 2013 c-3 -39 -2 -69 3 -66 4 2 7 9 7 14 0 6 7 17 15 25 19 20 19 38 1 31 -11 -4 -16 4 -18 31 -3 24 -5 12 -8 -35z M5480 1969 c0 -34 -17 -58 -29 -40 -7 10 -17 5 -45 -22 l-36 -35 39 -4 c22 -2 38 -1 35 3 -2 3 5 14 16 24 11 10 20 24 20 32 0 8 5 11 10 8 7 -4 8 3 4 22 -9 37 -14 42 -14 12z"/>
+<path fill="#0E2A47" d="M1055 2970 c-3 -5 -1 -10 4 -10 6 0 11 -8 11 -19 0 -41 51 -30 78 17 12 21 11 22 -37 22 -28 0 -53 -4 -56 -10z M994 2575 c0 -181 2 -257 3 -168 2 89 2 237 0 330 -1 92 -3 20 -3 -162z M1230 2859 c0 -17 -3 -19 -14 -10 -16 14 -21 8 -31 -36 -3 -18 -12 -33 -18 -33 -6 0 -3 -6 8 -13 10 -8 15 -19 11 -25 -4 -7 -1 -12 7 -12 16 0 26 18 29 53 1 12 5 -95 8 -238 l6 -260 2 298 c1 163 0 297 -3 297 -3 0 -5 -10 -5 -21z M5320 2731 c17 -5 21 -9 12 -15 -7 -4 -10 -11 -8 -15 10 -15 -14 -35 -43 -36 -30 -1 -39 11 -23 31 4 5 -1 1 -11 -10 -16 -18 -17 -45 -15 -387 l3 -369 26 -26 c72 -72 232 -54 228 26 0 13 -1 13 -6 0 -13 -35 -47 -60 -81 -60 l-34 0 37 36 c29 28 39 33 46 23 12 -18 28 5 30 41 l1 25 8 -25 c4 -14 8 132 9 323 1 358 -3 400 -40 423 -11 6 -10 3 1 -10 13 -16 12 -20 -5 -32 -23 -17 -55 -18 -56 -1 -5 39 -2 53 11 59 8 4 -14 6 -50 6 -42 0 -56 -2 -40 -7z m167 -263 c-2 -18 -4 -4 -4 32 0 36 2 50 4 33 2 -18 2 -48 0 -65z m-240 -50 c-2 -24 -4 -7 -4 37 0 44 2 63 4 43 2 -21 2 -57 0 -80z m240 -195 c-2 -32 -3 -6 -3 57 0 63 1 89 3 58 2 -32 2 -84 0 -115z m-221 -206 c18 7 18 -11 1 -29 -8 -7 -16 -20 -20 -28 -3 -8 -5 17 -5 55 1 39 3 53 5 33 3 -27 8 -35 19 -31z M1114 2719 c-3 -5 2 -9 10 -9 9 0 16 -5 16 -11 0 -6 -9 -8 -20 -4 -18 6 -19 4 -10 -20 6 -15 7 -31 4 -37 -3 -5 3 -4 15 4 25 16 28 30 4 21 -10 -3 -5 4 10 17 15 12 26 27 24 34 -4 13 -45 17 -53 5z M1165 2149 c-26 -12 -33 -18 -20 -19 11 0 31 9 45 20 31 24 26 24 -25 -1z"/>
+<path fill="url(#ls-arrow-blue)" d="M2910 5449 c-176 -20 -507 -111 -478 -131 9 -6 6 -7 -8 -3 -22 6 -96 -23 -89 -35 2 -4 -6 -6 -18 -6 -12 1 -21 -4 -20 -10 1 -7 -5 -10 -15 -8 -35 9 -379 -216 -365 -238 3 -6 1 -8 -5 -4 -27 16 -290 -251 -312 -318 -13 -41 -1 -93 28 -119 39 -34 227 -69 260 -48 7 4 -12 7 -45 5 -32 -1 -46 0 -30 2 23 5 25 7 13 20 -8 8 -19 14 -25 14 -22 0 -21 21 3 47 15 15 26 22 26 15 0 -6 -5 -12 -10 -12 -6 0 -5 -6 2 -14 7 -8 15 -14 18 -13 13 3 50 -16 50 -25 0 -6 9 -8 21 -5 17 5 18 3 8 -11 -7 -9 13 8 44 38 57 54 77 80 35 44 l-23 -19 19 22 c10 13 22 20 26 18 11 -7 61 35 55 45 -3 4 3 7 12 6 10 0 18 6 18 14 1 8 7 14 13 12 7 -1 32 11 55 26 23 16 61 39 85 51 23 12 40 26 37 31 -4 6 1 7 11 3 12 -4 15 -3 10 5 -5 8 -1 10 10 5 12 -4 15 -3 10 5 -4 8 -2 10 8 6 8 -3 27 2 43 11 27 15 27 15 3 10 -19 -5 -22 -4 -10 4 8 6 22 8 30 6 9 -3 52 8 97 24 153 56 284 76 503 76 151 0 215 -5 285 -19 202 -42 423 -139 572 -252 51 -38 54 -34 -85 -103 -137 -69 -164 -121 -99 -196 25 -30 152 -58 567 -128 459 -78 448 -77 499 -23 54 57 52 74 -83 656 -71 307 -77 326 -106 353 -19 17 -42 27 -61 27 -58 0 -84 -24 -137 -127 -80 -155 -62 -149 -188 -64 -384 258 -843 378 -1264 330z m-135 -38 c-11 -9 -103 -26 -94 -17 3 3 23 10 45 15 53 12 60 13 49 2z m-625 -241 c-8 -5 -11 -10 -5 -10 5 0 4 -5 -2 -11 -6 -6 -17 -8 -24 -4 -13 9 14 35 35 35 6 0 4 -5 -4 -10z m-454 -379 c-3 -5 4 -11 15 -14 25 -7 16 -27 -12 -27 -11 0 -17 5 -14 10 9 14 -8 12 -25 -2 -8 -7 -4 -1 9 15 24 26 38 36 27 18z m-71 -81 c-3 -5 3 -10 14 -10 24 0 35 -30 26 -71 -9 -38 -18 -29 -24 23 -1 4 -8 14 -17 23 -14 14 -13 45 1 45 4 0 3 -4 0 -10z M2305 1545 c-39 -14 -40 -14 -5 -8 41 7 82 22 60 22 -8 0 -33 -7 -55 -14z"/>
+<path fill="url(#ls-arrow-green)" d="M5805 2530 c0 -833 1 -1174 2 -758 2 417 2 1099 0 1515 -1 417 -2 76 -2 -757z M6474 3265 c0 -132 2 -185 3 -117 2 68 2 176 0 240 -1 64 -3 9 -3 -123z M6474 2585 c0 -49 1 -71 3 -48 2 23 2 64 0 90 -2 26 -3 8 -3 -42z M5503 2225 c0 -27 2 -38 4 -22 2 15 2 37 0 50 -2 12 -4 0 -4 -28z M6473 1990 c0 -41 2 -58 4 -37 2 20 2 54 0 75 -2 20 -4 3 -4 -38z M6473 1670 c0 -47 2 -66 4 -42 2 23 2 61 0 85 -2 23 -4 4 -4 -43z M1769 1183 c-38 -23 -59 -64 -59 -115 0 -53 202 -850 224 -883 24 -36 82 -49 126 -27 30 14 43 34 89 129 30 62 58 113 63 113 4 0 51 -29 103 -64 229 -154 485 -256 775 -308 114 -20 443 -17 550 6 428 89 749 263 1021 555 95 102 114 138 98 194 -14 50 -46 73 -141 103 -116 36 -139 31 -231 -52 -423 -383 -1087 -470 -1605 -211 -94 46 -233 136 -239 153 -2 7 42 35 99 65 135 69 157 100 122 174 -27 57 -29 58 -399 115 -497 76 -551 81 -596 53z"/>
+    </g></symbol>
+  </svg>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="site-nav wrap" aria-label="Main">
+      <a class="brand-lockup" href="#top" aria-label="LockSwap — back to top">
+        <span class="brand-mark-spin">
+          <svg class="brand-mark" viewBox="0 0 649 547" aria-hidden="true" focusable="false"><use href="#ls-mark"/></svg>
+        </span>
+        <span class="brand-wordmark"><span class="brand-wordmark-lock">Lock</span><span class="brand-wordmark-swap">Swap</span></span>
+      </a>
+      <div class="site-nav-links">
+        <a class="site-nav-link" href="#features">Features</a>
+        <a class="site-nav-link" href="#demo">The list</a>
+        <a class="site-nav-link" href="#how">How a swap works</a>
+        <a class="site-nav-link" href="#start">Quick start</a>
+      </div>
+      <div class="nav-actions">
+        <a class="btn btn-secondary btn-sm" href="https://github.com/saumon/lockswap">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </nav>
+    <div class="scroll-progress" aria-hidden="true"></div>
+  </header>
+
+  <main id="main">
+    <!-- ================================================================ Hero -->
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="grid-glow" aria-hidden="true"></div>
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <div class="hero-title-block">
+            <h1 class="hero-title" id="hero-title">
+              <span class="line"><span>Swap your locker,</span></span>
+              <span class="line"><span>not your day.</span></span>
+            </h1>
+          </div>
+          <p class="hero-lead">
+            In most companies a locker is assigned once and never moves. LockSwap lets
+            colleagues <strong>find each other and agree a swap directly</strong> — then
+            facilities validate it once the badges have been re-associated.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary btn-arrow" href="https://github.com/saumon/lockswap">View on GitHub</a>
+            <a class="btn btn-secondary" href="#how">How a swap works</a>
+          </div>
+          <p class="hero-meta">
+            <span>Ruby 3.4</span><span>Rails 8.1</span><span>SQLite</span><span>en · fr</span>
+          </p>
+        </div>
+
+        <div class="hero-visual">
+          <figure class="card card--axis bank" aria-labelledby="bank-caption">
+            <figcaption class="visually-hidden" id="bank-caption">
+              Illustration: a bank of lockers on three floors. A blue locker, yours,
+              and a green one, a colleague's, change places along two arcs, as in
+              the logo; the swap is then validated by facilities.
+            </figcaption>
+            <div aria-hidden="true">
+              <div class="bank-head">
+                <span class="bank-title">Locker bank · building A</span>
+                <span class="legend"><span class="you"><i></i>You</span><span class="them"><i></i>Them</span></span>
+              </div>
+              <div class="bank-stage" data-bank-stage>
+                <div class="bank-floor"><span class="floor-label">F3</span>
+                  <div class="locker" data-n="301"><span class="locker-number">301</span></div>
+                  <div class="locker" data-n="302"><span class="locker-number">302</span></div>
+                  <div class="locker" data-n="303"><span class="locker-number">303</span></div>
+                  <div class="locker" data-n="304"><span class="locker-number">304</span></div>
+                  <div class="locker" data-n="305"><span class="locker-number">305</span></div>
+                  <div class="locker" data-n="306"><span class="locker-number">306</span></div>
+                </div>
+                <div class="bank-floor"><span class="floor-label">F2</span>
+                  <div class="locker" data-n="201"><span class="locker-number">201</span></div>
+                  <div class="locker" data-n="202"><span class="locker-number">202</span></div>
+                  <div class="locker" data-n="203"><span class="locker-number">203</span></div>
+                  <div class="locker" data-n="204"><span class="locker-number">204</span></div>
+                  <div class="locker" data-n="205"><span class="locker-number">205</span></div>
+                  <div class="locker" data-n="206"><span class="locker-number">206</span></div>
+                </div>
+                <div class="bank-floor"><span class="floor-label">F1</span>
+                  <div class="locker" data-n="101"><span class="locker-number">101</span></div>
+                  <div class="locker" data-n="102"><span class="locker-number">102</span></div>
+                  <div class="locker" data-n="103"><span class="locker-number">103</span></div>
+                  <div class="locker" data-n="104"><span class="locker-number">104</span></div>
+                  <div class="locker" data-n="105"><span class="locker-number">105</span></div>
+                  <div class="locker" data-n="106"><span class="locker-number">106</span></div>
+                </div>
+
+                <svg class="swap-arcs" data-arcs>
+                  <defs>
+                    <marker id="head-you" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                      <path d="M0 0 L10 5 L0 10 z" fill="#0A77F1" />
+                    </marker>
+                    <marker id="head-them" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                      <path d="M0 0 L10 5 L0 10 z" fill="#0AB486" />
+                    </marker>
+                  </defs>
+                  <path data-arc="you" stroke="#0A77F1" marker-end="url(#head-you)"/>
+                  <path data-arc="them" stroke="#0AB486" marker-end="url(#head-them)"/>
+                </svg>
+
+                <div class="token token--you" data-token="you"><span class="token-who">You</span><span data-token-n>101</span></div>
+                <div class="token token--them" data-token="them"><span class="token-who">Them</span><span data-token-n>304</span></div>
+                <span class="bubble bubble-wish" data-bubble="wish">wants F3</span>
+                <span class="bubble badge badge-success" data-bubble="match">It's a match!</span>
+              </div>
+
+              <ol class="bank-steps">
+                <li class="bank-step" data-step="0">wish</li>
+                <li class="bank-step" data-step="1">match</li>
+                <li class="bank-step" data-step="2">accepted</li>
+                <li class="bank-step" data-step="3">validated</li>
+              </ol>
+              <div class="bank-status">
+                <span class="badge badge-neutral is-hidden" data-status>Waiting for facilities</span>
+              </div>
+            </div>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ The idea -->
+    <section class="section" id="idea" aria-labelledby="idea-title">
+      <div class="wrap idea">
+        <div class="idea-mark" data-reveal aria-hidden="true">
+          <span class="orbit"></span>
+          <span class="orbit orbit--b"></span>
+          <span class="brand-mark-spin">
+            <svg class="brand-mark" viewBox="0 0 649 547" focusable="false"><use href="#ls-mark"/></svg>
+          </span>
+        </div>
+        <div class="idea-cards">
+          <div class="section-head" data-reveal style="margin-bottom: var(--spacing-2)">
+            <h2 class="section-title" id="idea-title">Two lockers, changing places.</h2>
+            <p class="section-lead">
+              The logo is the whole interface. Its two colours carry one fixed meaning on every
+              screen, so a reader who has seen one page can read the next by colour alone.
+            </p>
+          </div>
+          <div class="card card--you" data-reveal style="--i:1">
+            <div class="axis-key">
+              <h3 class="card-title">Blue is yours</h3>
+              <span class="axis-swatch">#0A77F1</span>
+            </div>
+            <p class="card-lead">Your locker, your wish, your row in the list, a proposal you sent.</p>
+          </div>
+          <div class="card card--them" data-reveal style="--i:2">
+            <div class="axis-key">
+              <h3 class="card-title">Green is theirs</h3>
+              <span class="axis-swatch">#0AB486</span>
+            </div>
+            <p class="card-lead">Everyone else's: the pool of wishes, their offer, a proposal you received.</p>
+          </div>
+          <p class="idea-note" data-reveal style="--i:3">
+            Colour is never the only signal — every rail is doubled by words on screen.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ Features -->
+    <section class="section" id="features" aria-labelledby="features-title">
+      <div class="wrap">
+        <div class="section-head" data-reveal>
+          <h2 class="section-title" id="features-title">Everything a swap needs, nothing it doesn't.</h2>
+          <p class="section-lead">
+            From the first wish to the badge in the new locker: one locker, one holder — a given
+            number on a given floor can never belong to two people.
+          </p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="card card--you feature-card" data-reveal style="--i:0">
+            <div class="feature-who">
+              <span class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+              </span>
+              <h3 class="card-title">For employees</h3>
+            </div>
+            <ul class="feature-list">
+              <li>Record your floor and locker number — or say you have none.</li>
+              <li>Say which floor you are after, and browse everyone else's wishes.</li>
+              <li><strong>It's a match!</strong> — the list tags the one swap guaranteed to work both ways.</li>
+              <li>Propose, accept, decline or withdraw; accepting one declines every competing proposal.</li>
+              <li>Your locker is <strong>held still</strong> while a swap is outstanding.</li>
+              <li>A full proposal history, recorded as it happened.</li>
+            </ul>
+          </article>
+
+          <article class="card feature-card" data-reveal style="--i:1">
+            <div class="feature-who">
+              <span class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>
+              </span>
+              <h3 class="card-title">For facilities</h3>
+            </div>
+            <ul class="feature-list">
+              <li>A directory of every account with floor, locker and wish — filterable four ways.</li>
+              <li>A <strong>validation queue</strong>: approve accepted exchanges, or refuse them with a reason.</li>
+              <li>The <strong>Locker Map</strong>: draw zones floor by floor, and every screen says where a locker physically is.</li>
+              <li>The <strong>Danger Zone</strong>: allowed e-mail domains, site language, the building's floors, the locker-number format.</li>
+              <li>Grant admin rights; activate an account by hand.</li>
+            </ul>
+          </article>
+
+          <article class="card feature-card" data-reveal style="--i:2">
+            <div class="feature-who">
+              <span class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M13 15h4"/></svg>
+              </span>
+              <h3 class="card-title">Under the hood</h3>
+            </div>
+            <ul class="feature-list">
+              <li>E-mail activation, password reset, address-change confirmation, lockout after 5 failures.</li>
+              <li>English and French, switched site-wide; a test fails if a key is untranslated.</li>
+              <li>Responsive from 320px; every screen audited with axe-core in CI.</li>
+              <li>Server-rendered Rails + Hotwire. <strong>No Node, no bundler, no external services.</strong></li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ Demo -->
+    <section class="section" id="demo" aria-labelledby="demo-title">
+      <div class="wrap">
+        <div class="section-head" data-reveal>
+          <h2 class="section-title" id="demo-title">The list that finds your swap.</h2>
+          <p class="section-lead">
+            Everyone looking for a locker, narrowed by the floor they hold today. Try the filter —
+            this is a working replica of the screen, with made-up colleagues.
+          </p>
+        </div>
+
+        <div class="card card--them demo-card" data-reveal style="--i:1">
+          <div class="demo-top">
+            <h3 class="card-title">Locker wishes</h3>
+            <div class="filters" role="group" aria-label="Their floor">
+              <span class="filters-label" aria-hidden="true">Their floor</span>
+              <button type="button" class="filter-choice" data-filter="all" aria-pressed="true">All floors</button>
+              <button type="button" class="filter-choice" data-filter="1" aria-pressed="false">1</button>
+              <button type="button" class="filter-choice" data-filter="2" aria-pressed="false">2</button>
+              <button type="button" class="filter-choice" data-filter="3" aria-pressed="false">3</button>
+              <button type="button" class="filter-choice" data-filter="5" aria-pressed="false">5</button>
+            </div>
+          </div>
+
+          <table class="data-table">
+            <thead>
+              <tr><th scope="col">Person</th><th scope="col">Holds</th><th scope="col">Looking for</th><th scope="col">Swap</th></tr>
+            </thead>
+            <tbody data-wishes>
+              <tr data-rail="you" data-floor="you">
+                <td class="data-value">alice.martin@acme.test</td>
+                <td class="data-value" data-label="Holds">floor 1 · 012</td>
+                <td class="data-value" data-label="Looking for">floor 3</td>
+                <td data-label="Swap"><span class="you-note">This is you</span></td>
+              </tr>
+              <tr data-floor="3">
+                <td class="data-value">bob.leroy@acme.test</td>
+                <td class="data-value" data-label="Holds">floor 3 · 204</td>
+                <td class="data-value" data-label="Looking for">floor 1</td>
+                <td data-label="Swap"><span class="swap-cell"><span class="badge badge-success">It's a match!</span><button type="button" class="btn btn-primary btn-sm" data-propose="bob.leroy@acme.test">Propose</button></span></td>
+              </tr>
+              <tr data-floor="2">
+                <td class="data-value">chloe.dupont@acme.test</td>
+                <td class="data-value" data-label="Holds">floor 2 · 118</td>
+                <td class="data-value" data-label="Looking for">floor 1</td>
+                <td data-label="Swap"><button type="button" class="btn btn-primary btn-sm" data-propose="chloe.dupont@acme.test">Propose</button></td>
+              </tr>
+              <tr data-floor="3">
+                <td class="data-value">david.nguyen@acme.test</td>
+                <td class="data-value" data-label="Holds">floor 3 · 231</td>
+                <td class="data-value" data-label="Looking for">floor 4</td>
+                <td data-label="Swap"><button type="button" class="btn btn-primary btn-sm" data-propose="david.nguyen@acme.test">Propose</button></td>
+              </tr>
+              <tr data-floor="5">
+                <td class="data-value">emma.rossi@acme.test</td>
+                <td class="data-value" data-label="Holds">floor 5 · 502</td>
+                <td class="data-value" data-label="Looking for">floor 3</td>
+                <td data-label="Swap"><button type="button" class="btn btn-primary btn-sm" data-propose="emma.rossi@acme.test">Propose</button></td>
+              </tr>
+              <tr data-floor="1">
+                <td class="data-value">farid.benali@acme.test</td>
+                <td class="data-value" data-label="Holds">floor 1 · 047</td>
+                <td class="data-value" data-label="Looking for">floor 2</td>
+                <td data-label="Swap"><button type="button" class="btn btn-primary btn-sm" data-propose="farid.benali@acme.test">Propose</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="demo-foot" data-demo-count aria-live="polite">5 colleagues looking for a locker.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= How it works -->
+    <section class="section" id="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <div class="section-head" data-reveal>
+          <h2 class="section-title" id="how-title">How a swap works.</h2>
+          <p class="section-lead">
+            Alice holds locker 012 on floor 1 and wants floor 3. Bob holds 204 on floor 3 and wants
+            floor 1. Five steps later, they have swapped — and the history says so.
+          </p>
+        </div>
+
+        <ol class="steps" data-steps>
+          <li class="steps-rail" aria-hidden="true"><span class="steps-rail-fill" data-rail-fill></span></li>
+          <li class="step step--them" data-step-item>
+            <span class="step-dot" aria-hidden="true">1</span>
+            <div class="card card--them step-card" data-reveal>
+              <div class="step-head"><h3 class="card-title">Declare a wish</h3><span class="step-actor">Bob</span></div>
+              <p class="step-text">“I'm looking for a locker on <strong>floor 1</strong>.” The list of wishes now carries his row.</p>
+            </div>
+          </li>
+          <li class="step step--you" data-step-item>
+            <span class="step-dot" aria-hidden="true">2</span>
+            <div class="card card--you step-card" data-reveal>
+              <div class="step-head"><h3 class="card-title">Spot the match</h3><span class="badge badge-success">It's a match!</span></div>
+              <p class="step-text">Bob is on the floor Alice wants and wants the floor she is on. The row is tagged, computed fresh every time the list is shown.</p>
+            </div>
+          </li>
+          <li class="step step--you" data-step-item>
+            <span class="step-dot" aria-hidden="true">3</span>
+            <div class="card card--you step-card" data-reveal>
+              <div class="step-head"><h3 class="card-title">Propose, accept</h3><span class="step-actor">Alice → Bob</span></div>
+              <p class="step-text">Alice proposes; Bob accepts. <strong>Both lockers are held still</strong> and every competing proposal is declined.</p>
+            </div>
+          </li>
+          <li class="step" data-step-item>
+            <span class="step-dot" aria-hidden="true">4</span>
+            <div class="card step-card" data-reveal>
+              <div class="step-head"><h3 class="card-title">Facilities validate</h3><span class="badge badge-neutral">Waiting for facilities</span></div>
+              <p class="step-text">The exchange waits in the validation queue. Once the badges are re-associated, an administrator validates it — or refuses it, with a reason.</p>
+            </div>
+          </li>
+          <li class="step" data-step-item>
+            <span class="step-dot" aria-hidden="true">5</span>
+            <div class="card card--axis step-card" data-reveal>
+              <div class="step-head"><h3 class="card-title">Swapped</h3><span class="badge badge-success">Validated</span></div>
+              <p class="step-text">Floors and numbers are exchanged, both wishes cleared, and the <strong>history recorded</strong> — nobody had to write it down.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============================================================= Numbers -->
+    <section class="section" id="stack" aria-labelledby="stack-title">
+      <div class="wrap">
+        <div class="section-head" data-reveal>
+          <h2 class="section-title" id="stack-title">Small, boring, built to last.</h2>
+          <p class="section-lead">
+            One server, one SQLite file. Every behavioural change went through a written spec first.
+          </p>
+        </div>
+
+        <div class="stats">
+          <div class="card stat" data-reveal style="--i:0">
+            <span class="stat-figure"><span data-count="34">34</span></span>
+            <span class="stat-label">features, each specified before it was built (001 → 034)</span>
+          </div>
+          <div class="card stat" data-reveal style="--i:1">
+            <span class="stat-figure"><span data-count="2">2</span></span>
+            <span class="stat-label">languages, English and French, switched site-wide</span>
+          </div>
+          <div class="card stat" data-reveal style="--i:2">
+            <span class="stat-figure"><span data-count="320">320</span><small>px</small></span>
+            <span class="stat-label">narrowest screen every page is tested at</span>
+          </div>
+          <div class="card stat" data-reveal style="--i:3">
+            <span class="stat-figure"><span data-count="0">0</span></span>
+            <span class="stat-label">Node, bundlers or third-party services to run it</span>
+          </div>
+        </div>
+
+        <ul class="stack" aria-label="Tech stack" data-reveal style="--i:2">
+          <li class="chip">Ruby 3.4</li>
+          <li class="chip">Rails 8.1</li>
+          <li class="chip">Devise</li>
+          <li class="chip">SQLite</li>
+          <li class="chip">Solid Queue / Cache / Cable</li>
+          <li class="chip">Hotwire</li>
+          <li class="chip">Tailwind CSS 4</li>
+          <li class="chip">Propshaft</li>
+          <li class="chip">Minitest + Capybara + axe-core</li>
+          <li class="chip">Brakeman</li>
+          <li class="chip">Docker + Kamal</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ========================================================= Quick start -->
+    <section class="section" id="start" aria-labelledby="start-title">
+      <div class="wrap start-grid">
+        <div class="section-head" data-reveal style="margin-bottom: 0">
+          <h2 class="section-title" id="start-title">Running in three commands.</h2>
+          <p class="section-lead">Ruby 3.4.6, SQLite 3.8+ and libvips. That is the whole list.</p>
+        </div>
+
+        <div class="card terminal" data-reveal style="--i:1">
+          <div class="terminal-bar">
+            <span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="terminal-title">~/lockswap</span>
+            <button type="button" class="btn btn-secondary btn-sm" data-copy>Copy</button>
+          </div>
+<pre data-terminal><span class="prompt">$ </span>git clone https://github.com/saumon/lockswap.git
+<span class="prompt">$ </span>cd lockswap
+<span class="prompt">$ </span>bin/setup
+<span class="comment"># bundle install, db:prepare, seeds, then the server</span>
+<span class="ok">✓</span> Listening on http://localhost:3000</pre>
+        </div>
+
+        <div class="start-notes">
+          <div class="card card--you" data-reveal style="--i:0">
+            <h3>The first account is in charge</h3>
+            <p>Sign up at <code>/users/sign_up</code>: the first account ever registered becomes the super admin.</p>
+          </div>
+          <div class="card" data-reveal style="--i:1">
+            <h3>No SMTP needed to try it</h3>
+            <p>Activation mails wait in the built-in inbox at <code>/letter_opener</code> in development.</p>
+          </div>
+          <div class="card" data-reveal style="--i:2">
+            <h3>Ships with Kamal</h3>
+            <p><code>kamal setup</code> once, <code>kamal deploy</code> after that — Docker, to your own server over SSH.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================= Closing -->
+    <section class="section" aria-labelledby="closing-title">
+      <div class="wrap">
+        <div class="card card--axis closing" data-reveal>
+          <h2 class="section-title" id="closing-title">Read it, run it, make it yours.</h2>
+          <div class="hero-actions">
+            <a class="btn btn-primary btn-arrow" href="https://github.com/saumon/lockswap">Star it on GitHub</a>
+            <a class="btn btn-secondary" href="https://github.com/saumon/lockswap/blob/dev/docs/features.md">Feature history</a>
+          </div>
+          <p class="licence">
+            LockSwap is <strong>source-available</strong>: free to read, run, study and modify for
+            noncommercial purposes under the
+            <a href="https://github.com/saumon/lockswap/blob/dev/LICENSE">PolyForm Noncommercial License 1.0.0</a>.
+            Running it for a company's employees, or offering it as a service, needs a separate licence —
+            contact Grégoire BAUDRIMONT, <a href="mailto:shrekrobu@gmail.com">shrekrobu@gmail.com</a>.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div>
+        <a class="brand-lockup" href="#top">
+          <svg class="brand-mark" viewBox="0 0 649 547" aria-hidden="true" focusable="false"><use href="#ls-mark"/></svg>
+          <span class="brand-wordmark"><span class="brand-wordmark-lock">Lock</span><span class="brand-wordmark-swap">Swap</span></span>
+        </a>
+        <p class="footer-tagline">Swap your locker, not your day.</p>
+      </div>
+      <nav class="footer-links" aria-label="Project">
+        <a href="https://github.com/saumon/lockswap">GitHub</a>
+        <a href="https://github.com/saumon/lockswap/blob/dev/docs/deployment.md">Deploy</a>
+        <a href="https://github.com/saumon/lockswap/blob/dev/docs/development.md">Dev guide</a>
+        <a href="https://github.com/saumon/lockswap/blob/dev/CONTRIBUTING.md">Contributing</a>
+        <a href="https://github.com/saumon/lockswap/blob/dev/LICENSE">Licence</a>
+      </nav>
+    </div>
+  </footer>
+
+  <div class="toast-layer" data-toasts aria-live="polite"></div>
+
+  <script>
+  (function () {
+    "use strict";
+
+    var root = document.documentElement;
+    root.classList.add("js");
+
+    var motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    var reduced = function () { return motionQuery.matches; };
+    var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    var $ = function (sel, el) { return (el || document).querySelector(sel); };
+    var $$ = function (sel, el) { return Array.prototype.slice.call((el || document).querySelectorAll(sel)); };
+
+    /* --- Scroll reveal ---------------------------------------------------- */
+    var revealed = new Set();
+    var onReveal = new Map();
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-in");
+        revealed.add(entry.target);
+        var cb = onReveal.get(entry.target);
+        if (cb) { cb(); onReveal.delete(entry.target); }
+        io.unobserve(entry.target);
+      });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.12 });
+    $$("[data-reveal]").forEach(function (el) { io.observe(el); });
+
+    /* --- Header: reading progress, current section ------------------------ */
+    var progress = $(".scroll-progress");
+    var navLinks = $$(".site-nav-link");
+    var sections = navLinks.map(function (a) { return $(a.getAttribute("href")); });
+    var stepsEl = $("[data-steps]");
+    var railFill = $("[data-rail-fill]");
+    var stepItems = $$("[data-step-item]");
+    var ticking = false;
+
+    function onScroll() {
+      ticking = false;
+      var doc = document.documentElement;
+      var max = doc.scrollHeight - window.innerHeight;
+      var p = max > 0 ? Math.min(1, window.scrollY / max) : 0;
+      progress.style.transform = "scaleX(" + p + ")";
+
+      var current = -1;
+      sections.forEach(function (s, i) {
+        if (s && s.getBoundingClientRect().top < window.innerHeight * 0.4) current = i;
+      });
+      navLinks.forEach(function (a, i) { a.setAttribute("aria-current", i === current ? "true" : "false"); });
+
+      // The steps' rail fills as the reader moves through them, and each dot
+      // lights as the fill reaches it.
+      if (!reduced()) {
+        var r = stepsEl.getBoundingClientRect();
+        var mark = window.innerHeight * 0.6;
+        var fill = Math.max(0, Math.min(1, (mark - r.top) / r.height));
+        railFill.style.transform = "scaleY(" + fill + ")";
+        stepItems.forEach(function (li) {
+          li.classList.toggle("is-active", li.getBoundingClientRect().top + 30 < mark);
+        });
+      } else {
+        stepItems.forEach(function (li) { li.classList.add("is-active"); });
+      }
+    }
+
+    window.addEventListener("scroll", function () {
+      if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
+    }, { passive: true });
+    window.addEventListener("resize", onScroll);
+    onScroll();
+
+    /* --- Hero: the grid lights under the pointer, in the reader's colour --- */
+    var hero = $(".hero");
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      var glowFrame = 0, gx = 0, gy = 0;
+      hero.addEventListener("pointermove", function (e) {
+        var r = hero.getBoundingClientRect();
+        gx = e.clientX - r.left; gy = e.clientY - r.top;
+        if (!glowFrame) glowFrame = requestAnimationFrame(function () {
+          glowFrame = 0;
+          hero.style.setProperty("--mx", gx + "px");
+          hero.style.setProperty("--my", gy + "px");
+        });
+        hero.classList.add("is-lit");
+      });
+      hero.addEventListener("pointerleave", function () { hero.classList.remove("is-lit"); });
+    }
+
+    /* --- Hero: the locker bank -------------------------------------------- */
+    var stage = $("[data-bank-stage]");
+    var tokens = { you: $('[data-token="you"]'), them: $('[data-token="them"]') };
+    var arcs = { you: $('[data-arc="you"]'), them: $('[data-arc="them"]') };
+    var bubbles = { wish: $('[data-bubble="wish"]'), match: $('[data-bubble="match"]') };
+    var steps = $$(".bank-step");
+    var status = $("[data-status]");
+    var pairs = [["101", "304"], ["205", "102"], ["306", "203"], ["104", "202"]];
+    var bankVisible = true;
+
+    new IntersectionObserver(function (e) { bankVisible = e[0].isIntersecting; }, { threshold: 0.2 }).observe(stage);
+
+    function box(el) {
+      var r = el.getBoundingClientRect(), s = stage.getBoundingClientRect();
+      return { x: r.left - s.left, y: r.top - s.top, w: r.width, h: r.height };
+    }
+
+    function place(el, b) {
+      el.style.width = b.w + "px";
+      el.style.height = b.h + "px";
+      el.style.transform = "translate(" + b.x + "px," + b.y + "px)";
+    }
+
+    function placeBubble(el, b) {
+      var w = el.offsetWidth, sw = stage.clientWidth;
+      var x = Math.max(0, Math.min(sw - w, b.x + b.w / 2 - w / 2));
+      var y = b.y - el.offsetHeight - 8;
+      if (y < -4) y = b.y + b.h + 8;
+      return { x: x, y: y };
+    }
+
+    function reset(el) {
+      el.getAnimations().forEach(function (an) { an.cancel(); });
+    }
+
+    function show(el, xy) {
+      reset(el);
+      return el.animate([
+        { opacity: 0, transform: "translate(" + xy.x + "px," + (xy.y + 6) + "px) scale(0.85)" },
+        { opacity: 1, transform: "translate(" + xy.x + "px," + xy.y + "px) scale(1)" }
+      ], { duration: 420, easing: "cubic-bezier(0.34, 1.56, 0.64, 1)", fill: "forwards" });
+    }
+
+    function hide(el) {
+      return el.animate([{ opacity: getComputedStyle(el).opacity }, { opacity: 0 }],
+        { duration: 300, easing: "ease-out", fill: "forwards" });
+    }
+
+    // Points along a flattened half-ellipse from p to q. Both doors use the
+    // same turning direction, so they travel on opposite sides of the centre —
+    // the two circular arrows of the logo.
+    function arc(p, q, n) {
+      var cx = (p.x + q.x) / 2, cy = (p.y + q.y) / 2;
+      var ux = p.x - cx, uy = p.y - cy;
+      var R = Math.hypot(ux, uy) || 1;
+      ux /= R; uy /= R;
+      var nx = -uy, ny = ux;
+      var k = Math.min(0.55, 70 / R);
+      var pts = [];
+      for (var i = 0; i <= n; i++) {
+        var phi = Math.PI * i / n;
+        pts.push({
+          x: cx + ux * R * Math.cos(phi) - nx * k * R * Math.sin(phi),
+          y: cy + uy * R * Math.cos(phi) - ny * k * R * Math.sin(phi)
+        });
+      }
+      return pts;
+    }
+
+    function pathFrom(pts) {
+      return pts.map(function (p, i) { return (i ? "L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1); }).join(" ");
+    }
+
+    function setSteps(n) {
+      steps.forEach(function (s, i) { s.classList.toggle("is-on", i < n); });
+    }
+
+    function staticBank() {
+      var a = box($('[data-n="101"]', stage)), b = box($('[data-n="304"]', stage));
+      place(tokens.you, a); place(tokens.them, b);
+      tokens.you.style.opacity = tokens.them.style.opacity = 1;
+      $('[data-n="101"]', stage).classList.add("is-taken");
+      $('[data-n="304"]', stage).classList.add("is-taken");
+      var xy = placeBubble(bubbles.match, b);
+      bubbles.match.style.transform = "translate(" + xy.x + "px," + xy.y + "px)";
+      bubbles.match.style.opacity = 1;
+      setSteps(2);
+    }
+
+    async function cycle(pair) {
+      var myGen = gen;
+      var step = function (ms) { return sleep(ms).then(function () { if (myGen !== gen) throw new Error("bank reset"); }); };
+      var cellA = $('[data-n="' + pair[0] + '"]', stage);
+      var cellB = $('[data-n="' + pair[1] + '"]', stage);
+      var a = box(cellA), b = box(cellB);
+      var floorB = pair[1].charAt(0);
+
+      tokens.you.querySelector("[data-token-n]").textContent = pair[0];
+      tokens.them.querySelector("[data-token-n]").textContent = pair[1];
+      tokens.you.classList.remove("is-held"); tokens.them.classList.remove("is-held");
+      [tokens.you, tokens.them, arcs.you, arcs.them, bubbles.wish, bubbles.match].forEach(reset);
+      place(tokens.you, a); place(tokens.them, b);
+      setSteps(0);
+      status.classList.add("is-hidden");
+
+      // 1. Two doors light up: yours and theirs.
+      cellA.classList.add("is-taken"); cellB.classList.add("is-taken");
+      var pop = function (b2) {
+        return [
+          { opacity: 0, transform: "translate(" + b2.x + "px," + b2.y + "px) scale(0.6)" },
+          { opacity: 1, transform: "translate(" + b2.x + "px," + b2.y + "px) scale(1)" }
+        ];
+      };
+      var opts = { duration: 520, easing: "cubic-bezier(0.34, 1.56, 0.64, 1)", fill: "forwards" };
+      tokens.you.animate(pop(a), opts);
+      await step(160);
+      tokens.them.animate(pop(b), opts);
+      await step(600);
+
+      // 2. Your wish.
+      bubbles.wish.textContent = "wants F" + floorB;
+      show(bubbles.wish, placeBubble(bubbles.wish, a));
+      setSteps(1);
+      await step(1000);
+
+      // 3. The list says it's a match.
+      show(bubbles.match, placeBubble(bubbles.match, b));
+      setSteps(2);
+      await step(1100);
+
+      // 4. Accepted: both lockers held still.
+      hide(bubbles.wish); hide(bubbles.match);
+      tokens.you.classList.add("is-held"); tokens.them.classList.add("is-held");
+      setSteps(3);
+      await step(700);
+
+      // 5. The swap, along the logo's two arrows.
+      var ca = { x: a.x + a.w / 2, y: a.y + a.h / 2 }, cb = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+      var arcA = arc(ca, cb, 28), arcB = arc(cb, ca, 28);
+      arcs.you.setAttribute("d", pathFrom(arcA.slice(3, -6)));
+      arcs.them.setAttribute("d", pathFrom(arcB.slice(3, -6)));
+      ["you", "them"].forEach(function (k) {
+        var len = arcs[k].getTotalLength();
+        arcs[k].style.strokeDasharray = len;
+        arcs[k].animate([
+          { strokeDashoffset: len, opacity: 0.9 },
+          { strokeDashoffset: 0, opacity: 0.9 }
+        ], { duration: 650, easing: "cubic-bezier(0.65, 0, 0.35, 1)", fill: "forwards" });
+      });
+      await step(250);
+
+      tokens.you.classList.remove("is-held"); tokens.them.classList.remove("is-held");
+      var travel = function (pts, w, h, spin) {
+        return pts.map(function (p, i) {
+          var t = i / (pts.length - 1);
+          var lift = 1 + 0.16 * Math.sin(Math.PI * t);
+          return {
+            transform: "translate(" + (p.x - w / 2) + "px," + (p.y - h / 2) + "px) rotate(" + (spin * Math.sin(Math.PI * t)) + "deg) scale(" + lift + ")",
+            opacity: 1
+          };
+        });
+      };
+      var dur = 1500, ease = "cubic-bezier(0.65, 0, 0.35, 1)";
+      tokens.you.animate(travel(arcA, a.w, a.h, -8), { duration: dur, easing: ease, fill: "forwards" });
+      var last = tokens.them.animate(travel(arcB, b.w, b.h, 8), { duration: dur, easing: ease, fill: "forwards" });
+      await last.finished; await step(0);
+
+      // You now hold their number; they hold yours.
+      tokens.you.querySelector("[data-token-n]").textContent = pair[1];
+      tokens.them.querySelector("[data-token-n]").textContent = pair[0];
+      hide(arcs.you); hide(arcs.them);
+      status.textContent = "Waiting for facilities";
+      status.className = "badge badge-neutral";
+      await step(1100);
+
+      // 6. Facilities validate.
+      status.classList.add("is-hidden");
+      await step(250);
+      status.textContent = "Validated by facilities";
+      status.className = "badge badge-success";
+      setSteps(4);
+      await step(2400);
+
+      // Reset for the next pair.
+      hide(tokens.you); hide(tokens.them);
+      status.classList.add("is-hidden");
+      await step(350);
+      cellA.classList.remove("is-taken"); cellB.classList.remove("is-taken");
+      setSteps(0);
+      await step(500);
+    }
+
+    // A resize moves every door, so a swap in flight is abandoned and the
+    // bank starts the next one from fresh measurements.
+    var gen = 0;
+    function abandon() {
+      gen++;
+      [tokens.you, tokens.them, arcs.you, arcs.them, bubbles.wish, bubbles.match].forEach(function (el) {
+        reset(el);
+        el.style.transform = "";
+      });
+      $$(".locker.is-taken", stage).forEach(function (c) { c.classList.remove("is-taken"); });
+      status.classList.add("is-hidden");
+      setSteps(0);
+    }
+
+    async function runBank() {
+      if (reduced()) { staticBank(); return; }
+      await sleep(900); // let the hero finish arriving first
+      var i = 0;
+      for (;;) {
+        while (!bankVisible || document.hidden) await sleep(400);
+        if (reduced()) { staticBank(); return; }
+        try { await cycle(pairs[i++ % pairs.length]); }
+        catch (e) { await sleep(300); }
+      }
+    }
+
+    var lastWidth = window.innerWidth;
+    window.addEventListener("resize", function () {
+      if (reduced() || window.innerWidth === lastWidth) return;
+      lastWidth = window.innerWidth;
+      abandon();
+    });
+
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(runBank); else runBank();
+
+    /* --- Demo: the wish list ---------------------------------------------- */
+    var chips = $$("[data-filter]");
+    var rows = $$("[data-wishes] tr");
+    var countEl = $("[data-demo-count]");
+
+    chips.forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        var f = chip.getAttribute("data-filter");
+        chips.forEach(function (c) { c.setAttribute("aria-pressed", c === chip ? "true" : "false"); });
+        var shown = 0;
+        rows.forEach(function (row) {
+          var floor = row.getAttribute("data-floor");
+          var keep = floor === "you" || f === "all" || floor === f;
+          if (floor !== "you" && keep) shown++;
+          if (keep && row.hidden) {
+            row.hidden = false;
+            row.classList.add("is-leaving");
+            requestAnimationFrame(function () { requestAnimationFrame(function () { row.classList.remove("is-leaving"); }); });
+          } else if (!keep && !row.hidden) {
+            if (reduced()) { row.hidden = true; return; }
+            row.classList.add("is-leaving");
+            setTimeout(function () { if (row.classList.contains("is-leaving")) row.hidden = true; }, 230);
+          }
+        });
+        countEl.textContent = shown === 0
+          ? "No wish matches this filter."
+          : shown + (shown === 1 ? " colleague" : " colleagues") + " looking for a locker" + (f === "all" ? "." : " on floor " + f + ".");
+      });
+    });
+
+    var toastLayer = $("[data-toasts]");
+    $$("[data-propose]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var t = document.createElement("div");
+        t.className = "card card--you toast";
+        t.innerHTML = "<strong>Proposal sent</strong>";
+        t.appendChild(document.createTextNode("To " + btn.getAttribute("data-propose") + " — a demo: nothing left this page."));
+        toastLayer.appendChild(t);
+        setTimeout(function () {
+          if (reduced()) { t.remove(); return; }
+          t.classList.add("is-leaving");
+          t.addEventListener("animationend", function () { t.remove(); }, { once: true });
+        }, 3200);
+      });
+    });
+
+    /* --- Counters --------------------------------------------------------- */
+    $$("[data-count]").forEach(function (el) {
+      var target = parseInt(el.getAttribute("data-count"), 10);
+      var card = el.closest("[data-reveal]");
+      if (reduced() || target === 0) return;
+      el.textContent = "0";
+      onReveal.set(card, function () {
+        var start = performance.now(), dur = 1400;
+        (function tick(now) {
+          var t = Math.min(1, (now - start) / dur);
+          var e = 1 - Math.pow(1 - t, 4);
+          el.textContent = Math.round(target * e);
+          if (t < 1) requestAnimationFrame(tick);
+        })(start);
+      });
+    });
+
+    /* --- Terminal: typed when it comes into view --------------------------- */
+    var term = $("[data-terminal]");
+    var termCard = term.closest("[data-reveal]");
+    var termText = term.textContent.replace(/^\$ /gm, "").split("\n").filter(function (l) {
+      return l && l.charAt(0) !== "#" && l.charAt(0) !== "✓";
+    }).join("\n");
+
+    if (!reduced()) {
+      var script = [
+        { type: "cmd", text: "git clone https://github.com/saumon/lockswap.git" },
+        { type: "cmd", text: "cd lockswap" },
+        { type: "cmd", text: "bin/setup" },
+        { type: "comment", text: "# bundle install, db:prepare, seeds, then the server" },
+        { type: "ok", text: "Listening on http://localhost:3000" }
+      ];
+      term.setAttribute("aria-label", termText);
+      term.textContent = "";
+      var caret = document.createElement("span");
+      caret.className = "caret";
+      term.appendChild(caret);
+
+      onReveal.set(termCard, async function () {
+        await sleep(500);
+        for (var i = 0; i < script.length; i++) {
+          var line = script[i];
+          var span = document.createElement("span");
+          if (line.type === "cmd") {
+            var pr = document.createElement("span");
+            pr.className = "prompt"; pr.textContent = "$ ";
+            term.insertBefore(pr, caret);
+          } else if (line.type === "comment") {
+            span.className = "comment";
+          } else {
+            var ok = document.createElement("span");
+            ok.className = "ok"; ok.textContent = "✓ ";
+            term.insertBefore(ok, caret);
+          }
+          term.insertBefore(span, caret);
+          if (line.type === "cmd") {
+            for (var c = 0; c < line.text.length; c++) {
+              span.textContent += line.text.charAt(c);
+              await sleep(22 + Math.random() * 38);
+            }
+            await sleep(320);
+          } else {
+            span.textContent = line.text;
+            await sleep(line.type === "comment" ? 700 : 200);
+          }
+          if (i < script.length - 1) term.insertBefore(document.createTextNode("\n"), caret);
+        }
+        term.removeAttribute("aria-label");
+      });
+    }
+
+    $("[data-copy]").addEventListener("click", function (e) {
+      var btn = e.currentTarget;
+      var done = function () {
+        btn.textContent = "Copied";
+        setTimeout(function () { btn.textContent = "Copy"; }, 1600);
+      };
+      if (navigator.clipboard) navigator.clipboard.writeText(termText).then(done, function () {});
+    });
+  })();
+  </script>
+</body>
+</html>

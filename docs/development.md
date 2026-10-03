@@ -251,3 +251,21 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   an account), an email change confirmed from the new mailbox, and an administrator activating an
   account by hand.
 
+
+## The landing page
+
+The project's public page is [`docs/index.html`](index.html), served by **GitHub Pages** from the
+`/docs` folder (Settings → Pages → *Deploy from a branch*, folder `/docs`). It is one static file: no
+build step, no framework, nothing loaded from a third party. `docs/.nojekyll` tells Pages to serve it
+as-is.
+
+* its tokens are a copy of the ones in `app/assets/tailwind/application.css`, which stays the source
+  of truth — change a colour there and here together. The fonts in `docs/assets/fonts/` are copies of
+  `app/assets/fonts/`, under the same SIL OFL;
+* the logo is inlined once as an SVG `<symbol>` traced from `app/views/shared/_brand_mark.html.erb`;
+  `docs/assets/brand-mark.svg` is the same artwork as a file, for the favicon;
+* it follows the design contract in [`CLAUDE.md`](../CLAUDE.md) — the swap axis, the two families, the
+  hinged cards — but not the application's 400ms motion budget: it is a page visited once, not a tool
+  used all day. Every animation is still declared inside `prefers-reduced-motion: no-preference`, and
+  nothing is hidden unless the script that reveals it is running;
+* to preview it: `python3 -m http.server -d docs 8000`, then <http://localhost:8000>.
