@@ -36,7 +36,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_090100) do
   end
 
   create_table "locker_swap_proposals", force: :cascade do |t|
-    t.integer "admin_decided_by_id"
     t.datetime "completed_at"
     t.datetime "created_at", null: false
     t.datetime "decided_at"
@@ -50,6 +49,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_090100) do
     t.string "requester_locker_number_at_resolution"
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.integer "admin_decided_by_id"
     t.index ["admin_decided_by_id"], name: "index_locker_swap_proposals_on_admin_decided_by_id"
     t.index ["recipient_id"], name: "index_locker_swap_proposals_on_recipient_id"
     t.index ["recipient_id"], name: "index_swap_proposals_accepted_recipient", unique: true, where: "status = 1"
@@ -82,10 +82,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_090100) do
     t.boolean "admin", default: false, null: false
     t.datetime "admin_granted_at"
     t.integer "admin_granted_by_id"
-    t.datetime "confirmation_sent_at"
-    t.string "confirmation_token"
-    t.datetime "confirmed_at"
-    t.integer "confirmed_by_id"
     t.datetime "created_at", null: false
     t.string "email", default: "", null: false, collation: "NOCASE"
     t.string "encrypted_password", default: "", null: false
@@ -96,12 +92,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_090100) do
     t.integer "locker_edited_by_id"
     t.string "locker_number"
     t.datetime "remember_created_at"
-    t.datetime "reset_password_sent_at"
-    t.string "reset_password_token"
     t.datetime "search_cancelled_at"
     t.integer "search_cancelled_by_id"
-    t.string "unconfirmed_email"
     t.datetime "updated_at", null: false
+    t.string "confirmation_token"
+    t.datetime "confirmed_at"
+    t.datetime "confirmation_sent_at"
+    t.string "unconfirmed_email"
+    t.string "reset_password_token"
+    t.datetime "reset_password_sent_at"
+    t.integer "confirmed_by_id"
     t.index ["admin"], name: "index_users_on_bootstrap_admin", unique: true, where: "admin = 1 AND admin_granted_at IS NULL"
     t.index ["admin_granted_by_id"], name: "index_users_on_admin_granted_by_id"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
