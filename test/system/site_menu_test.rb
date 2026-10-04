@@ -225,4 +225,23 @@ class SiteMenuTest < ApplicationSystemTestCase
         "an address too long for the panel must be truncated, not laid out full width"
     end
   end
+
+  # 035 FR-001: the signed-in address is the way to the account page, at both
+  # treatments, and says so when it is the page being shown.
+  test "the signed-in address leads to the account page at both widths" do
+    log_in_as @user
+
+    with_viewport(:desktop) do
+      within(".site-bar") { find("a.site-nav-identity", text: @user.email).click }
+      assert_current_path edit_user_registration_path
+      assert_selector ".site-bar a.site-nav-identity[aria-current=page]"
+    end
+
+    visit root_path
+    with_viewport(:phone) do
+      find(".site-menu-toggle").click
+      within(".site-menu-panel") { find("a.site-nav-identity", text: @user.email).click }
+      assert_current_path edit_user_registration_path
+    end
+  end
 end

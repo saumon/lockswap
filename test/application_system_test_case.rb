@@ -30,6 +30,21 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
       Rails.logger.debug { "Selenium Manager could not resolve a Chrome binary: #{e.message}" }
       nil
     end
+
+    # Chrome checks every credential submitted through a form against its list
+    # of leaked passwords, and for some pairs answers with a "change your
+    # password" bubble. The bubble takes focus from the page
+    # (document.hasFocus() turns false), and from then on Selenium's clicks
+    # never reach it — no pointerdown, no click, nothing. Which pairs trigger it
+    # is Chrome's business, and the answer comes back over the network, so the
+    # failure follows the account and the timing rather than the code:
+    # grace@example.com/password123 lost its next click while
+    # frank@example.com/password123, an identical step for step test, did not.
+    # That was NavigationTest's granted-administrator case (failing 2 runs out
+    # of 2 at --seed 2 without this line, passing 3 out of 3 with it) and
+    # AdminUserDetailTest's ModalNotFound on the grant confirm (1 pass in 3
+    # before, 4 out of 4 after), both of which log in as grace.
+    options.add_preference("profile.password_manager_leak_detection", false)
   end
 
   # One process, whatever the suite grows to. Minitest parallelises past 50 tests,

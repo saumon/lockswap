@@ -26,6 +26,39 @@ en:
   # sparse) read their aria-label from t("activerecord.attributes...")
   # directly rather than through f.label's own automatic humanization, and a
   # direct t() call has no such fallback in any language.
+  # 035: the account page's password form (app/models/password_change.rb). Its
+  # own names and messages rather than User's, because its fields are not
+  # User's: "New password" is not "Password", and "is incorrect" is said of a
+  # password the form checked, not one it saved.
+  activemodel:
+    models:
+      password_change: "password change"
+    attributes:
+      password_change:
+        current_password: "Current password"
+        password: "New password"
+        password_confirmation: "Confirm new password"
+    errors:
+      models:
+        password_change:
+          # FR-024: saving raised, or failed for a reason the form cannot name.
+          failed: "Your password could not be changed. Nothing was modified — please try again."
+          attributes:
+            current_password:
+              blank: "is required."
+              # FR-013: incorrect, and nothing more about it.
+              invalid: "is incorrect."
+              throttled:
+                one: "has been entered incorrectly too many times. Try again in %{count} minute."
+                other: "has been entered incorrectly too many times. Try again in %{count} minutes."
+            password:
+              blank: "is required."
+              too_short: "must be at least %{count} characters long."
+              too_long: "must be at most %{count} characters long."
+              same_as_current: "must be different from your current password."
+            password_confirmation:
+              blank: "is required."
+              confirmation: "doesn't match the new password above."
   activerecord:
     attributes:
       site_floor_list:
@@ -297,12 +330,23 @@ en:
         log_in: "Log in"
       edit:
         title: "Account settings"
-        heading: "Edit user"
+        heading: "Account settings"
         waiting_confirmation_for: "Currently waiting confirmation for: %{email}"
-        leave_blank: "(leave blank if you don't want to change it)"
         current_password_hint: "(we need your current password to confirm your changes)"
+        current_password_subject: "current password"
         submit: "Update"
         submitting: "Updating…"
+        # 035: the account page's two sections, and the password one's outcome.
+        email_section_title: "Email address"
+        password_section_title: "Change password"
+        new_password_subject: "new password"
+        new_password_confirmation_subject: "confirm new password"
+        password_submit: "Change my password"
+        password_submitting: "Changing…"
+        password_changed_title: "Your password has been changed"
+        password_changed_active: "Your new password is active: use it from now on to sign in."
+        password_changed_sessions: "Every other device or browser signed in to your account has been signed out. This one stays signed in."
+        password_changed_notified: "A notification confirming the change has been sent to %{email}."
         cancel_account_title: "Cancel my account"
         unhappy: "Unhappy?"
         cancel_account_button: "Cancel my account"
@@ -518,6 +562,8 @@ en:
       swap_validations: "Swap validations"
       danger_zone: "Danger Zone"
       log_out: "Log out"
+      # 035 FR-001: read after the email address the link shows.
+      account_settings: "account settings"
   user:
     locker_number_format_hint: "Required format: %{expected}"
     messages:

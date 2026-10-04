@@ -2302,6 +2302,37 @@
   }
 
   .form-errors-list li + li { margin-top: var(--spacing-1); }
+
+  /* --- 035: form-level success summary ------------------------------------
+     The counterpart of .form-errors, for the one outcome that has more to say
+     than a toast can hold before it dismisses itself: the password change's
+     three statements (spec FR-014, research.md R8). Same shape, the success
+     pair instead of the error one — #07795A on #E6F7F1 is 4.87:1, computed
+     where the tokens are declared. Focusable by script only (tabindex -1), so
+     the focus ring is the shared :focus-visible one. */
+  .form-success {
+    padding: var(--spacing-4) var(--spacing-5);
+    background-color: var(--color-status-success-tint);
+    border: 1px solid var(--color-status-success);
+    border-radius: var(--radius-md);
+  }
+
+  .form-success-title {
+    color: var(--color-status-success);
+    font-size: var(--text-label);
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .form-success-list {
+    margin: var(--spacing-2) 0 0;
+    padding-inline-start: var(--spacing-5);
+    list-style: disc outside;
+    color: var(--color-status-success);
+    font-size: var(--text-sm);
+  }
+
+  .form-success-list li + li { margin-top: var(--spacing-1); }
 }
 
 /* ===========================================================================

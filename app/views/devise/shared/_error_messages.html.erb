@@ -1,5 +1,11 @@
+<%# 035 (analyze I2): `focus: true` makes the summary take focus when it is
+    rendered — Turbo focuses the first [autofocus] after a render — so a refused
+    submission is announced where the user's attention already is (FR-012).
+    Opt-in: the other screens that render this are unchanged. %>
 <% if resource.errors.any? %>
-  <div id="error_explanation" data-turbo-temporary role="alert" class="form-errors">
+  <% focus = local_assigns.fetch(:focus, false) %>
+  <div id="error_explanation" data-turbo-temporary role="alert" class="form-errors"
+       <%= tag.attributes(tabindex: (-1 if focus), autofocus: focus) %>>
     <h2 class="form-errors-title">
       <%= I18n.t("errors.messages.not_saved",
                  count: resource.errors.count,

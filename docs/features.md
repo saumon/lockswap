@@ -1,6 +1,6 @@
 # Feature history
 
-Feature-by-feature record of what LockSwap does, 001 → 034. The specs in [`specs/`](../specs/) are the source of truth; this page is the narrative.
+Feature-by-feature record of what LockSwap does, 001 → 035. The specs in [`specs/`](../specs/) are the source of truth; this page is the narrative.
 
 The project started with the foundations — without user accounts, no locker swap is possible — and
 now carries the swap through end to end: declare what you are looking for, offer a swap, answer one,
@@ -76,7 +76,9 @@ it. A forgotten password is no longer the end of an account either — the sign-
 by email — and a changed address only takes effect once it has been confirmed from the new mailbox.
 Whoever was already registered carries on exactly as before; for anyone whose email never arrives,
 an administrator can activate the account by hand. How the site sends its mail, and how to point it
-at your own SMTP server, has [a section of its own](email.md).
+at your own SMTP server, has [a section of its own](email.md). And a password can now be changed
+without forgetting it first: the account page — reached at last from the menu, by the address shown
+there — has a section of its own for it, and changing it signs out every other device at once.
 
 | Feature | Status |
 | --- | --- |
@@ -113,6 +115,7 @@ at your own SMTP server, has [a section of its own](email.md).
 | **032 — Locker zone visibility across screens** | ✅ Shipped |
 | **033 — Administrator validation of locker swaps** | ✅ Shipped |
 | **034 — Email activation and password reset** | ✅ Shipped |
+| **035 — Change password from the account page** | ✅ Shipped |
 | Locker directory and availability | ⏳ To be specified |
 
 What feature 001 covers today — see
@@ -1111,3 +1114,25 @@ and [📧 Email](email.md) for how mail is sent and configured:
   that follows the site's own design tokens. A slow or broken mail server never slows down or breaks a
   page.
 
+What feature 035 adds — see
+[`specs/035-password-change/spec.md`](../specs/035-password-change/spec.md):
+
+* **the account page is in the menu**: the signed-in address in the header is now the link to it.
+  Before, the only way there was to type its address;
+* **email and password are two separate sections** of that page, each with its own current-password
+  check and its own button. The email form no longer accepts a password at all — not even from a request
+  built by hand;
+* **changing the password asks for three things** — the current password, the new one, and the new one
+  again — each with an eye to show what was typed. Too short, too long or mismatched is said while
+  typing, and the form will not send what it already knows will be refused, so nothing typed is lost;
+* **every other device is signed out** the moment the password changes, those kept signed in for 30 days
+  included. The browser that made the change stays signed in, and stays remembered;
+* **the page says what just happened**, in a panel that stays rather than a notice that fades: the new
+  password is active, the other devices were signed out, and the existing password-changed email (034)
+  has gone to the account's address;
+* **guessing is limited**: after 5 wrong current passwords in a row, the form refuses to check any more
+  for 15 minutes. The user stays signed in, and signing in elsewhere is not affected;
+* **nothing about the current password is ever revealed** — not its length, not how close a guess was,
+  and not whether a new password matches it unless the current one was given correctly. A refused form
+  comes back with every password field empty, and no password is ever logged;
+* **a reset link requested earlier stops working** once the password has been changed here.

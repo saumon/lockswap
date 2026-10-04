@@ -8,6 +8,13 @@ Rails.application.routes.draw do
     passwords: "users/passwords"
   }
 
+  # 035: changing the password from the account page, a member of the
+  # controller that owns that page (research.md R1). Not /users/password —
+  # PATCH there is the 034 reset flow (users/passwords#update).
+  devise_scope :user do
+    patch "users/account/password", to: "registrations#update_password", as: :user_account_password
+  end
+
   # 034 FR-030: the development inbox, when no SMTP server is configured
   # (research.md R12). Never mounted in production or test.
   mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?

@@ -251,4 +251,145 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to root_path
   end
+
+  # --- 035: changing the password from the account page -----------------------
+
+  NEW_PASSWORD = "brandnew456".freeze
+
+  def change_password(current: VALID_PASSWORD, password: NEW_PASSWORD, confirmation: password)
+    patch user_account_password_path, params: {
+      password_change: { current_password: current, password: password, password_confirmation: confirmation }
+    }
+  end
+
+  # The request log and Rails.logger, as one string, for the duration of the block.
+  def captured_log
+    io = StringIO.new
+    logger = ActiveSupport::Logger.new(io)
+    Rails.logger.broadcast_to(logger)
+    yield
+    io.string
+  ensure
+    Rails.logger.stop_broadcasting_to(logger)
+  end
+
+  # US1, FR-014, FR-017: back to the account page with the outcome, still
+  # signed in.
+  test "035: a valid change redirects to the account page and keeps this session" do
+    sign_in users(:carol)
+
+    log = captured_log { change_password }
+
+    assert_redirected_to edit_user_registration_path
+    assert_response :see_other
+    assert flash[:password_changed]
+    assert_includes log, "[password_change] event=changed user_id=#{users(:carol).id}"
+
+    get edit_user_registration_path
+    assert_response :success
+    assert users(:carol).reload.valid_password?(NEW_PASSWORD)
+  end
+
+  # FR-019: nothing changes, and signing in comes back to the account page.
+  test "035: without a session the change is refused and sign-in returns to the account page" do
+    change_password
+
+    assert_redirected_to new_user_session_path
+    assert users(:carol).reload.valid_password?(VALID_PASSWORD)
+
+    post user_session_path, params: { user: { email: users(:carol).email, password: VALID_PASSWORD } }
+    assert_redirected_to edit_user_registration_path
+  end
+
+  # FR-007: there is no way to name another account.
+  test "035: the change applies to the signed-in account whatever else is posted" do
+    sign_in users(:carol)
+
+    patch user_account_password_path, params: {
+      id: users(:alice).id, user: { id: users(:alice).id },
+      password_change: { current_password: VALID_PASSWORD, password: NEW_PASSWORD,
+                         password_confirmation: NEW_PASSWORD }
+    }
+
+    assert users(:carol).reload.valid_password?(NEW_PASSWORD)
+    assert users(:alice).reload.valid_password?(VALID_PASSWORD)
+  end
+
+  # US3, FR-013, FR-025, FR-026: a refusal re-renders the page, echoes no
+  # password, and logs which rules failed — never the values.
+  test "035: a refusal echoes no password and logs only the failed rules" do
+    sign_in users(:carol)
+    wrong = "guessing-#{SecureRandom.hex(4)}"
+    short = "sh#{SecureRandom.hex(1)}"
+
+    log = captured_log { change_password(current: wrong, password: short) }
+
+    assert_response :unprocessable_content
+    [ wrong, short ].each do |value|
+      assert_not_includes response.body, value
+      assert_not_includes log, value
+    end
+    assert_select "input[type=password][value]", count: 0
+    assert_select "#error_explanation li", minimum: 2
+    assert_match(/\[password_change\] event=refused user_id=#{users(:carol).id} reasons=\S*current_password_invalid/, log)
+    assert users(:carol).reload.valid_password?(VALID_PASSWORD)
+  end
+
+  # Analyze I1: the password errors belong to the password card only.
+  test "035: a refusal leaves the email form without errors" do
+    sign_in users(:carol)
+
+    change_password(password: "short")
+
+    assert_select "form[action='#{user_registration_path}'] #error_explanation", count: 0
+    assert_select "#error_explanation", count: 1
+  end
+
+  test "035: a throttled attempt is logged as such" do
+    sign_in users(:carol)
+    users(:carol).update_columns(password_change_failed_attempts: 5, password_change_locked_at: Time.current)
+
+    log = captured_log { change_password }
+
+    assert_response :unprocessable_content
+    assert_includes log, "[password_change] event=throttled user_id=#{users(:carol).id}"
+    assert users(:carol).reload.valid_password?(VALID_PASSWORD)
+  end
+
+  # FR-024: a failure while saving changes nothing and says so plainly.
+  test "035: an error while saving leaves the password unchanged and says to try again" do
+    sign_in users(:carol)
+    User.class_eval do
+      alias_method :__save_before_035_test, :save
+      define_method(:save) { |**| raise ActiveRecord::ActiveRecordError, "disk on fire" }
+    end
+
+    log = captured_log { change_password }
+
+    assert_response :unprocessable_content
+    assert_includes response.body, ERB::Util.html_escape(I18n.t("activemodel.errors.models.password_change.failed"))
+    assert_not_includes response.body, "disk on fire"
+    assert_includes log, "[password_change] event=failed user_id=#{users(:carol).id}"
+  ensure
+    User.class_eval do
+      alias_method :save, :__save_before_035_test
+      remove_method :__save_before_035_test
+    end
+    assert users(:carol).reload.valid_password?(VALID_PASSWORD)
+  end
+
+  # US4, research.md R2: the email form no longer carries a password, and the
+  # server does not accept one through it either.
+  test "035: the email form cannot change the password" do
+    sign_in users(:carol)
+
+    assert_no_enqueued_emails do
+      put user_registration_path, params: {
+        user: { email: users(:carol).email, current_password: VALID_PASSWORD,
+                password: NEW_PASSWORD, password_confirmation: NEW_PASSWORD }
+      }
+    end
+
+    assert users(:carol).reload.valid_password?(VALID_PASSWORD)
+  end
 end
