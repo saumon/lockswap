@@ -69,6 +69,7 @@ change.
 
 **Under the hood**
 - Sign-up with e-mail activation, password reset, e-mail change confirmation,
+  password change from the account page (signs out every other device),
   account lockout (5 failures → 15 minutes).
 - English and French, switched site-wide; a test fails if a key is untranslated.
 - Responsive from 320px up; accessibility (axe-core) audited on every screen in CI.

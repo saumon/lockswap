@@ -249,7 +249,14 @@ Each feature ships a quickstart that walks through its acceptance scenarios by h
   until the link is followed, a resent email killing the previous link, the same answer for an unknown
   address, a password reset (mismatch, success, reused link, expired link, ending a lockout, activating
   an account), an email change confirmed from the new mailbox, and an administrator activating an
-  account by hand.
+  account by hand;
+* [`specs/035-password-change/quickstart.md`](../specs/035-password-change/quickstart.md) —
+  reaching the account page from the address in the menu, changing the password and reading the
+  panel that says it is active, that other devices were signed out and that a notice was sent, a
+  second browser sent to sign-in while this one stays remembered, a too-short or mismatched password
+  flagged before anything is sent, a wrong current password coming back with every field empty, the
+  form waiting 15 minutes after five wrong guesses while the user stays signed in, and the one
+  "password changed" email in the development inbox.
 
 
 ## The landing page

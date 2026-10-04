@@ -7,6 +7,35 @@
 # to the exact values ActiveSupport's bundled en.yml uses, rather than the
 # French conventions rails-i18n would otherwise contribute.
 fr:
+  # 035 : le formulaire de mot de passe de la page du compte
+  # (app/models/password_change.rb) — voir en.yml.
+  activemodel:
+    models:
+      password_change: "changement de mot de passe"
+    attributes:
+      password_change:
+        current_password: "Mot de passe actuel"
+        password: "Nouveau mot de passe"
+        password_confirmation: "Confirmer le nouveau mot de passe"
+    errors:
+      models:
+        password_change:
+          failed: "Votre mot de passe n'a pas pu être modifié. Rien n'a changé — veuillez réessayer."
+          attributes:
+            current_password:
+              blank: "est obligatoire."
+              invalid: "est incorrect."
+              throttled:
+                one: "a été saisi incorrectement trop de fois. Réessayez dans %{count} minute."
+                other: "a été saisi incorrectement trop de fois. Réessayez dans %{count} minutes."
+            password:
+              blank: "est obligatoire."
+              too_short: "doit contenir au moins %{count} caractères."
+              too_long: "doit contenir au plus %{count} caractères."
+              same_as_current: "doit être différent de votre mot de passe actuel."
+            password_confirmation:
+              blank: "est obligatoire."
+              confirmation: "ne correspond pas au nouveau mot de passe ci-dessus."
   # 025 T021: model/attribute names no gem can know, since they are unique to
   # this application. rails-i18n and devise-i18n both ship generic
   # activerecord.attributes coverage (created_at, updated_at, and Devise's own
@@ -342,12 +371,22 @@ fr:
         log_in: "Se connecter"
       edit:
         title: "Paramètres du compte"
-        heading: "Modifier l'utilisateur"
+        heading: "Paramètres du compte"
         waiting_confirmation_for: "Confirmation en attente pour : %{email}"
-        leave_blank: "(laissez vide si vous ne voulez pas le changer)"
         current_password_hint: "(nous avons besoin de votre mot de passe actuel pour confirmer vos modifications)"
+        current_password_subject: "mot de passe actuel"
         submit: "Mettre à jour"
         submitting: "Mise à jour en cours…"
+        email_section_title: "Adresse e-mail"
+        password_section_title: "Changer le mot de passe"
+        new_password_subject: "nouveau mot de passe"
+        new_password_confirmation_subject: "confirmation du nouveau mot de passe"
+        password_submit: "Changer mon mot de passe"
+        password_submitting: "Modification…"
+        password_changed_title: "Votre mot de passe a été modifié"
+        password_changed_active: "Votre nouveau mot de passe est actif : utilisez-le désormais pour vous connecter."
+        password_changed_sessions: "Tous les autres appareils ou navigateurs connectés à votre compte ont été déconnectés. Celui-ci reste connecté."
+        password_changed_notified: "Une notification confirmant la modification a été envoyée à %{email}."
         cancel_account_title: "Annuler mon compte"
         unhappy: "Mécontent(e) ?"
         cancel_account_button: "Annuler mon compte"
@@ -555,6 +594,7 @@ fr:
       swap_validations: "Validation des échanges"
       danger_zone: "Zone de danger"
       log_out: "Se déconnecter"
+      account_settings: "paramètres du compte"
   user:
     locker_number_format_hint: "Format requis : %{expected}"
     messages:

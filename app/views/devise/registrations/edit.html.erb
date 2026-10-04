@@ -1,50 +1,30 @@
 <% content_for :title, t(".title") %>
 
-<div class="auth-page">
-  <div class="card stack">
+<%# 035 FR-002, US4: the account page holds two forms, one per thing to change,
+    each with its own current-password check and its own submit. They used to
+    be one form where a blank new password meant "keep the old one" — which made
+    the password the least findable thing on the page that owns it.
+
+    One column: both cards hold controls, so side by side they would break
+    assert_tab_order_follows_visual_order (CLAUDE.md "Layout"). The title sits
+    above the cards rather than inside the first one, which is no longer the
+    whole page.
+
+    The page used to borrow .auth-page from the signed-out screens — a 26rem
+    column centred on its own, which on a desktop read as a narrow strip in the
+    middle of a site that is 68rem wide everywhere else. It is a signed-in page
+    like the others now: the main column, left-aligned, title flush left. The
+    two cards about the reader's own account hang on the blue hinge; the one
+    that deletes it on the destructive one (CLAUDE.md "The swap axis"). %>
+<div class="stack">
+  <div class="page-head">
     <h1 class="page-title"><%= t(".heading") %></h1>
-
-    <%= render "devise/shared/error_messages", resource: resource %>
-
-    <%= form_for(resource, as: resource_name, url: registration_path(resource_name),
-                 html: { method: :put, class: "stack-tight" }) do |f| %>
-      <div class="field">
-        <%= f.label :email, class: "field-label" %>
-        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "field-input" %>
-      </div>
-
-      <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-        <p class="field-hint"><%= t(".waiting_confirmation_for", email: resource.unconfirmed_email) %></p>
-      <% end %>
-
-      <div class="field">
-        <%= f.label :password, class: "field-label" %>
-        <%= f.password_field :password, autocomplete: "new-password",
-              aria: { describedby: "edit_password_hint" }, class: "field-input" %>
-        <p id="edit_password_hint" class="field-hint">
-          <%= t(".leave_blank") %><% if @minimum_password_length %> — <%= t("devise.shared.password_hint", count: @minimum_password_length) %><% end %>
-        </p>
-      </div>
-
-      <div class="field">
-        <%= f.label :password_confirmation, class: "field-label" %>
-        <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "field-input" %>
-      </div>
-
-      <div class="field">
-        <%= f.label :current_password, class: "field-label" %>
-        <%= f.password_field :current_password, autocomplete: "current-password",
-              aria: { describedby: "current_password_hint" }, class: "field-input" %>
-        <p id="current_password_hint" class="field-hint">
-          <%= t(".current_password_hint") %>
-        </p>
-      </div>
-
-      <%= f.submit t(".submit"), class: "btn btn-primary", data: { turbo_submits_with: t(".submitting") } %>
-    <% end %>
   </div>
 
-  <div class="card stack-tight">
+  <%= render "devise/registrations/email_form" %>
+  <%= render "devise/registrations/password_form", password_change: @password_change %>
+
+  <div class="card card--alert stack-tight">
     <h2 class="card-title"><%= t(".cancel_account_title") %></h2>
     <p class="card-lead"><%= t(".unhappy") %></p>
     <div class="row">

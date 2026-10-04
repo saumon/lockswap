@@ -10,9 +10,15 @@ class EmailChangeTest < ApplicationSystemTestCase
     log_in_as alice
 
     visit edit_user_registration_path
-    fill_in_reliably "Email", with: NEW_EMAIL
-    fill_in_reliably "Current password", with: VALID_PASSWORD
-    click_on "Update"
+    # 035: "Current password" is on the page twice now — once per card — so the
+    # fills are scoped to the email card, which carries no new-password field.
+    within(".card", text: I18n.t("devise.registrations.edit.email_section_title")) do
+      assert_no_field "New password"
+      assert_no_field "Password", exact: true
+      fill_in_reliably "Email", with: NEW_EMAIL
+      fill_in_reliably "Current password", with: VALID_PASSWORD
+      click_on "Update"
+    end
 
     assert_text I18n.t("devise.registrations.update_needs_confirmation")
 

@@ -1,0 +1,39 @@
+<%# 035 US4: the email half of the old combined form. Its password fields are
+    gone, and RegistrationsController#account_update_params no longer accepts
+    them either (research.md R2) — removing them here alone would not stop a
+    hand-made request.
+
+    No autofocus on the email field any more (analyze I2): it was the page's
+    first [autofocus], so Turbo would have given it focus ahead of the password
+    card's success panel or error summary. %>
+<div class="card card--you stack">
+  <h2 class="card-title"><%= t("devise.registrations.edit.email_section_title") %></h2>
+
+  <%= render "devise/shared/error_messages", resource: resource %>
+
+  <%= form_for(resource, as: resource_name, url: registration_path(resource_name),
+               html: { method: :put, class: "stack-tight" }) do |f| %>
+    <div class="field">
+      <%= f.label :email, class: "field-label" %>
+      <%= f.email_field :email, autocomplete: "email", class: "field-input" %>
+    </div>
+
+    <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+      <p class="field-hint"><%= t("devise.registrations.edit.waiting_confirmation_for", email: resource.unconfirmed_email) %></p>
+    <% end %>
+
+    <div class="field">
+      <%= f.label :current_password, class: "field-label" %>
+      <%= render "devise/shared/password_field", f: f, attribute: :current_password,
+            subject: t("devise.registrations.edit.current_password_subject"),
+            autocomplete: "current-password",
+            aria: { describedby: "current_password_hint" }, data: {} %>
+      <p id="current_password_hint" class="field-hint">
+        <%= t("devise.registrations.edit.current_password_hint") %>
+      </p>
+    </div>
+
+    <%= f.submit t("devise.registrations.edit.submit"), class: "btn btn-primary",
+          data: { turbo_submits_with: t("devise.registrations.edit.submitting") } %>
+  <% end %>
+</div>

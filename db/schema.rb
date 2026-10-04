@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_090100) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_04_090000) do
   create_table "allowed_email_domains", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "domain", null: false
@@ -102,6 +102,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_090100) do
     t.string "reset_password_token"
     t.datetime "reset_password_sent_at"
     t.integer "confirmed_by_id"
+    t.integer "password_change_failed_attempts", default: 0, null: false
+    t.datetime "password_change_locked_at"
     t.index ["admin"], name: "index_users_on_bootstrap_admin", unique: true, where: "admin = 1 AND admin_granted_at IS NULL"
     t.index ["admin_granted_by_id"], name: "index_users_on_admin_granted_by_id"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
